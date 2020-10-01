@@ -140,9 +140,9 @@ class Google_Tag_Manager_Server_Side {
 
 		$plugin_admin = new Google_Tag_Manager_Server_Side_Admin( $this->get_google_tag_manager_server_side(), $this->get_version() );
 
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'admin_init' );
+		$this->loader->add_action( 'admin_menu', $plugin_admin, 'display_admin_page' );
+		$this->loader->add_filter( 'plugin_action_links', $plugin_admin, 'add_plugin_action_links', 10, 2 );
 	}
 
 	/**
