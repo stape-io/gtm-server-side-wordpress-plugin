@@ -155,6 +155,15 @@ class Google_Tag_Manager_Server_Side {
 	private function define_public_hooks() {
 
 		$plugin_public = new Google_Tag_Manager_Server_Side_Public( $this->get_google_tag_manager_server_side(), $this->get_version() );
+
+		$this->loader->add_action( 'wp_head', $plugin_public, 'gtm_head' );
+
+		$this->loader->add_action( 'body_open', $plugin_public, 'gtm_body' );
+		$this->loader->add_action( 'wp_body_open', $plugin_public, 'gtm_body' );
+		$this->loader->add_action( 'genesis_before', $plugin_public, 'gtm_body' );
+		$this->loader->add_action( 'tha_body_top', $plugin_public, 'gtm_body' );
+		$this->loader->add_action( 'body_top', $plugin_public, 'gtm_body' );
+		$this->loader->add_action( 'wp_footer', $plugin_public, 'gtm_body' );
 	}
 
 	/**
