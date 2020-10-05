@@ -157,7 +157,7 @@ class Google_Tag_Manager_Server_Side {
 	 */
 	private function define_admin_hooks() {
 
-		$plugin_admin = new Google_Tag_Manager_Server_Side_Admin( $this->get_google_tag_manager_server_side(), $this->get_version() );
+		$plugin_admin = new Google_Tag_Manager_Server_Side_Admin();
 
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'admin_init' );
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'display_admin_page' );

@@ -9,40 +9,6 @@
 class Google_Tag_Manager_Server_Side_Admin {
 
 	/**
-	 * The ID of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string $google_tag_manager_server_side The ID of this plugin.
-	 */
-	private $google_tag_manager_server_side;
-
-	/**
-	 * The version of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string $version The current version of this plugin.
-	 */
-	private $version;
-
-	/**
-	 * Initialize the class and set its properties.
-	 *
-	 * @param string $google_tag_manager_server_side The name of this plugin.
-	 * @param string $version The version of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @noinspection UnusedConstructorDependenciesInspection
-	 */
-	public function __construct( $google_tag_manager_server_side, $version ) {
-
-		$this->google_tag_manager_server_side = $google_tag_manager_server_side;
-		$this->version                        = $version;
-
-	}
-
-	/**
 	 * Add settings menu.
 	 *
 	 * @since    1.0.0
@@ -182,7 +148,7 @@ class Google_Tag_Manager_Server_Side_Admin {
 		switch ( $args['id'] ) {
 			case GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL:
 			{
-				_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://gtm-server.com" target="_blank">step by step tutorial</a>.<br />', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
+				_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://gtm-server.com/how-to-set-up-google-tag-manager-server-side-container/" target="_blank">step by step tutorial</a>.<br />', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
 
 				break;
 			}

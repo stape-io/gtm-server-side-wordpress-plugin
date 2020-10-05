@@ -8,7 +8,7 @@
  * @wordpress-plugin
  * Plugin Name:       Google Tag Manager Server-Side for WordPress
  * Plugin URI:        https://wordpress.org/plugins/google-tag-manager-server-side/
- * Description:       Allows wordpress send events to Google Tag Manager Server-Side
+ * Description:       Google Tag Manager Server-Side Integration Made Easy
  * Version:           1.0.0
  * Author:            GTM Server
  * Author URI:        https://gtm-server.com
