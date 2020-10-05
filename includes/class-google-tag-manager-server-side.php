@@ -186,6 +186,11 @@ class Google_Tag_Manager_Server_Side {
 		$this->loader->add_action( 'tha_body_top', $plugin_public, 'gtm_body' );
 		$this->loader->add_action( 'body_top', $plugin_public, 'gtm_body' );
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'gtm_body' );
+
+		$pluginList = get_option( 'active_plugins' );
+		if ( in_array( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php' , $pluginList, true ) ) {
+			$this->loader->add_filter( 'gtm4wp_get_the_gtm_tag', $plugin_public, 'gtm4wp_filter' );
+		}
 	}
 
 	/**

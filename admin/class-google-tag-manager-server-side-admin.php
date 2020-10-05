@@ -204,6 +204,10 @@ class Google_Tag_Manager_Server_Side_Admin {
 	}
 
 	private function canPatchOtherPlugin() {
+		if ( is_plugin_active( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php' ) ) {
+			return true;
+		}
+
 		return false;
 	}
 }

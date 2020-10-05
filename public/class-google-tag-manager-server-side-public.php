@@ -45,6 +45,14 @@ class Google_Tag_Manager_Server_Side_Public {
 
 	}
 
+	/**
+	 * @param string
+	 * @return string
+	 */
+	public function gtm4wp_filter( $value ) {
+		return str_replace('www.googletagmanager.com', $this->getServerSideContainerDomain(), $value);
+	}
+
 	public function track_cookie_set() {
 		if (get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] !== GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF) {
 			return;
@@ -90,7 +98,7 @@ class Google_Tag_Manager_Server_Side_Public {
 			}
 		}
 
-		$trackUrl = esc_attr(get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ]);
+		$trackUrl = $this->getServerSideContainerUrl();
 
 		$this->send_track_request( $trackUrl . '/collect?v=1' . $trackingParameter, $trackInfos["ua"]);
 	}
@@ -290,5 +298,19 @@ class Google_Tag_Manager_Server_Side_Public {
 	private function get_cookie_domain()
 	{
 		return parse_url(home_url())['host'];
+	}
+
+	/**
+	 * @return string
+	 */
+	private function getServerSideContainerUrl() {
+		return esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ] );
+	}
+
+	/**
+	 * @return string
+	 */
+	private function getServerSideContainerDomain() {
+		return str_replace('https://', '', $this->getServerSideContainerUrl());
 	}
 }
