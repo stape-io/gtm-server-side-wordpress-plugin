@@ -1,22 +1,5 @@
 <?php
 
-define( 'GTM_SERVER_SIDE_BASENAME', 'google-tag-manager-server-side' );
-define( 'GTM_SERVER_SIDE_TRANSLATION_DOMAIN', 'google-tag-manager-server-side' );
-
-define( 'GTM_SERVER_SIDE_ADMIN_SLUG', 'gtm-server-side-admin-settings' );
-define( 'GTM_SERVER_SIDE_ADMIN_OPTIONS', 'gtm-server-side-admin-options' );
-
-define( 'GTM_SERVER_SIDE_ADMIN_GROUP', 'gtm-server-side-admin-group' );
-define( 'GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL', 'gtm-server-side-admin-group-general' );
-
-define( 'GTM_SERVER_SIDE_SERVER_CONTAINER_URL', 'gtm-server-side-server-container-url' );
-define( 'GTM_SERVER_SIDE_WEB_CONTAINER_ID', 'gtm-server-side-web-container-id' );
-
-define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT', 'gtm-server-side-placement' );
-define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN', 'gtm-server-side-placement-plugin' );
-define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE', 'gtm-server-side-placement-code' );
-define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF', 'gtm-server-side-placement-off' );
-
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -109,6 +92,18 @@ class Google_Tag_Manager_Server_Side_Admin {
 				'description' => __( 'Valid format: GTM-XXXXX where X can be numbers and capital letters.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
 			]
 		);
+
+		add_settings_field(
+			GTM_SERVER_SIDE_GA_ID,
+			__( 'GA Property ID', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			[ $this, 'input_callback_function' ],
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			[
+				'label_for'   => GTM_SERVER_SIDE_GA_ID,
+				'description' => __( 'Valid format: UA-XXXXXXXXX-X. where X can be numbers. For example: UA-123456789-1.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			]
+		);
 	}
 
 	/**
@@ -141,6 +136,13 @@ class Google_Tag_Manager_Server_Side_Admin {
 		if ( $id === GTM_SERVER_SIDE_WEB_CONTAINER_ID ) {
 
 			echo '<input type="text" pattern="GTM-.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) . '"/><br />' . $data['description'];
+
+			return;
+		}
+
+		if ( $id === GTM_SERVER_SIDE_GA_ID ) {
+
+			echo '<input type="text" pattern="UA-.*-.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) . '"/><br />' . $data['description'];
 
 			return;
 		}

@@ -1,5 +1,24 @@
 <?php
 
+define( 'GTM_SERVER_SIDE_BASENAME', 'google-tag-manager-server-side' );
+define( 'GTM_SERVER_SIDE_TRANSLATION_DOMAIN', 'google-tag-manager-server-side' );
+define( 'GTM_SERVER_SIDE_COOKIE_NAME', '_gtm_ssc' );
+
+define( 'GTM_SERVER_SIDE_ADMIN_SLUG', 'gtm-server-side-admin-settings' );
+define( 'GTM_SERVER_SIDE_ADMIN_OPTIONS', 'gtm-server-side-admin-options' );
+
+define( 'GTM_SERVER_SIDE_ADMIN_GROUP', 'gtm-server-side-admin-group' );
+define( 'GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL', 'gtm-server-side-admin-group-general' );
+
+define( 'GTM_SERVER_SIDE_SERVER_CONTAINER_URL', 'gtm-server-side-server-container-url' );
+define( 'GTM_SERVER_SIDE_WEB_CONTAINER_ID', 'gtm-server-side-web-container-id' );
+define( 'GTM_SERVER_SIDE_GA_ID', 'gtm-server-side-ga-id' );
+
+define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT', 'gtm-server-side-placement' );
+define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN', 'gtm-server-side-placement-plugin' );
+define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE', 'gtm-server-side-placement-code' );
+define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF', 'gtm-server-side-placement-off' );
+
 /**
  * The core plugin class.
  *
@@ -155,6 +174,9 @@ class Google_Tag_Manager_Server_Side {
 	private function define_public_hooks() {
 
 		$plugin_public = new Google_Tag_Manager_Server_Side_Public( $this->get_google_tag_manager_server_side(), $this->get_version() );
+
+		$this->loader->add_action( 'send_headers', $plugin_public, 'track_cookie_set' );
+		$this->loader->add_action( 'wp_footer', $plugin_public, 'track_pageview' );
 
 		$this->loader->add_action( 'wp_head', $plugin_public, 'gtm_head' );
 

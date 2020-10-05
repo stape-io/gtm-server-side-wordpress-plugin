@@ -25,16 +25,27 @@
     #gtm-server-side-admin-settings > form > table > tbody > tr:nth-child(3) {
         display: none;
     }
+
+    #gtm-server-side-admin-settings > form > table > tbody > tr:nth-child(4) {
+        display: none;
+    }
 </style>
 
 <script>
     jQuery( document ).ready(function() {
         function showHideGTMIdField() {
-            var el = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE?>');
-            if (el.prop('checked')) {
-                jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').closest('tr').show();
+            var elCode = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE?>');
+            if (elCode.prop('checked')) {
+                jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').prop('required', true).closest('tr').show();
             } else {
-                jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').closest('tr').hide();
+                jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').prop('required', false).closest('tr').hide();
+            }
+
+            var elOff = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF?>');
+            if (elOff.prop('checked')) {
+                jQuery('#<?=GTM_SERVER_SIDE_GA_ID?>').prop('required', true).closest('tr').show();
+            } else {
+                jQuery('#<?=GTM_SERVER_SIDE_GA_ID?>').prop('required', false).closest('tr').hide();
             }
         }
         showHideGTMIdField();
