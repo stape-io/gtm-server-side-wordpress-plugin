@@ -8,8 +8,8 @@
  * @link       http://example.com
  * @since      1.0.0
  *
- * @package    Google_Tag_Manager_Server_Side
- * @subpackage Google_Tag_Manager_Server_Side/admin/partials
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/admin/partials
  */
 ?>
 

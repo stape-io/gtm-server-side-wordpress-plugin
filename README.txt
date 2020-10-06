@@ -28,7 +28,7 @@ Google Tag Manager Server-Side makes your analytics data resistant to:
 
 == Installation ==
 
-1. Unzip and upload the "google-tag-manager-server-side" to the '/wp-content/plugins/' directory
+1. Unzip and upload the "gtm-server-side" to the '/wp-content/plugins/' directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Settings / GTM Server-side and enter your GTM Server-side url and set additional options
 

@@ -3,10 +3,10 @@
 /**
  * The admin-specific functionality of the plugin.
  *
- * @package    Google_Tag_Manager_Server_Side
- * @subpackage Google_Tag_Manager_Server_Side/admin
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/admin
  */
-class Google_Tag_Manager_Server_Side_Admin {
+class GTM_Server_Side_Admin {
 
 	/**
 	 * Add settings menu.
@@ -139,7 +139,7 @@ class Google_Tag_Manager_Server_Side_Admin {
 	 * @since    1.0.0
 	 */
 	public function showOptionsPage() {
-		require_once( 'partials/google-tag-manager-server-side-admin-display.php' );
+		require_once( 'partials/gtm-server-side-admin-display.php' );
 	}
 
 	public function admin_output_section( $args ) {

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * @package    Google_Tag_Manager_Server_Side
- * @subpackage Google_Tag_Manager_Server_Side/public
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/public
  */
-class Google_Tag_Manager_Server_Side_Public {
+class GTM_Server_Side_Public {
 
 	public static $printed_noscript_tag = false;
 
@@ -13,9 +13,9 @@ class Google_Tag_Manager_Server_Side_Public {
 	 *
 	 * @since    1.0.0
 	 * @access   private
-	 * @var      string    $google_tag_manager_server_side    The ID of this plugin.
+	 * @var      string    $gtm_server_side    The ID of this plugin.
 	 */
-	private $google_tag_manager_server_side;
+	private $gtm_server_side;
 
 	/**
 	 * The version of this plugin.
@@ -35,12 +35,12 @@ class Google_Tag_Manager_Server_Side_Public {
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
-	 * @param      string    $google_tag_manager_server_side       The name of the plugin.
+	 * @param      string    $gtm_server_side       The name of the plugin.
 	 * @param      string    $version    The version of this plugin.
 	 */
-	public function __construct( $google_tag_manager_server_side, $version ) {
+	public function __construct( $gtm_server_side, $version ) {
 
-		$this->google_tag_manager_server_side = $google_tag_manager_server_side;
+		$this->gtm_server_side = $gtm_server_side;
 		$this->version = $version;
 
 	}
@@ -86,7 +86,7 @@ class Google_Tag_Manager_Server_Side_Public {
 		$tracking_data_array['uip'] = $this->get_ip();
 		$tracking_data_array['cid'] = $this->get_cid();
 		$tracking_data_array['dr'] = $this->get_referrer();
-		$tracking_data_array['ds'] = $this->google_tag_manager_server_side.'_'.$this->version;
+		$tracking_data_array['ds'] = $this->gtm_server_side.'_'.$this->version;
 		$tracking_data_array['z'] = time() . mt_rand();
 
 		$trackInfos = $this->encode_strings_in_array($tracking_data_array);

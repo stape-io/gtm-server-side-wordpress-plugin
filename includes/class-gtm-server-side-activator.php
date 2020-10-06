@@ -6,10 +6,10 @@
  * This class defines all code necessary to run during the plugin's activation.
  *
  * @since      1.0.0
- * @package    Google_Tag_Manager_Server_Side
- * @subpackage Google_Tag_Manager_Server_Side/includes
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/includes
  */
-class Google_Tag_Manager_Server_Side_Activator {
+class GTM_Server_Side_Activator {
 
 	/**
 	 * Short Description. (use period)

@@ -7,10 +7,10 @@
  * the plugin, and register them with the WordPress API. Call the
  * run function to execute the list of actions and filters.
  *
- * @package    Google_Tag_Manager_Server_Side
- * @subpackage Google_Tag_Manager_Server_Side/includes
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/includes
  */
-class Google_Tag_Manager_Server_Side_Loader {
+class GTM_Server_Side_Loader {
 
 	/**
 	 * The array of actions registered with WordPress.

@@ -6,10 +6,10 @@
  * This class defines all code necessary to run during the plugin's deactivation.
  *
  * @since      1.0.0
- * @package    Google_Tag_Manager_Server_Side
- * @subpackage Google_Tag_Manager_Server_Side/includes
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/includes
  */
-class Google_Tag_Manager_Server_Side_Deactivator {
+class GTM_Server_Side_Deactivator {
 
 	/**
 	 * Short Description. (use period)
