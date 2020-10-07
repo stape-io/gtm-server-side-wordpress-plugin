@@ -29,5 +29,4 @@ class GTM_Server_Side_i18n {
 	}
 
 
-
 }

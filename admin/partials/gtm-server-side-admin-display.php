@@ -32,7 +32,7 @@
 </style>
 
 <script>
-    jQuery( document ).ready(function() {
+    jQuery(document).ready(function () {
         function showHideGTMIdField() {
             var elCode = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE?>');
             if (elCode.prop('checked')) {
@@ -48,6 +48,7 @@
                 jQuery('#<?=GTM_SERVER_SIDE_GA_ID?>').prop('required', false).closest('tr').hide();
             }
         }
+
         showHideGTMIdField();
 
         jQuery(".<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT?>").change(function () {

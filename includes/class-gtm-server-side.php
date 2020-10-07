@@ -40,7 +40,7 @@ class GTM_Server_Side {
 	 *
 	 * @since    1.0.0
 	 * @access   protected
-	 * @var      GTM_Server_Side_Loader    $loader    Maintains and registers all hooks for the plugin.
+	 * @var      GTM_Server_Side_Loader $loader Maintains and registers all hooks for the plugin.
 	 */
 	protected $loader;
 
@@ -49,7 +49,7 @@ class GTM_Server_Side {
 	 *
 	 * @since    1.0.0
 	 * @access   protected
-	 * @var      string    $gtm_server_side    The string used to uniquely identify this plugin.
+	 * @var      string $gtm_server_side The string used to uniquely identify this plugin.
 	 */
 	protected $gtm_server_side;
 
@@ -58,7 +58,7 @@ class GTM_Server_Side {
 	 *
 	 * @since    1.0.0
 	 * @access   protected
-	 * @var      string    $version    The current version of the plugin.
+	 * @var      string $version The current version of the plugin.
 	 */
 	protected $version;
 
@@ -188,7 +188,7 @@ class GTM_Server_Side {
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'gtm_body' );
 
 		$pluginList = get_option( 'active_plugins' );
-		if ( in_array( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php' , $pluginList, true ) ) {
+		if ( in_array( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php', $pluginList, true ) ) {
 			$this->loader->add_filter( 'gtm4wp_get_the_gtm_tag', $plugin_public, 'gtm4wp_filter' );
 		}
 	}
@@ -206,8 +206,8 @@ class GTM_Server_Side {
 	 * The name of the plugin used to uniquely identify it within the context of
 	 * WordPress and to define internationalization functionality.
 	 *
-	 * @since     1.0.0
 	 * @return    string    The name of the plugin.
+	 * @since     1.0.0
 	 */
 	public function get_gtm_server_side() {
 		return $this->gtm_server_side;
@@ -216,8 +216,8 @@ class GTM_Server_Side {
 	/**
 	 * The reference to the class that orchestrates the hooks with the plugin.
 	 *
-	 * @since     1.0.0
 	 * @return    GTM_Server_Side_Loader    Orchestrates the hooks of the plugin.
+	 * @since     1.0.0
 	 */
 	public function get_loader() {
 		return $this->loader;
@@ -226,8 +226,8 @@ class GTM_Server_Side {
 	/**
 	 * Retrieve the version number of the plugin.
 	 *
-	 * @since     1.0.0
 	 * @return    string    The version number of the plugin.
+	 * @since     1.0.0
 	 */
 	public function get_version() {
 		return $this->version;

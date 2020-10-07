@@ -70,4 +70,5 @@ function run_gtm_server_side() {
 	$plugin->run();
 
 }
+
 run_gtm_server_side();

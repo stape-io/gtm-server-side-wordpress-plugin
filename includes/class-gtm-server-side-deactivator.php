@@ -19,7 +19,7 @@ class GTM_Server_Side_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
-		if (!current_user_can('activate_plugins')) {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
 			return;
 		}
 	}
