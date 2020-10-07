@@ -188,20 +188,13 @@ class GTM_Server_Side_Public {
 	 * @param string $url
 	 * @param string $user_agent_string
 	 */
-	private function send_track_request($url, $user_agent_string)
-	{
-		$curl = curl_init();
-		curl_setopt_array($curl, array(
-			CURLOPT_URL => $url,
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_CUSTOMREQUEST => "GET",
-			CURLOPT_HTTPHEADER => array(
-				"cache-control: no-cache",
-				"User-Agent: " . $user_agent_string,
-			),
-		));
-		curl_exec($curl);
-		curl_close($curl);
+	private function send_track_request( $url, $user_agent_string ) {
+
+		wp_remote_get( $url, [
+			'headers' => [
+				'cache-control' => 'no-cache',
+				'User-Agent'    => $user_agent_string,
+			],
 
 	}
 
