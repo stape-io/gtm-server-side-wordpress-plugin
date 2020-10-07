@@ -11,7 +11,18 @@ jobs:
         uses: actions/checkout@v2
       - name: Create zip archive
         run: |
-          zip -r gtm-server-side . -x '/*.git/*' -x '.github/*' -x '.idea/*' -x '.DS_Store'
+          mkdir                   gtm-server-side
+          cp -r admin             gtm-server-side
+          cp -r assets            gtm-server-side
+          cp -r includes          gtm-server-side
+          cp -r languages         gtm-server-side
+          cp -r public            gtm-server-side
+          cp gtm-server-side.php  gtm-server-side
+          cp index.php            gtm-server-side
+          cp LICENSE.txt          gtm-server-side
+          cp README.txt           gtm-server-side
+          cp uninstall.php        gtm-server-side
+          zip -r gtm-server-side gtm-server-side
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
