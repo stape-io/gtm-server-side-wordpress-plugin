@@ -6,7 +6,7 @@
  * @package           GTM_Server_Side
  *
  * @wordpress-plugin
- * Plugin Name:       GTM Server-side
+ * Plugin Name:       GTM Server-Side
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
  * Description:       Google Tag Manager Server-Side Integration Made Easy
  * Version:           1.0.0

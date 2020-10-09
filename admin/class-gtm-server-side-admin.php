@@ -37,7 +37,7 @@ class GTM_Server_Side_Admin {
 
 		add_settings_field(
 			GTM_SERVER_SIDE_SERVER_CONTAINER_URL,
-			__( 'GTM Server-side url', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			__( 'GTM Server-Side url', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
 			[ $this, 'input_callback_function' ],
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
@@ -123,8 +123,8 @@ class GTM_Server_Side_Admin {
 	 */
 	public function display_admin_page() {
 		add_options_page(
-			'GTM Server-side',
-			'GTM Server-side',
+			'GTM Server-Side',
+			'GTM Server-Side',
 			'manage_options',
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			[ $this, 'showOptionsPage' ],
