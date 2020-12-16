@@ -2,8 +2,8 @@
 Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server-side, gtm, gtm server-side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
-Tested up to: 5.5.1
-Stable tag: 1.0.1
+Tested up to: 5.6.0
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,9 @@ Please refer to blog post <a href="https://gtm-server.com/how-to-set-up-google-t
 2. Menu item in the settings panel.
 
 == Changelog ==
+
+= 1.0.2 =
+* Add ecommerce events
 
 = 1.0.1 =
 * Assets and texts update.

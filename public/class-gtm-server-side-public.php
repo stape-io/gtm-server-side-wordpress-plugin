@@ -30,6 +30,7 @@ class GTM_Server_Side_Public {
 	 * @var string
 	 */
 	private $cid;
+	private $tracking_data_array;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -44,6 +45,8 @@ class GTM_Server_Side_Public {
 		$this->gtm_server_side = $gtm_server_side;
 		$this->version         = $version;
 
+		$this->tracking_data_array        = [];
+
 	}
 
 	/**
@@ -56,7 +59,7 @@ class GTM_Server_Side_Public {
 	}
 
 	public function track_cookie_set() {
-		if ( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] !== GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF ) {
+		if ( $this->isBackendTracking() ) {
 			return;
 		}
 
@@ -77,8 +80,53 @@ class GTM_Server_Side_Public {
 		}
 	}
 
+	public function track_add_cart_data()
+	{
+		$this->tracking_data_array['pa'] = "checkout";
+		$this->tracking_data_array['cos'] = 1;
+	}
+
+	public function track_add_checkout_data()
+	{
+		$this->tracking_data_array['pa'] = "checkout";
+		$this->tracking_data_array['cos'] = 2;
+	}
+
+	public function track_add_pdp_view_data()
+	{
+		$this->tracking_data_array['pa'] = "detail";
+	}
+
+	public function track_event_add_to_cart()
+	{
+		if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+			return;
+		}
+
+		if ( $this->isBackendTracking() ) {
+			return;
+		}
+
+		$tracking_data_array['pa'] = "add";
+		$tracking_data_array["t"] = "event";
+		$tracking_data_array['ec'] = "Enhanced Ecommerce";
+		$tracking_data_array['ea'] = "Add to Cart";
+
+		$this->sendEventToGA( $tracking_data_array );
+	}
+
+	public function track_add_order_data($order_id = null)
+	{
+		if ( $this->isBackendTracking() ) {
+			return;
+		}
+
+		$tracking_data_array = $this->getEEData( $order_id );
+		$this->sendEventToGA( $tracking_data_array );
+	}
+
 	public function track_pageview() {
-		if ( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] !== GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF ) {
+		if ( $this->isBackendTracking() ) {
 			return;
 		}
 
@@ -86,29 +134,8 @@ class GTM_Server_Side_Public {
 			return;
 		}
 
-		$tracking_data_array        = [];
-		$tracking_data_array["t"]   = "pageview";
-		$tracking_data_array['tid'] = get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_GA_ID ];
-		$tracking_data_array['dl']  = $this->get_url();
-		$tracking_data_array['ua']  = $this->get_user_agent();
-		$tracking_data_array['uip'] = $this->get_ip();
-		$tracking_data_array['cid'] = $this->get_cid();
-		$tracking_data_array['dr']  = $this->get_referrer();
-		$tracking_data_array['ds']  = $this->gtm_server_side . '_' . $this->version;
-		$tracking_data_array['z']   = time() . mt_rand();
-
-		$trackInfos = $this->encode_strings_in_array( $tracking_data_array );
-
-		$trackingParameter = "";
-		foreach ( $trackInfos as $parameter => $value ) {
-			if ( $value ) {
-				$trackingParameter .= "&" . $parameter . "=" . $value;
-			}
-		}
-
-		$trackUrl = $this->getServerSideContainerUrl();
-
-		$this->send_track_request( $trackUrl . '/collect?v=1' . $trackingParameter, $trackInfos["ua"] );
+		$this->tracking_data_array["t"]   = isset($this->tracking_data_array["t"]) ? $this->tracking_data_array["t"]:"pageview";
+		$this->sendEventToGA( $this->tracking_data_array );
 	}
 
 	/**
@@ -315,5 +342,74 @@ class GTM_Server_Side_Public {
 	 */
 	private function getServerSideContainerDomain() {
 		return str_replace( 'https://', '', $this->getServerSideContainerUrl() );
+	}
+
+	/**
+	 * @param array $tracking_data_array
+	 */
+	private function sendEventToGA( array $tracking_data_array ) {
+		$tracking_data_array['tid'] = get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_GA_ID ];
+		$tracking_data_array['dl']  = $this->get_url();
+		$tracking_data_array['ua']  = $this->get_user_agent();
+		$tracking_data_array['uip'] = $this->get_ip();
+		$tracking_data_array['cid'] = $this->get_cid();
+		$tracking_data_array['dr']  = $this->get_referrer();
+		$tracking_data_array['ds']  = $this->gtm_server_side . '_' . $this->version;
+		$tracking_data_array['z']   = time() . mt_rand();
+
+		$trackInfos = $this->encode_strings_in_array( $tracking_data_array );
+
+		$trackingParameter = "";
+		foreach ( $trackInfos as $parameter => $value ) {
+			if ( $value ) {
+				$trackingParameter .= "&" . $parameter . "=" . $value;
+			}
+		}
+
+		$trackUrl = $this->getServerSideContainerUrl();
+
+		$this->send_track_request( $trackUrl . '/collect?v=1' . $trackingParameter, $trackInfos["ua"] );
+	}
+
+	/**
+	 * @param $order_id
+	 *
+	 * @return array
+	 */
+	private function getEEData( $order_id = null ) {
+		$tracking_data_array        = [];
+		$tracking_data_array["t"]   = "event";
+
+		if ($order_id === null) {
+			return $tracking_data_array;
+		}
+
+		$order_data_collector       = new GTM_Server_Side_tracking_collect_data_order( $order_id );
+		$tracking_data_array['pa']  = $order_data_collector->get_product_action();
+		$tracking_data_array['ti']  = $order_data_collector->get_order_id();
+		$tracking_data_array['tr']  = $order_data_collector->get_revenue();
+		$tracking_data_array['tt']  = $order_data_collector->get_tax();
+		$tracking_data_array['ts']  = $order_data_collector->get_shipping();
+		$tracking_data_array['tcc'] = $order_data_collector->get_coupon_code();
+
+		$orderItems = $order_data_collector->get_order_items();
+		foreach ( $orderItems as $productIndex => $orderItem ) {
+			$tracking_data_array[ 'pr' . $productIndex . 'id' ] = $orderItem["id"];
+			$tracking_data_array[ 'pr' . $productIndex . 'nm' ] = $orderItem["name"];
+			$tracking_data_array[ 'pr' . $productIndex . 'qt' ] = $orderItem["qty"];
+			$tracking_data_array[ 'pr' . $productIndex . 'pr' ] = $orderItem["productPriceWithTaxes"];
+			$tracking_data_array[ 'pr' . $productIndex . 'va' ] = $orderItem["variation_id"];
+			$tracking_data_array[ 'pr' . $productIndex . 'ca' ] = $orderItem["categories"];
+			$tracking_data_array[ 'pr' . $productIndex . 'br' ] = $orderItem["tags"];
+		}
+
+		return $tracking_data_array;
+}
+
+	/**
+	 * @return bool
+	 */
+	private function isBackendTracking() {
+		return get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] !== GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF;
 	}
 }
