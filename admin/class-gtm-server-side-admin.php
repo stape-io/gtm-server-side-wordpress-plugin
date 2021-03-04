@@ -37,13 +37,13 @@ class GTM_Server_Side_Admin {
 
 		add_settings_field(
 			GTM_SERVER_SIDE_SERVER_CONTAINER_URL,
-			__( 'GTM Server-Side url', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			__( 'GTM Server Side url', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
 			[ $this, 'input_callback_function' ],
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
 			[
 				'label_for'   => GTM_SERVER_SIDE_SERVER_CONTAINER_URL,
-				'description' => __( 'Enter your Google Tag Manager Server-side url. For example: https://gtm.example.com', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+				'description' => __( 'Enter your Google Tag Manager server side url. For example: https://gtm.example.com', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
 			]
 		);
 
@@ -123,8 +123,8 @@ class GTM_Server_Side_Admin {
 	 */
 	public function display_admin_page() {
 		add_options_page(
-			'GTM Server-Side',
-			'GTM Server-Side',
+			'GTM Server Side',
+			'GTM Server Side',
 			'manage_options',
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			[ $this, 'showOptionsPage' ],
@@ -148,7 +148,7 @@ class GTM_Server_Side_Admin {
 		switch ( $args['id'] ) {
 			case GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL:
 			{
-				_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://gtm-server.com/how-to-set-up-google-tag-manager-server-side-container/" target="_blank">step by step tutorial</a>.<br />', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
+				_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://gtm-server.com/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/" target="_blank">step by step tutorial</a>.<br />', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
 
 				break;
 			}

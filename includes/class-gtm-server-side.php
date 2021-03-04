@@ -77,7 +77,7 @@ class GTM_Server_Side {
 		if ( defined( 'GTM_SERVER_SIDE_VERSION' ) ) {
 			$this->version = GTM_SERVER_SIDE_VERSION;
 		} else {
-			$this->version = '1.0.0';
+			$this->version = '1.0.3';
 		}
 		$this->gtm_server_side = 'gtm-server-side';
 

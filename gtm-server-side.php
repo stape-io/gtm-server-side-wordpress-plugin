@@ -6,10 +6,10 @@
  * @package           GTM_Server_Side
  *
  * @wordpress-plugin
- * Plugin Name:       GTM Server-Side
+ * Plugin Name:       GTM Server Side
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
- * Description:       Google Tag Manager Server-Side Integration Made Easy
- * Version:           1.0.0
+ * Description:       Google Tag Manager Server Side Integration Made Easy
+ * Version:           1.0.3
  * Author:            GTM Server
  * Author URI:        https://gtm-server.com
  * License:           GPL-2.0+
@@ -26,7 +26,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'GTM_SERVER_SIDE_VERSION', '1.0.0' );
+define( 'GTM_SERVER_SIDE_VERSION', '1.0.3' );
 
 /**
  * The code that runs during plugin activation.

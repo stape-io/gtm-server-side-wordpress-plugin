@@ -58,7 +58,7 @@
 </script>
 
 <div id="gtm-server-side-admin-settings" class="wrap">
-    <h2><?php _e( 'Google Tag Manager Server-side for WordPress options', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?></h2>
+    <h2><?php _e( 'Google Tag Manager server side for WordPress options', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?></h2>
     <form action="options.php" method="post">
 		<?php settings_fields( GTM_SERVER_SIDE_ADMIN_GROUP ); ?>
 		<?php do_settings_sections( GTM_SERVER_SIDE_ADMIN_SLUG ); ?>
