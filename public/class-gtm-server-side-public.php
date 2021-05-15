@@ -55,6 +55,10 @@ class GTM_Server_Side_Public {
 	 * @return string
 	 */
 	public function gtm4wp_filter( $value ) {
+		if (strpos($this->getServerSideContainerDomain(), 'z.gtm-server.com') !== false) {
+			return $value;
+		}
+
 		return str_replace( 'www.googletagmanager.com', $this->getServerSideContainerDomain(), $value );
 	}
 
@@ -152,7 +156,7 @@ class GTM_Server_Side_Public {
 		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 		            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-		        '" . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ] ) . "/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+		        '" . $this->generate_gtm_web_container_js_url() . "/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 		    })(window,document,'script','dataLayer','" . esc_js( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_ID ] ) . "');</script>
 		<!-- End Google Tag Manager -->
 		";
@@ -176,6 +180,19 @@ class GTM_Server_Side_Public {
 		                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 		<!-- End Google Tag Manager (noscript) -->
 		';
+	}
+
+	/**
+	 * @return string
+	 */
+	private function generate_gtm_web_container_js_url() {
+		$transportUrl = get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ];
+
+		if (strpos($transportUrl, '.gtm-server.com') !== false) {
+			return 'https://www.googletagmanager.com';
+		}
+
+		return $transportUrl;
 	}
 
 	/**
