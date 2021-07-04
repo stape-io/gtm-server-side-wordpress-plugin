@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @link              https://gtm-server.com
+ * @link              https://stape.io
  * @since             1.0.0
  * @package           GTM_Server_Side
  *
@@ -9,9 +9,9 @@
  * Plugin Name:       GTM Server Side
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
  * Description:       Google Tag Manager Server Side Integration Made Easy
- * Version:           1.0.4
- * Author:            GTM Server
- * Author URI:        https://gtm-server.com
+ * Version:           1.0.5
+ * Author:            Stape
+ * Author URI:        https://stape.io
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       gtm-server-side
@@ -26,7 +26,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'GTM_SERVER_SIDE_VERSION', '1.0.4' );
+define( 'GTM_SERVER_SIDE_VERSION', '1.0.5' );
 
 /**
  * The code that runs during plugin activation.

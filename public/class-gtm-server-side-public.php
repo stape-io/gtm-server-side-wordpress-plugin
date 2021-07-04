@@ -59,6 +59,10 @@ class GTM_Server_Side_Public {
 			return $value;
 		}
 
+		if (strpos($this->getServerSideContainerDomain(), 'stape.io') !== false) {
+			return $value;
+		}
+
 		return str_replace( 'www.googletagmanager.com', $this->getServerSideContainerDomain(), $value );
 	}
 
@@ -189,6 +193,10 @@ class GTM_Server_Side_Public {
 		$transportUrl = get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ];
 
 		if (strpos($transportUrl, '.gtm-server.com') !== false) {
+			return 'https://www.googletagmanager.com';
+		}
+
+		if (strpos($transportUrl, '.stape.io') !== false) {
 			return 'https://www.googletagmanager.com';
 		}
 

@@ -148,7 +148,7 @@ class GTM_Server_Side_Admin {
 		switch ( $args['id'] ) {
 			case GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL:
 			{
-				_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://gtm-server.com/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/" target="_blank">step by step tutorial</a>.<br />', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
+				_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://stape.io/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/" target="_blank">step by step tutorial</a>.<br />', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
 
 				break;
 			}

@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 5.7.2
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,19 +40,19 @@ Please refer to the official <a href="https://marketingplatform.google.com/about
 
 = What is Google Tag Manager Server Side =
 
-Please refer to the technical description of <a href="https://gtm-server.com/what-is-google-tag-manager-server-side-tracking/">Google Tag Manager Server Side </a>.
+Please refer to the technical description of <a href="https://stape.io/what-is-google-tag-manager-server-side-tracking/">Google Tag Manager Server Side </a>.
 
 = Where I can get GTM Server Side url =
 
-Please refer to blog post <a href="https://gtm-server.com/how-to-set-up-google-tag-manager-server-side-container/">how to set up Google Tag Manager Server Side Container </a>.
+Please refer to blog post <a href="https://stape.io/how-to-set-up-google-tag-manager-server-side-container/">how to set up Google Tag Manager Server Side Container </a>.
 
 = Does the plugin support WooCommerce =
 
-Yes, please refer to the blog post on how to setup <a href="https://gtm-server.com/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/">server side Tagging For WordPress with WooCommerce </a>.
+Yes, please refer to the blog post on how to setup <a href="https://stape.io/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/">server side Tagging For WordPress with WooCommerce </a>.
 
 = Can I integrate Facebook Conversion API with Google Tag Manager server side =
 
-Yes. <a href="https://gtm-server.com/how-to-set-up-facebook-conversion-api/">How to Setup Facebook Conversion API </a>.
+Yes. <a href="https://stape.io/how-to-set-up-facebook-conversion-api/">How to Setup Facebook Conversion API </a>.
 
 == Screenshots ==
 
@@ -60,6 +60,9 @@ Yes. <a href="https://gtm-server.com/how-to-set-up-facebook-conversion-api/">How
 2. Menu item in the settings panel.
 
 == Changelog ==
+
+= 1.0.5 =
+* Update regarding Gtm Server to Stape rename.
 
 = 1.0.4 =
 * Fixed issues regarding GTM SS debugger
