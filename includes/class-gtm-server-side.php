@@ -12,6 +12,7 @@ define( 'GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL', 'gtm-server-side-admin-group-gene
 
 define( 'GTM_SERVER_SIDE_SERVER_CONTAINER_URL', 'gtm-server-side-server-container-url' );
 define( 'GTM_SERVER_SIDE_WEB_CONTAINER_ID', 'gtm-server-side-web-container-id' );
+define( 'GTM_SERVER_SIDE_IDENTIFIER', 'gtm-server-side-identifier' );
 define( 'GTM_SERVER_SIDE_GA_ID', 'gtm-server-side-ga-id' );
 
 define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT', 'gtm-server-side-placement' );

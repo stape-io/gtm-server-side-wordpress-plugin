@@ -60,6 +60,18 @@ class GTM_Server_Side_Admin {
 		);
 
 		add_settings_field(
+			GTM_SERVER_SIDE_IDENTIFIER,
+			__( 'Stape container identifier', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			[ $this, 'input_callback_function' ],
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			[
+				'label_for'   => GTM_SERVER_SIDE_IDENTIFIER,
+				'description' => __( 'Use in case you configured <a href="https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers#how-to-avoid-google-tag-manager-blocking-by-ad-blockers" target="_blank">custom web GTM loader power-up</a>.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			]
+		);
+
+		add_settings_field(
 			GTM_SERVER_SIDE_GA_ID,
 			__( 'GA Property ID', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
 			[ $this, 'input_callback_function' ],
@@ -85,35 +97,42 @@ class GTM_Server_Side_Admin {
 		if ( $id === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) {
 
 			//echo  $data['description'].'<br>';
-			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN . '" ' . ( esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN ? 'checked="checked"' : '' ) . ' ' . ( $this->canPatchOtherPlugin() ? '' : 'disabled' ) . '/> ' . __( "Update existing GTM web container configuration for working with your server-side container. (This option is not enabled if we can't find an existing web container.)", GTM_SERVER_SIDE_TRANSLATION_DOMAIN ) . '<br />';
-			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE . '" ' . ( esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE ? 'checked="checked"' : '' ) . '/> ' . __( 'Add Google Tag Manager web container on all pages. If you have other GTM plugins, please disable them.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ) . '<br />';
-			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF . '" ' . ( esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF ? 'checked="checked"' : '' ) . '/> ' . __( 'Off - only server-side events will be tracked. This increase page speed because no additional JS will be placed on the page, but only PageView and Woocommerce events will be tracked.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
+			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN . '" ' . ( esc_attr( $this->getOption( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN ? 'checked="checked"' : '' ) . ' ' . ( $this->canPatchOtherPlugin() ? '' : 'disabled' ) . '/> ' . __( "Update existing GTM web container configuration for working with your server-side container. (This option is not enabled if we can't find an existing web container.)", GTM_SERVER_SIDE_TRANSLATION_DOMAIN ) . '<br />';
+			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE . '" ' . ( esc_attr( $this->getOption( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE ? 'checked="checked"' : '' ) . '/> ' . __( 'Add Google Tag Manager web container on all pages. If you have other GTM plugins, please disable them.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ) . '<br />';
+			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF . '" ' . ( esc_attr( $this->getOption( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF ? 'checked="checked"' : '' ) . '/> ' . __( 'Off - only server-side events will be tracked. This increase page speed because no additional JS will be placed on the page, but only PageView and Woocommerce events will be tracked.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
 
 			return;
 		}
 
 		if ( $id === GTM_SERVER_SIDE_SERVER_CONTAINER_URL ) {
 
-			echo '<input type="url" required pattern="https://.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) . '"/><br />' . $data['description'];
+			echo '<input type="url" required pattern="https://.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( $this->getOption( $id ) ) . '"/><br />' . $data['description'];
+
+			return;
+		}
+
+		if ( $id === GTM_SERVER_SIDE_IDENTIFIER ) {
+
+			echo '<input type="text" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( $this->getOption( $id ) ) . '"/><br />' . $data['description'];
 
 			return;
 		}
 
 		if ( $id === GTM_SERVER_SIDE_WEB_CONTAINER_ID ) {
 
-			echo '<input type="text" pattern="GTM-.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) . '"/><br />' . $data['description'];
+			echo '<input type="text" pattern="GTM-.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( $this->getOption( $id ) ) . '"/><br />' . $data['description'];
 
 			return;
 		}
 
 		if ( $id === GTM_SERVER_SIDE_GA_ID ) {
 
-			echo '<input type="text" pattern="UA-.*-.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) . '"/><br />' . $data['description'];
+			echo '<input type="text" pattern="UA-.*-.*" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( $this->getOption( $id ) ) . '"/><br />' . $data['description'];
 
 			return;
 		}
 
-		echo '<input type="text" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) . '"/><br />' . $data['description'];
+		echo '<input type="text" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" id="' . $id . '" value="' . esc_attr( $this->getOption( $id ) ) . '"/><br />' . $data['description'];
 	}
 
 	/**
@@ -175,5 +194,9 @@ class GTM_Server_Side_Admin {
 		}
 
 		return false;
+	}
+
+	protected function getOption( $id ) {
+		return isset(get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ]) ? get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] : '';
 	}
 }

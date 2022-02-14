@@ -63,7 +63,7 @@ class GTM_Server_Side_Public {
 			return $value;
 		}
 
-		return str_replace( 'www.googletagmanager.com', $this->getServerSideContainerDomain(), $value );
+		return str_replace( 'www.googletagmanager.com/gtm', $this->getServerSideContainerDomain().'/'.$this->generate_gtm_js_file_url(), $value );
 	}
 
 	public function track_cookie_set() {
@@ -160,8 +160,8 @@ class GTM_Server_Side_Public {
 		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 		            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-		        '" . $this->generate_gtm_web_container_js_url() . "/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-		    })(window,document,'script','dataLayer','" . esc_js( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_ID ] ) . "');</script>
+		        '" . $this->generate_gtm_web_container_js_url() . "/".$this->generate_gtm_js_file_url().".js?id='+i+dl;f.parentNode.insertBefore(j,f);
+		    })(window,document,'script','dataLayer','" . esc_js( $this->getOption(GTM_SERVER_SIDE_WEB_CONTAINER_ID) ) . "');</script>
 		<!-- End Google Tag Manager -->
 		";
 	}
@@ -180,7 +180,7 @@ class GTM_Server_Side_Public {
 
 		echo '
 		<!-- Google Tag Manager (noscript) -->
-		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=' . esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_ID ] ) . '"
+		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=' . esc_attr( $this->getOption(GTM_SERVER_SIDE_WEB_CONTAINER_ID) ) . '"
 		                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 		<!-- End Google Tag Manager (noscript) -->
 		';
@@ -190,7 +190,7 @@ class GTM_Server_Side_Public {
 	 * @return string
 	 */
 	private function generate_gtm_web_container_js_url() {
-		$transportUrl = get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ];
+		$transportUrl = $this->getOption(GTM_SERVER_SIDE_SERVER_CONTAINER_URL);
 
 		if (strpos($transportUrl, '.gtm-server.com') !== false) {
 			return 'https://www.googletagmanager.com';
@@ -201,6 +201,19 @@ class GTM_Server_Side_Public {
 		}
 
 		return $transportUrl;
+	}
+
+	/**
+	 * @return string
+	 */
+	private function generate_gtm_js_file_url() {
+		$identifier = $this->getOption(GTM_SERVER_SIDE_IDENTIFIER);
+
+		if ($identifier) {
+			return $identifier;
+		}
+
+		return 'gtm';
 	}
 
 	/**
@@ -359,7 +372,7 @@ class GTM_Server_Side_Public {
 	 * @return string
 	 */
 	private function getServerSideContainerUrl() {
-		return esc_attr( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_SERVER_CONTAINER_URL ] );
+		return esc_attr( $this->getOption(GTM_SERVER_SIDE_SERVER_CONTAINER_URL) );
 	}
 
 	/**
@@ -373,7 +386,7 @@ class GTM_Server_Side_Public {
 	 * @param array $tracking_data_array
 	 */
 	private function sendEventToGA( array $tracking_data_array ) {
-		$tracking_data_array['tid'] = get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_GA_ID ];
+		$tracking_data_array['tid'] = $this->getOption(GTM_SERVER_SIDE_GA_ID);
 		$tracking_data_array['dl']  = $this->get_url();
 		$tracking_data_array['ua']  = $this->get_user_agent();
 		$tracking_data_array['uip'] = $this->get_ip();
@@ -436,5 +449,9 @@ class GTM_Server_Side_Public {
 	 */
 	private function isBackendTracking() {
 		return get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] !== GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF;
+	}
+
+	protected function getOption($id) {
+		return isset(get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ]) ? get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] : '';
 	}
 }

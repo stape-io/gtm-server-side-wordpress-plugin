@@ -41,6 +41,14 @@
                 jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').prop('required', false).closest('tr').hide();
             }
 
+            var elCodeWeb = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE?>');
+            var elCodePlugin = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN?>');
+            if (elCodeWeb.prop('checked') || elCodePlugin.prop('checked')) {
+                jQuery('#<?=GTM_SERVER_SIDE_IDENTIFIER?>').closest('tr').show();
+            } else {
+                jQuery('#<?=GTM_SERVER_SIDE_IDENTIFIER?>').closest('tr').hide();
+            }
+
             var elOff = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF?>');
             if (elOff.prop('checked')) {
                 jQuery('#<?=GTM_SERVER_SIDE_GA_ID?>').prop('required', true).closest('tr').show();
