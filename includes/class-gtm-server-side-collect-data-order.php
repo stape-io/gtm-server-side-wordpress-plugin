@@ -1,5 +1,16 @@
 <?php
+/**
+ * Measurement Protocol Integration
+ *
+ * @since      1.0.0
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/includes
+ * @file       class-gtm-server-side-collect-data-order.php
+ */
 
+/**
+ * Measurement class.
+ */
 class GTM_Server_Side_tracking_collect_data_order {
 
 
