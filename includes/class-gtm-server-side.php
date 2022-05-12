@@ -20,7 +20,7 @@ define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN', 'gtm-server-side-place
 define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE', 'gtm-server-side-placement-code' );
 define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF', 'gtm-server-side-placement-off' );
 
-include 'class-gtm-server-side-collect-data-order.php';
+require 'class-gtm-server-side-collect-data-order.php';
 
 /**
  * The core plugin class.
@@ -180,12 +180,12 @@ class GTM_Server_Side {
 
 		$this->loader->add_action( 'send_headers', $plugin_public, 'track_cookie_set' );
 
-		if ($this->woocommerce_version_check()) {
-			add_action('woocommerce_thankyou', array($plugin_public, 'track_add_order_data'));
-			add_action('woocommerce_add_to_cart', array($plugin_public, 'track_event_add_to_cart'));
-			add_action('woocommerce_after_single_product', array($plugin_public, 'track_add_pdp_view_data'));
-			add_action('woocommerce_after_cart', array($plugin_public, 'track_add_cart_data'));
-			add_action('woocommerce_after_checkout_form', array($plugin_public, 'track_add_checkout_data'));
+		if ( $this->woocommerce_version_check() ) {
+			add_action( 'woocommerce_thankyou', array( $plugin_public, 'track_add_order_data' ) );
+			add_action( 'woocommerce_add_to_cart', array( $plugin_public, 'track_event_add_to_cart' ) );
+			add_action( 'woocommerce_after_single_product', array( $plugin_public, 'track_add_pdp_view_data' ) );
+			add_action( 'woocommerce_after_cart', array( $plugin_public, 'track_add_cart_data' ) );
+			add_action( 'woocommerce_after_checkout_form', array( $plugin_public, 'track_add_checkout_data' ) );
 		}
 
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'track_pageview' );
@@ -244,33 +244,31 @@ class GTM_Server_Side {
 		return $this->version;
 	}
 
-	private function woocommerce_version_check($version = '3.0')
-	{
-		if (preg_grep('/woocommerce[\-0-9\.]{0,6}\/woocommerce\.php/', apply_filters('active_plugins', get_option('active_plugins'))) != array()) {
-			if (version_compare($this->get_woo_version_number(), $version, ">=")) {
+	private function woocommerce_version_check( $version = '3.0' ) {
+		if ( preg_grep( '/woocommerce[\-0-9\.]{0,6}\/woocommerce\.php/', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) != array() ) {
+			if ( version_compare( $this->get_woo_version_number(), $version, '>=' ) ) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private function get_woo_version_number()
-	{
-		// If get_plugins() isn't available, require it
-		if (!function_exists('get_plugins')) {
+	private function get_woo_version_number() {
+		 // If get_plugins() isn't available, require it
+		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
 		// Create the plugins folder and file variables
-		$plugin_folder = get_plugins('/' . 'woocommerce');
-		$plugin_file = 'woocommerce.php';
+		$plugin_folder = get_plugins( '/' . 'woocommerce' );
+		$plugin_file   = 'woocommerce.php';
 
 		// If the plugin version number is set, return it
-		if (isset($plugin_folder[$plugin_file]['Version'])) {
-			return $plugin_folder[$plugin_file]['Version'];
+		if ( isset( $plugin_folder[ $plugin_file ]['Version'] ) ) {
+			return $plugin_folder[ $plugin_file ]['Version'];
 
 		}
 
-		return "1.0";
+		return '1.0';
 	}
 }

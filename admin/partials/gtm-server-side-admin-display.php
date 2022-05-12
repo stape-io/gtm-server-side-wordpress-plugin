@@ -14,63 +14,63 @@
 ?>
 
 <style>
-    #gtm-server-side-admin-settings form h2 {
-        display: none;
-    }
+	#gtm-server-side-admin-settings form h2 {
+		display: none;
+	}
 
-    #gtm-server-side-admin-group-gtm-url {
-        width: 300px;
-    }
+	#gtm-server-side-admin-group-gtm-url {
+		width: 300px;
+	}
 
-    #gtm-server-side-admin-settings > form > table > tbody > tr:nth-child(3) {
-        display: none;
-    }
+	#gtm-server-side-admin-settings > form > table > tbody > tr:nth-child(3) {
+		display: none;
+	}
 
-    #gtm-server-side-admin-settings > form > table > tbody > tr:nth-child(4) {
-        display: none;
-    }
+	#gtm-server-side-admin-settings > form > table > tbody > tr:nth-child(4) {
+		display: none;
+	}
 </style>
 
 <script>
-    jQuery(document).ready(function () {
-        function showHideGTMIdField() {
-            var elCode = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE?>');
-            if (elCode.prop('checked')) {
-                jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').prop('required', true).closest('tr').show();
-            } else {
-                jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_ID?>').prop('required', false).closest('tr').hide();
-            }
+	jQuery(document).ready(function () {
+		function showHideGTMIdField() {
+			var elCode = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE; ?>');
+			if (elCode.prop('checked')) {
+				jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_ID; ?>').prop('required', true).closest('tr').show();
+			} else {
+				jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_ID; ?>').prop('required', false).closest('tr').hide();
+			}
 
-            var elCodeWeb = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE?>');
-            var elCodePlugin = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN?>');
-            if (elCodeWeb.prop('checked') || elCodePlugin.prop('checked')) {
-                jQuery('#<?=GTM_SERVER_SIDE_IDENTIFIER?>').closest('tr').show();
-            } else {
-                jQuery('#<?=GTM_SERVER_SIDE_IDENTIFIER?>').closest('tr').hide();
-            }
+			var elCodeWeb = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE; ?>');
+			var elCodePlugin = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN; ?>');
+			if (elCodeWeb.prop('checked') || elCodePlugin.prop('checked')) {
+				jQuery('#<?php echo GTM_SERVER_SIDE_IDENTIFIER; ?>').closest('tr').show();
+			} else {
+				jQuery('#<?php echo GTM_SERVER_SIDE_IDENTIFIER; ?>').closest('tr').hide();
+			}
 
-            var elOff = jQuery('#<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF?>');
-            if (elOff.prop('checked')) {
-                jQuery('#<?=GTM_SERVER_SIDE_GA_ID?>').prop('required', true).closest('tr').show();
-            } else {
-                jQuery('#<?=GTM_SERVER_SIDE_GA_ID?>').prop('required', false).closest('tr').hide();
-            }
-        }
+			var elOff = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF; ?>');
+			if (elOff.prop('checked')) {
+				jQuery('#<?php echo GTM_SERVER_SIDE_GA_ID; ?>').prop('required', true).closest('tr').show();
+			} else {
+				jQuery('#<?php echo GTM_SERVER_SIDE_GA_ID; ?>').prop('required', false).closest('tr').hide();
+			}
+		}
 
-        showHideGTMIdField();
+		showHideGTMIdField();
 
-        jQuery(".<?=GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT?>").change(function () {
-            showHideGTMIdField();
-        });
-    });
+		jQuery(".<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT; ?>").change(function () {
+			showHideGTMIdField();
+		});
+	});
 </script>
 
 <div id="gtm-server-side-admin-settings" class="wrap">
-    <h2><?php _e( 'Google Tag Manager server side for WordPress options', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?></h2>
-    <form action="options.php" method="post">
+	<h2><?php _e( 'Google Tag Manager server side for WordPress options', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?></h2>
+	<form action="options.php" method="post">
 		<?php settings_fields( GTM_SERVER_SIDE_ADMIN_GROUP ); ?>
 		<?php do_settings_sections( GTM_SERVER_SIDE_ADMIN_SLUG ); ?>
 		<?php submit_button(); ?>
 
-    </form>
+	</form>
 </div>

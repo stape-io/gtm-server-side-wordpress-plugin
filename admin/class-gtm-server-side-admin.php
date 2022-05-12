@@ -19,68 +19,68 @@ class GTM_Server_Side_Admin {
 		add_settings_section(
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
 			__( 'General', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			[ $this, 'admin_output_section' ],
+			array( $this, 'admin_output_section' ),
 			GTM_SERVER_SIDE_ADMIN_SLUG
 		);
 
 		add_settings_field(
 			GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT,
 			__( 'Web container code placement type', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			[ $this, 'input_callback_function' ],
+			array( $this, 'input_callback_function' ),
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
-			[
+			array(
 				'label_for'   => GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT,
 				'description' => __( 'Choose wisely.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			]
+			)
 		);
 
 		add_settings_field(
 			GTM_SERVER_SIDE_SERVER_CONTAINER_URL,
 			__( 'GTM Server Side url', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			[ $this, 'input_callback_function' ],
+			array( $this, 'input_callback_function' ),
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
-			[
+			array(
 				'label_for'   => GTM_SERVER_SIDE_SERVER_CONTAINER_URL,
 				'description' => __( 'Enter your Google Tag Manager server side url. For example: https://gtm.example.com', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			]
+			)
 		);
 
 		add_settings_field(
 			GTM_SERVER_SIDE_WEB_CONTAINER_ID,
 			__( 'Google Tag Manager ID', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			[ $this, 'input_callback_function' ],
+			array( $this, 'input_callback_function' ),
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
-			[
+			array(
 				'label_for'   => GTM_SERVER_SIDE_WEB_CONTAINER_ID,
 				'description' => __( 'Valid format: GTM-XXXXX where X can be numbers and capital letters.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			]
+			)
 		);
 
 		add_settings_field(
 			GTM_SERVER_SIDE_IDENTIFIER,
 			__( 'Stape container identifier', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			[ $this, 'input_callback_function' ],
+			array( $this, 'input_callback_function' ),
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
-			[
+			array(
 				'label_for'   => GTM_SERVER_SIDE_IDENTIFIER,
 				'description' => __( 'Use in case you configured <a href="https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers#how-to-avoid-google-tag-manager-blocking-by-ad-blockers" target="_blank">custom web GTM loader power-up</a>.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			]
+			)
 		);
 
 		add_settings_field(
 			GTM_SERVER_SIDE_GA_ID,
 			__( 'GA Property ID', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			[ $this, 'input_callback_function' ],
+			array( $this, 'input_callback_function' ),
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
-			[
+			array(
 				'label_for'   => GTM_SERVER_SIDE_GA_ID,
 				'description' => __( 'Valid format: UA-XXXXXXXXX-X. where X can be numbers. For example: UA-123456789-1.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
-			]
+			)
 		);
 	}
 
@@ -96,7 +96,7 @@ class GTM_Server_Side_Admin {
 
 		if ( $id === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) {
 
-			//echo  $data['description'].'<br>';
+			// echo  $data['description'].'<br>';
 			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN . '" ' . ( esc_attr( $this->getOption( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN ? 'checked="checked"' : '' ) . ' ' . ( $this->canPatchOtherPlugin() ? '' : 'disabled' ) . '/> ' . __( "Update existing GTM web container configuration for working with your server-side container. (This option is not enabled if we can't find an existing web container.)", GTM_SERVER_SIDE_TRANSLATION_DOMAIN ) . '<br />';
 			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE . '" ' . ( esc_attr( $this->getOption( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE ? 'checked="checked"' : '' ) . '/> ' . __( 'Add Google Tag Manager web container on all pages. If you have other GTM plugins, please disable them.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ) . '<br />';
 			echo '<input required class="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT . '" type="radio" id="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF . '" name="' . GTM_SERVER_SIDE_ADMIN_OPTIONS . '[' . $id . ']" value="' . GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF . '" ' . ( esc_attr( $this->getOption( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ) ) === GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF ? 'checked="checked"' : '' ) . '/> ' . __( 'Off - only server-side events will be tracked. This increase page speed because no additional JS will be placed on the page, but only PageView and Woocommerce events will be tracked.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN );
@@ -146,7 +146,7 @@ class GTM_Server_Side_Admin {
 			'GTM Server Side',
 			'manage_options',
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			[ $this, 'showOptionsPage' ],
+			array( $this, 'showOptionsPage' ),
 			27
 		);
 
@@ -158,7 +158,7 @@ class GTM_Server_Side_Admin {
 	 * @since    1.0.0
 	 */
 	public function showOptionsPage() {
-		require_once( 'partials/gtm-server-side-admin-display.php' );
+		require_once 'partials/gtm-server-side-admin-display.php';
 	}
 
 	public function admin_output_section( $args ) {
@@ -197,6 +197,6 @@ class GTM_Server_Side_Admin {
 	}
 
 	protected function getOption( $id ) {
-		return isset(get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ]) ? get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] : '';
+		return isset( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) ? get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] : '';
 	}
 }

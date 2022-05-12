@@ -1,6 +1,7 @@
 <?php
-
 /**
+ * Main plugin file.
+ *
  * @link              https://stape.io
  * @since             1.0.0
  * @package           GTM_Server_Side
