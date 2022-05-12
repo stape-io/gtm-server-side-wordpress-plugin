@@ -203,6 +203,10 @@ class GTM_Server_Side {
 
 		$plugin_list = get_option( 'active_plugins' );
 		if ( in_array( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php', $plugin_list, true ) ) {
+			if ( $this->is_plugin_tracking() ) {
+				return;
+			}
+
 			$this->loader->add_filter( 'gtm4wp_get_the_gtm_tag', $plugin_public, 'gtm4wp_filter' );
 		}
 	}
@@ -283,5 +287,25 @@ class GTM_Server_Side {
 		}
 
 		return '1.0';
+	}
+
+	/**
+	 * Is plugin tracking.
+	 *
+	 * @return bool
+	 */
+	protected function is_plugin_tracking() {
+		return get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN !== $this->get_option( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT );
+	}
+
+	/**
+	 * Get attr option.
+	 *
+	 * @param string $id The option ID.
+	 *
+	 * @return string
+	 */
+	protected function get_option( $id ) {
+		return isset( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] ) ? get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ $id ] : '';
 	}
 }

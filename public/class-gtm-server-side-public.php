@@ -213,7 +213,7 @@ class GTM_Server_Side_Public {
 	 * @return void
 	 */
 	public function gtm_head() {
-		if ( get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE !== get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ] ) {
+		if ( $this->is_add_web_snippet() ) {
 			return;
 		}
 
@@ -556,7 +556,16 @@ class GTM_Server_Side_Public {
 	 * @return bool
 	 */
 	private function is_backend_tracking() {
-		return get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF !== get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS )[ GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ];
+		return get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF !== $this->get_option( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT );
+	}
+
+	/**
+	 * Is web tracking.
+	 *
+	 * @return bool
+	 */
+	protected function is_add_web_snippet() {
+		return get_option( GTM_SERVER_SIDE_ADMIN_OPTIONS ) && GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE !== $this->get_option( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT );
 	}
 
 	/**

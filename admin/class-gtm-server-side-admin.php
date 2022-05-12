@@ -71,7 +71,7 @@ class GTM_Server_Side_Admin {
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
 			array(
 				'label_for'   => GTM_SERVER_SIDE_IDENTIFIER,
-				'description' => __( 'Use in case you configured <a href="https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers#how-to-avoid-google-tag-manager-blocking-by-ad-blockers" target="_blank">custom web GTM loader power-up</a>.', 'gtm-server-side' ),
+				'description' => __( 'Use in case you configured ', 'gtm-server-side' ),
 			)
 		);
 
@@ -117,6 +117,9 @@ class GTM_Server_Side_Admin {
 		if ( GTM_SERVER_SIDE_IDENTIFIER === $id ) {
 
 			echo '<input type="text" name="' . esc_attr( GTM_SERVER_SIDE_ADMIN_OPTIONS ) . '[' . esc_attr( $id ) . ']" id="' . esc_attr( $id ) . '" value="' . esc_attr( $this->get_option( $id ) ) . '"/><br />' . esc_html( $data['description'] );
+			echo '<a href="https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers#how-to-avoid-google-tag-manager-blocking-by-ad-blockers" target="_blank">';
+			esc_html_e( 'custom web GTM loader power-up', 'gtm-server-side' );
+			echo '</a>.';
 
 			return;
 		}
@@ -175,7 +178,10 @@ class GTM_Server_Side_Admin {
 		echo '<span class="tabinfo">';
 
 		if ( GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL === $args['id'] ) {
-			esc_html_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our <a href="https://stape.io/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/" target="_blank">step by step tutorial</a>.<br />', 'gtm-server-side' );
+			esc_html_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our ', 'gtm-server-side' );
+			echo '<a href="https://stape.io/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/" target="_blank">';
+			esc_html_e( 'step by step tutorial', 'gtm-server-side' );
+			echo '</a>.<br />';
 		} // end switch
 
 		echo '</span>';
