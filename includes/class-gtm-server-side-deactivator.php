@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Fired during plugin deactivation.
  *
@@ -8,9 +7,13 @@
  * @since      1.0.0
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
+ * @file       class-gtm-server-side-deactivator.php
+ */
+
+/**
+ * The plugin deactivator class.
  */
 class GTM_Server_Side_Deactivator {
-
 	/**
 	 * Short Description. (use period)
 	 *

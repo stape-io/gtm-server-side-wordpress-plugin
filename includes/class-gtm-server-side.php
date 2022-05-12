@@ -1,4 +1,17 @@
 <?php
+/**
+ * The core plugin class.
+ *
+ * This is used to define internationalization, admin-specific hooks, and
+ * public-facing site hooks.
+ *
+ * Also maintains the unique identifier of this plugin as well as the current
+ * version of the plugin.
+ *
+ * @since      1.0.0
+ * @package    GTM_Server_Side
+ * @subpackage GTM_Server_Side/includes
+ */
 
 define( 'GTM_SERVER_SIDE_BASENAME', 'gtm-server-side' );
 define( 'GTM_SERVER_SIDE_TRANSLATION_DOMAIN', 'gtm-server-side' );
@@ -24,16 +37,6 @@ require 'class-gtm-server-side-collect-data-order.php';
 
 /**
  * The core plugin class.
- *
- * This is used to define internationalization, admin-specific hooks, and
- * public-facing site hooks.
- *
- * Also maintains the unique identifier of this plugin as well as the current
- * version of the plugin.
- *
- * @since      1.0.0
- * @package    GTM_Server_Side
- * @subpackage GTM_Server_Side/includes
  */
 class GTM_Server_Side {
 
@@ -95,7 +98,7 @@ class GTM_Server_Side {
 	 * Include the following files that make up the plugin:
 	 *
 	 * - GTM_Server_Side_Loader. Orchestrates the hooks of the plugin.
-	 * - GTM_Server_Side_i18n. Defines internationalization functionality.
+	 * - GTM_Server_Side_I18n. Defines internationalization functionality.
 	 * - GTM_Server_Side_Admin. Defines all hooks for the admin area.
 	 * - GTM_Server_Side_Public. Defines all hooks for the public side of the site.
 	 *
@@ -137,7 +140,7 @@ class GTM_Server_Side {
 	/**
 	 * Define the locale for this plugin for internationalization.
 	 *
-	 * Uses the GTM_Server_Side_i18n class in order to set the domain and to register the hook
+	 * Uses the GTM_Server_Side_I18n class in order to set the domain and to register the hook
 	 * with WordPress.
 	 *
 	 * @since    1.0.0
@@ -145,7 +148,7 @@ class GTM_Server_Side {
 	 */
 	private function set_locale() {
 
-		$plugin_i18n = new GTM_Server_Side_i18n();
+		$plugin_i18n = new GTM_Server_Side_I18n();
 
 		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
 
@@ -198,8 +201,8 @@ class GTM_Server_Side {
 		$this->loader->add_action( 'body_top', $plugin_public, 'gtm_body' );
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'gtm_body' );
 
-		$pluginList = get_option( 'active_plugins' );
-		if ( in_array( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php', $pluginList, true ) ) {
+		$plugin_list = get_option( 'active_plugins' );
+		if ( in_array( 'duracelltomi-google-tag-manager/duracelltomi-google-tag-manager-for-wordpress.php', $plugin_list, true ) ) {
 			$this->loader->add_filter( 'gtm4wp_get_the_gtm_tag', $plugin_public, 'gtm4wp_filter' );
 		}
 	}
@@ -244,26 +247,36 @@ class GTM_Server_Side {
 		return $this->version;
 	}
 
-	private function woocommerce_version_check( $version = '3.0' ) {
-		if ( preg_grep( '/woocommerce[\-0-9\.]{0,6}\/woocommerce\.php/', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) != array() ) {
-			if ( version_compare( $this->get_woo_version_number(), $version, '>=' ) ) {
+	/**
+	 * Woocommerce version check
+	 *
+	 * @return bool
+	 */
+	private function woocommerce_version_check() {
+		if ( preg_grep( '/woocommerce[\-0-9\.]{0,6}\/woocommerce\.php/', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) !== array() ) {
+			if ( version_compare( $this->get_woo_version_number(), '3.0', '>=' ) ) {
 				return true;
 			}
 		}
 		return false;
 	}
 
+	/**
+	 * Get woocommerce version number
+	 *
+	 * @return string
+	 */
 	private function get_woo_version_number() {
-		 // If get_plugins() isn't available, require it
+		// If get_plugins() isn't available, require it.
 		if ( ! function_exists( 'get_plugins' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		// Create the plugins folder and file variables
-		$plugin_folder = get_plugins( '/' . 'woocommerce' );
+		// Create the plugins folder and file variables.
+		$plugin_folder = get_plugins( '/woocommerce' );
 		$plugin_file   = 'woocommerce.php';
 
-		// If the plugin version number is set, return it
+		// If the plugin version number is set, return it.
 		if ( isset( $plugin_folder[ $plugin_file ]['Version'] ) ) {
 			return $plugin_folder[ $plugin_file ]['Version'];
 

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Provide a admin area view for the plugin
  *
@@ -11,6 +10,7 @@
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/admin/partials
  */
+
 ?>
 
 <style>
@@ -34,39 +34,39 @@
 <script>
 	jQuery(document).ready(function () {
 		function showHideGTMIdField() {
-			var elCode = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE; ?>');
+			var elCode = jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE ); ?>');
 			if (elCode.prop('checked')) {
-				jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_ID; ?>').prop('required', true).closest('tr').show();
+				jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_ID ); ?>').prop('required', true).closest('tr').show();
 			} else {
-				jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_ID; ?>').prop('required', false).closest('tr').hide();
+				jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_ID ); ?>').prop('required', false).closest('tr').hide();
 			}
 
-			var elCodeWeb = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE; ?>');
-			var elCodePlugin = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN; ?>');
+			var elCodeWeb = jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE ); ?>');
+			var elCodePlugin = jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN ); ?>');
 			if (elCodeWeb.prop('checked') || elCodePlugin.prop('checked')) {
-				jQuery('#<?php echo GTM_SERVER_SIDE_IDENTIFIER; ?>').closest('tr').show();
+				jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_IDENTIFIER ); ?>').closest('tr').show();
 			} else {
-				jQuery('#<?php echo GTM_SERVER_SIDE_IDENTIFIER; ?>').closest('tr').hide();
+				jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_IDENTIFIER ); ?>').closest('tr').hide();
 			}
 
-			var elOff = jQuery('#<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF; ?>');
+			var elOff = jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF ); ?>');
 			if (elOff.prop('checked')) {
-				jQuery('#<?php echo GTM_SERVER_SIDE_GA_ID; ?>').prop('required', true).closest('tr').show();
+				jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_GA_ID ); ?>').prop('required', true).closest('tr').show();
 			} else {
-				jQuery('#<?php echo GTM_SERVER_SIDE_GA_ID; ?>').prop('required', false).closest('tr').hide();
+				jQuery('#<?php echo esc_html( GTM_SERVER_SIDE_GA_ID ); ?>').prop('required', false).closest('tr').hide();
 			}
 		}
 
 		showHideGTMIdField();
 
-		jQuery(".<?php echo GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT; ?>").change(function () {
+		jQuery(".<?php echo esc_html( GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT ); ?>").change(function () {
 			showHideGTMIdField();
 		});
 	});
 </script>
 
 <div id="gtm-server-side-admin-settings" class="wrap">
-	<h2><?php _e( 'Google Tag Manager server side for WordPress options', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?></h2>
+	<h2><?php esc_html_e( 'Google Tag Manager server side for WordPress options', 'gtm-server-side' ); ?></h2>
 	<form action="options.php" method="post">
 		<?php settings_fields( GTM_SERVER_SIDE_ADMIN_GROUP ); ?>
 		<?php do_settings_sections( GTM_SERVER_SIDE_ADMIN_SLUG ); ?>

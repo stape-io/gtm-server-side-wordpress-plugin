@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Fired during plugin activation.
  *
@@ -8,6 +7,11 @@
  * @since      1.0.0
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
+ * @file       class-gtm-server-side-activator.php
+ */
+
+/**
+ * The plugin activator class.
  */
 class GTM_Server_Side_Activator {
 

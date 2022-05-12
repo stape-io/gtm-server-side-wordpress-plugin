@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Define the internationalization functionality.
  *
@@ -9,8 +8,13 @@
  * @since      1.0.0
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
+ * @file       class-gtm-server-side-i18n.php
  */
-class GTM_Server_Side_i18n {
+
+/**
+ * Define the internationalization functionality.
+ */
+class GTM_Server_Side_I18n {
 
 
 	/**
