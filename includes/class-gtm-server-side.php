@@ -33,7 +33,7 @@ define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_PLUGIN', 'gtm-server-side-place
 define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_CODE', 'gtm-server-side-placement-code' );
 define( 'GTM_SERVER_SIDE_WEB_CONTAINER_PLACEMENT_OFF', 'gtm-server-side-placement-off' );
 
-require 'class-gtm-server-side-collect-data-order.php';
+require 'class-gtm-server-side-tracking-collect-data-order.php';
 
 /**
  * The core plugin class.

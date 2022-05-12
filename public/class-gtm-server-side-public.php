@@ -319,7 +319,7 @@ class GTM_Server_Side_Public {
 			'wav',
 		);
 
-		$url = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$url = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 
 		foreach ( $blacklist as $i_value ) {
 			if ( preg_match( '/\.' . $i_value . '(\W|$)/', $url ) ) {
@@ -528,7 +528,7 @@ class GTM_Server_Side_Public {
 			return $tracking_data_array;
 		}
 
-		$order_data_collector       = new GTM_Server_Side_tracking_collect_data_order( $order_id );
+		$order_data_collector       = new GTM_Server_Side_Tracking_Collect_Data_Order( $order_id );
 		$tracking_data_array['pa']  = $order_data_collector->get_product_action();
 		$tracking_data_array['ti']  = $order_data_collector->get_order_id();
 		$tracking_data_array['tr']  = $order_data_collector->get_revenue();
