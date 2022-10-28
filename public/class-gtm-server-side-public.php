@@ -65,7 +65,6 @@ class GTM_Server_Side_Public {
 		$this->version         = $version;
 
 		$this->tracking_data_array = array();
-
 	}
 
 	/**
@@ -349,7 +348,6 @@ class GTM_Server_Side_Public {
 				),
 			)
 		);
-
 	}
 
 	/**

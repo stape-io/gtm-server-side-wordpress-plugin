@@ -43,7 +43,6 @@ class GTM_Server_Side_Loader {
 
 		$this->actions = array();
 		$this->filters = array();
-
 	}
 
 	/**
@@ -102,7 +101,6 @@ class GTM_Server_Side_Loader {
 		);
 
 		return $hooks;
-
 	}
 
 	/**
@@ -135,7 +133,6 @@ class GTM_Server_Side_Loader {
 				$hook['accepted_args']
 			);
 		}
-
 	}
 
 }

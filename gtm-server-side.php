@@ -69,7 +69,6 @@ function run_gtm_server_side() {
 
 	$plugin = new GTM_Server_Side();
 	$plugin->run();
-
 }
 
 run_gtm_server_side();

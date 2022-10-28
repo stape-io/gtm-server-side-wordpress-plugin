@@ -23,7 +23,6 @@ class GTM_Server_Side_Activator {
 	 * @since    1.0.0
 	 */
 	public static function activate() {
-
 	}
 
 }

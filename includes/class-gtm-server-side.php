@@ -89,7 +89,6 @@ class GTM_Server_Side {
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-
 	}
 
 	/**
@@ -134,7 +133,6 @@ class GTM_Server_Side {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-gtm-server-side-public.php';
 
 		$this->loader = new GTM_Server_Side_Loader();
-
 	}
 
 	/**
@@ -151,7 +149,6 @@ class GTM_Server_Side {
 		$plugin_i18n = new GTM_Server_Side_I18n();
 
 		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
-
 	}
 
 	/**

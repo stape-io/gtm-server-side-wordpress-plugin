@@ -155,7 +155,6 @@ class GTM_Server_Side_Admin {
 			array( $this, 'show_options_page' ),
 			27
 		);
-
 	}
 
 	/**
