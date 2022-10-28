@@ -2,8 +2,8 @@
 Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
-Tested up to: 5.9.3
-Stable tag: 1.1.2
+Tested up to: 6.0.3
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 2. Menu item in the settings panel.
 
 == Changelog ==
+
+= 1.1.3 =
+* Added support for WordPress 6.0
 
 = 1.1.2 =
 * Improve security
