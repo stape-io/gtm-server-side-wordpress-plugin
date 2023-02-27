@@ -1,0 +1,23 @@
+#gtm-server-side-admin-settings form h2 {
+	display: none;
+}
+
+#gtm-server-side-admin-settings .error {
+	color: red;
+	padding-left: 5px;
+}
+
+#gtm-server-side-admin-settings .success {
+	color: green;
+	padding-left: 5px;
+}
+
+.tab-disabled {
+	color: #50575e94;
+}
+
+.tab-disabled:hover {
+	color: #50575e94;
+	background: #dcdcde;
+	cursor: not-allowed;
+}

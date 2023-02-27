@@ -2,8 +2,8 @@
 Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
-Tested up to: 6.1
-Stable tag: 1.1.4
+Tested up to: 6.1.1
+Stable tag: 2.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -60,6 +60,11 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 2. Menu item in the settings panel.
 
 == Changelog ==
+= 2.0.0 =
+* Changed plugin settings page. Added two new tabs - Data Layer and Webhooks.
+* Added integration with WooCommerce plugin.
+* Data Layer tab. Added the ability to track e-commerce events for the Data Layer - Login, SignUp, ViewItem, AddToCart, BeginCheckout. Including user data.
+* Webhooks tab. Added the ability to send Purchase or Refund data to a third-party URL.
 
 = 1.1.4 =
 * Added support for WordPress 6.1

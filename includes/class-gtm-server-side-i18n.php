@@ -8,28 +8,26 @@
  * @since      1.0.0
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
- * @file       class-gtm-server-side-i18n.php
  */
+
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Define the internationalization functionality.
  */
 class GTM_Server_Side_I18n {
-
+	use GTM_Server_Side_Singleton;
 
 	/**
-	 * Load the plugin text domain for translation.
+	 * Init.
 	 *
-	 * @since    1.0.0
+	 * @return void
 	 */
-	public function load_plugin_textdomain() {
-
+	public function init() {
 		load_plugin_textdomain(
 			'gtm-server-side',
 			false,
 			dirname( dirname( plugin_basename( __FILE__ ) ) ) . '/languages/'
 		);
 	}
-
-
 }
