@@ -1,0 +1,211 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: gtm-server-side\n"
+"POT-Creation-Date: 2023-02-15 19:56+0200\n"
+"PO-Revision-Date: 2023-02-15 19:57+0200\n"
+"Last-Translator: PavelK\n"
+"Language-Team: \n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;esc_html_e;_e\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: includes/class-gtm-server-side-admin-ajax.php:52
+msgid "GTM server container URL is required."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:62
+msgid "Purchase or refund webhook is required."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:78
+#: includes/class-gtm-server-side-admin-ajax.php:86
+msgid "Product category"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:98
+msgid "Some problem with Purchase webhook."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:102
+msgid "Purchase webhook OK."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:117
+msgid "Some problem with Refund webhook."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:121
+msgid "Refund webhook OK."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:133
+msgid "An error occurred during data processing."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:58
+#: templates/class-gtm-server-side-admin.php:31
+msgid "General"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:81
+msgid "Add Google Tag Manager web container on all pages"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:90
+msgid ""
+"Select this option if you want to embed the GTM snippet code on your website"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:97
+msgid "Update existing GTM snippet"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:107
+msgid ""
+"This option will work if you already have a GTM snippet inserted through "
+"another plugin. This option is not enabled if we can't find an existing web "
+"container"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:114
+msgid "Disable"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:131
+msgid "GTM Web container ID"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:140
+msgid "Enter the ID of your <strong>WEB</strong> container"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:149
+#: includes/class-gtm-server-side-admin-settings.php:284
+msgid "GTM server container URL"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:158
+msgid ""
+"Enter the URL of your server container in the format: https://gtm.example."
+"com. Alternatively, leave this field blank, in which case the container will "
+"load from the standard googletagmanager.com address"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:167
+msgid "Stape container identifier or custom loader"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:175
+#, php-format
+msgid ""
+"If you are using <a href=\"%s\" target=\"_blank\">stape.io</a> - specify the "
+"container ID here which you can find in container settings. <a href=\"%s\" "
+"target=\"_blank\">What is this for?</a>"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:190
+#: templates/class-gtm-server-side-admin.php:35
+#: templates/class-gtm-server-side-admin.php:39
+msgid "Data Layer"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:204
+msgid "Add ecommerce Data Layer events"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:213
+msgid ""
+"This option only works with Woocommerce shops. Adds basic events and their "
+"data: Login, SignUp, ViewItem, AddToCart, BeginCheckout, Purchase."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:228
+msgid "Add user data to Data Layer evemts"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:237
+msgid ""
+"All events for authorised users will have their personal details (name, "
+"surname, email, etc.) available. Their billing details will be available on "
+"the purchase event."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:252
+#: templates/class-gtm-server-side-admin.php:44
+#: templates/class-gtm-server-side-admin.php:48
+msgid "Webhooks"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:266
+msgid "Send webhooks to server GTM container"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:275
+#, php-format
+msgid ""
+"This option will allow webhooks to be sent to your server GTM container. <a "
+"href=\"%s\" target=\"_blank\">How to set this up?</a>"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:292
+msgid ""
+"Enter the URL of your server container in the format: https://gtm.example."
+"com/data"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:307
+msgid "Purchase webhook"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:329
+msgid "Refund webhook"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:350
+#: includes/class-gtm-server-side-admin-settings.php:351
+msgid "GTM Server Side"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:377
+msgid "Settings"
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:18
+msgid "Google Tag Manager server side for WordPress options"
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:22
+msgid ""
+"This plugin is intended to be used by IT girls&guys and marketing staff. If "
+"you don't know what to do follow our "
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:24
+msgid "step by step tutorial"
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:38
+#: templates/class-gtm-server-side-admin.php:47
+msgid "Activate WooCommerce plugin"
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:64
+msgid "Send test webhook"
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:67
+msgid ""
+"If you have made changes to the settings, first save them before sending the "
+"test."
+msgstr ""
+
+#: templates/class-gtm-server-side-admin.php:70
+msgid "Sending..."
+msgstr ""
