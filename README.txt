@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 6.1.1
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,6 +19,8 @@ This plugin lets you:
 * Download gtm and google analytics javascript libraries from your domain and prevent 3rd party cookie blocking.
 * If you have an existing setup of GTM using another plugin it can update the settings of known plugins to use your GTM Server Side container for tracking.
 * Can send events to GTM server side without any js library and optimize page speed.
+* Add ecommerce Data Layer events
+* Add user data to Data Layer events
 
 Google Tag Manager Server Side makes your analytics data resistant to:
 
@@ -60,6 +62,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 2. Menu item in the settings panel.
 
 == Changelog ==
+= 2.0.1 =
+* Updated description and screenshots
+
 = 2.0.0 =
 * Changed plugin settings page. Added two new tabs - Data Layer and Webhooks.
 * Added integration with WooCommerce plugin.
