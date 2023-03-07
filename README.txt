@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 6.1.1
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -11,22 +11,24 @@ Google Tag Manager Server Side Integration Made Easy
 
 == Description ==
 
-Google Tag Manager Server Side Integration Made Easy.
+If you are looking for the easiest way to implement server-side tracking on your WordPress website, the GTM Server Side plugin by stape.io is the best solution. It helps to easily modify the gtm script with the tagging server URL, adds a custom loader, and sends data layer events and webhooks.
 
-This plugin lets you:
 
-* Add Google Tag Manager Web container to your website.
-* Download gtm and google analytics javascript libraries from your domain and prevent 3rd party cookie blocking.
-* If you have an existing setup of GTM using another plugin it can update the settings of known plugins to use your GTM Server Side container for tracking.
-* Can send events to GTM server side without any js library and optimize page speed.
-* Add ecommerce Data Layer events
-* Add user data to Data Layer events
+GTM Server Side plugin by stape.io features:
 
-Google Tag Manager Server Side makes your analytics data resistant to:
+* Add web Google Tag Manager script on every website page.
+* Work with any other WP plugin that inserts gtm script on the website.
+* Adds custom loader, which makes Google Tag Manager and Google Analytics tracking invisible to ad blockers and other tracking prevention mechanisms.
+* Sends events to GTM server side without any js library and optimizes page speed.
+* Adds e-commerce Data Layer events.
+* Adds user data to Data Layer events.
+* Sends webhooks.
 
-* 3rd party cookies blockers (adBlockers can't block it)
-* intelligent tracking protection (Safari, Firefox, etc will track all users)
-* security policy restrictions (all js libraries will load from your domain)
+Benefits of GTM Server Side plugin by stape.io:
+
+* Increase cookies lifetime when using a custom domain for server Google Tag Manager container.
+* Increases the accuracy of tracking when the custom loader is enabled.
+* Simplifies the process of adding GTM script on the website and delivering e-commerce and user data.
 
 == Installation ==
 
@@ -58,10 +60,15 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 
 == Screenshots ==
 
-1. Plugin settings.
-2. Menu item in the settings panel.
+1. General plugin settings.
+2. Data Layer settings.
+2. Webhooks settings.
+4. Menu item in the settings panel.
 
 == Changelog ==
+= 2.0.2 =
+* Updated description and screenshots
+
 = 2.0.1 =
 * Updated description and screenshots
 

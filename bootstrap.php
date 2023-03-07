@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Definitions.
-define( 'GTM_SERVER_SIDE_VERSION', '2.0.1' );
+define( 'GTM_SERVER_SIDE_VERSION', '2.0.2' );
 
 define( 'GTM_SERVER_SIDE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'GTM_SERVER_SIDE_URL', plugin_dir_url( __FILE__ ) );

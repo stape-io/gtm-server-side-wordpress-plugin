@@ -20,7 +20,7 @@ $tab = GTM_Server_Side_Admin_Settings::get_settings_tab(); // phpcs:ignore WordP
 	<div class="tabinfo">
 		<strong>
 			<?php esc_html_e( 'This plugin is intended to be used by IT girls&guys and marketing staff. If you don\'t know what to do follow our ', 'gtm-server-side' ); ?>
-			<a href="https://stape.io/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container/" target="_blank">
+			<a href="https://stape.io/blog/how-to-add-google-tag-manager-server-side-container-to-wordpress" target="_blank">
 				<?php esc_html_e( 'step by step tutorial', 'gtm-server-side' ); ?>
 			</a>.
 		</strong>
