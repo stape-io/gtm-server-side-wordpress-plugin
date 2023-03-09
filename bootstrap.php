@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Definitions.
-define( 'GTM_SERVER_SIDE_VERSION', '2.0.2' );
+define( 'GTM_SERVER_SIDE_VERSION', '2.1.0' );
 
 define( 'GTM_SERVER_SIDE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'GTM_SERVER_SIDE_URL', plugin_dir_url( __FILE__ ) );
@@ -16,12 +16,14 @@ define( 'GTM_SERVER_SIDE_URL', plugin_dir_url( __FILE__ ) );
 define( 'GTM_SERVER_SIDE_AJAX_SECURITY', 'gtm-server-side-admin__xyz' );
 
 define( 'GTM_SERVER_SIDE_ADMIN_SLUG', 'gtm-server-side-admin-settings' );
+define( 'GTM_SERVER_SIDE_COOKIE_KEEPER_NAME', '_sbp' );
 
 define( 'GTM_SERVER_SIDE_FIELD_VERSION', 'gtm_server_side_version' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT', 'gtm_server_side_placement' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID', 'gtm_server_side_web_container_id' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL', 'gtm_server_side_web_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER', 'gtm_server_side_web_identifier' );
+define( 'GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER', 'gtm_server_side_cookie_keeper' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE', 'gtm_server_side_data_layer_ecommerce' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_USER_DATA', 'gtm_server_side_data_layer_user_data' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_ENABLE', 'gtm_server_side_webhooks_enable' );

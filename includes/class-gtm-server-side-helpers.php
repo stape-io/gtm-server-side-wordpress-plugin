@@ -35,6 +35,13 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_webhook;
 
 	/**
+	 * Enable or disable cookie keeper.
+	 *
+	 * @var bool
+	 */
+	private static $is_enable_cookie_keeper;
+
+	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
@@ -130,6 +137,19 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return static::$is_enable_webhook;
+	}
+
+	/**
+	 * Enable or disable cookie keeper.
+	 *
+	 * @return string
+	 */
+	public static function is_enable_cookie_keeper() {
+		if ( null === static::$is_enable_cookie_keeper ) {
+			static::$is_enable_cookie_keeper = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER );
+		}
+
+		return static::$is_enable_cookie_keeper;
 	}
 
 	/**

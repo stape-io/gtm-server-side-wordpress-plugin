@@ -69,6 +69,13 @@ jQuery( document ).ready(
 				pluginGtmServerSide.changeContainerId();
 			}
 		);
+		pluginGtmServerSide.changeWebIdentifier();
+		jQuery( '.js-gtm_server_side_web_identifier' ).on(
+			'keyup',
+			function() {
+				pluginGtmServerSide.changeWebIdentifier();
+			}
+		);
 		// ----------
 
 		// Tab "Data Layer".
@@ -171,5 +178,16 @@ var pluginGtmServerSide = {
 			$elCI.rules( 'remove', 'required' );
 			$elCU.rules( 'remove', 'required' );
 		}
-	}
+	},
+
+	changeWebIdentifier: function() {
+		var $elCookieKeeper = jQuery( '#gtm_server_side_cookie_keeper' );
+		if ( 0 === jQuery( '#gtm_server_side_web_identifier' ).val().length ) {
+			$elCookieKeeper
+				.prop( 'checked', false )
+				.prop( 'disabled', true );
+		} else {
+			$elCookieKeeper.prop( 'disabled', false );
+		}
+	},
 };

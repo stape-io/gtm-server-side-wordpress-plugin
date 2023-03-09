@@ -169,10 +169,40 @@ class GTM_Server_Side_Admin_Settings {
 				echo '<input
 					type="text"
 					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) . '"
+					class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) . '"
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) . '"
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) ) . '">';
 				echo '<br>';
-				printf( __( 'If you are using <a href="%s" target="_blank">stape.io</a> - specify the container ID here which you can find in container settings. <a href="%s" target="_blank">What is this for?</a>', 'gtm-server-side' ), 'https://stape.io', 'https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers' ); //phpcs:ignore
+				printf(
+					__( 'If you are using <a href="%s" target="_blank">stape.io</a> - specify the container ID here which you can find in <a href="%s" target="_blank">container settings</a>. <a href="%s" target="_blank">What is this for?</a>','gtm-server-side' ), //phpcs:ignore
+					'https://stape.io',
+					'https://help.stape.io/hc/en-us/articles/9697466601373-How-to-find-the-Stape-container-identifier',
+					'https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers'
+				);
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+		);
+
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER,
+			__( 'Cookie Keeper', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="checkbox"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ) . '"
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ), 'yes', false ) . '
+					value="yes">';
+				echo '<br>';
+				printf( __( 'Activate this option only if you already have this Power-Up set up on Stape.io. <a href="%s" target="_blank">Find out more.</a>', 'gtm-server-side' ), '#' ); //phpcs:ignore
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL

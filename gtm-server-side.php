@@ -10,7 +10,7 @@
  * Plugin Name:       GTM Server Side
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
  * Description:       Google Tag Manager Server Side Integration Made Easy
- * Version:           2.0.2
+ * Version:           2.1.0
  * Author:            Stape
  * Author URI:        https://stape.io
  * License:           GPL-2.0+

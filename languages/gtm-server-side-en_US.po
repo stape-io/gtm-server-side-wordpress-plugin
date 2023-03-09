@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: gtm-server-side\n"
-"POT-Creation-Date: 2023-02-15 19:56+0200\n"
-"PO-Revision-Date: 2023-02-15 19:57+0200\n"
+"POT-Creation-Date: 2023-03-09 16:06+0200\n"
+"PO-Revision-Date: 2023-03-09 16:06+0200\n"
 "Last-Translator: PavelK\n"
 "Language-Team: \n"
 "Language: en_GB\n"
@@ -24,28 +24,23 @@ msgstr ""
 msgid "Purchase or refund webhook is required."
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-ajax.php:78
-#: includes/class-gtm-server-side-admin-ajax.php:86
-msgid "Product category"
-msgstr ""
-
-#: includes/class-gtm-server-side-admin-ajax.php:98
+#: includes/class-gtm-server-side-admin-ajax.php:99
 msgid "Some problem with Purchase webhook."
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-ajax.php:102
-msgid "Purchase webhook OK."
-msgstr ""
-
-#: includes/class-gtm-server-side-admin-ajax.php:117
-msgid "Some problem with Refund webhook."
-msgstr ""
-
-#: includes/class-gtm-server-side-admin-ajax.php:121
-msgid "Refund webhook OK."
+#: includes/class-gtm-server-side-admin-ajax.php:103
+msgid "Purchase webhook sent."
 msgstr ""
 
 #: includes/class-gtm-server-side-admin-ajax.php:133
+msgid "Some problem with Refund webhook."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:137
+msgid "Refund webhook sent."
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-ajax.php:149
 msgid "An error occurred during data processing."
 msgstr ""
 
@@ -87,7 +82,7 @@ msgid "Enter the ID of your <strong>WEB</strong> container"
 msgstr ""
 
 #: includes/class-gtm-server-side-admin-settings.php:149
-#: includes/class-gtm-server-side-admin-settings.php:284
+#: includes/class-gtm-server-side-admin-settings.php:314
 msgid "GTM server container URL"
 msgstr ""
 
@@ -102,78 +97,90 @@ msgstr ""
 msgid "Stape container identifier or custom loader"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:175
+#: includes/class-gtm-server-side-admin-settings.php:177
 #, php-format
 msgid ""
 "If you are using <a href=\"%s\" target=\"_blank\">stape.io</a> - specify the "
-"container ID here which you can find in container settings. <a href=\"%s\" "
+"container ID here which you can find in <a href=\"%s\" "
+"target=\"_blank\">container settings</a>. <a href=\"%s\" "
 "target=\"_blank\">What is this for?</a>"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:190
+#: includes/class-gtm-server-side-admin-settings.php:196
+msgid "Cookie Keeper"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:205
+#, php-format
+msgid ""
+"Activate this option only if you already have this Power-Up set up on Stape."
+"io. <a href=\"%s\" target=\"_blank\">Find out more.</a>"
+msgstr ""
+
+#: includes/class-gtm-server-side-admin-settings.php:220
 #: templates/class-gtm-server-side-admin.php:35
 #: templates/class-gtm-server-side-admin.php:39
 msgid "Data Layer"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:204
+#: includes/class-gtm-server-side-admin-settings.php:234
 msgid "Add ecommerce Data Layer events"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:213
+#: includes/class-gtm-server-side-admin-settings.php:243
 msgid ""
 "This option only works with Woocommerce shops. Adds basic events and their "
 "data: Login, SignUp, ViewItem, AddToCart, BeginCheckout, Purchase."
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:228
-msgid "Add user data to Data Layer evemts"
+#: includes/class-gtm-server-side-admin-settings.php:258
+msgid "Add user data to Data Layer events"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:237
+#: includes/class-gtm-server-side-admin-settings.php:267
 msgid ""
 "All events for authorised users will have their personal details (name, "
 "surname, email, etc.) available. Their billing details will be available on "
 "the purchase event."
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:252
+#: includes/class-gtm-server-side-admin-settings.php:282
 #: templates/class-gtm-server-side-admin.php:44
 #: templates/class-gtm-server-side-admin.php:48
 msgid "Webhooks"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:266
+#: includes/class-gtm-server-side-admin-settings.php:296
 msgid "Send webhooks to server GTM container"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:275
+#: includes/class-gtm-server-side-admin-settings.php:305
 #, php-format
 msgid ""
 "This option will allow webhooks to be sent to your server GTM container. <a "
 "href=\"%s\" target=\"_blank\">How to set this up?</a>"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:292
+#: includes/class-gtm-server-side-admin-settings.php:322
 msgid ""
 "Enter the URL of your server container in the format: https://gtm.example."
 "com/data"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:307
+#: includes/class-gtm-server-side-admin-settings.php:337
 msgid "Purchase webhook"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:329
+#: includes/class-gtm-server-side-admin-settings.php:359
 msgid "Refund webhook"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:350
-#: includes/class-gtm-server-side-admin-settings.php:351
+#: includes/class-gtm-server-side-admin-settings.php:380
+#: includes/class-gtm-server-side-admin-settings.php:381
 msgid "GTM Server Side"
 msgstr ""
 
-#: includes/class-gtm-server-side-admin-settings.php:377
+#: includes/class-gtm-server-side-admin-settings.php:407
 msgid "Settings"
 msgstr ""
 
