@@ -127,8 +127,8 @@ class GTM_Server_Side_WC_Helpers {
 			'billing_company'     => $customer->get_billing_company(),
 			'billing_address'     => join( ' ', array( $customer->get_billing_address_1(), $customer->get_billing_address_2() ) ),
 			'billing_postcode'    => $customer->get_billing_postcode(),
-			'billing_country'     => $this->get_country( $customer->get_billing_country() ),
-			'billing_state'       => $this->get_state( $customer->get_billing_country(), $customer->get_billing_state() ),
+			'billing_country'     => $customer->get_billing_country(),
+			'billing_state'       => $customer->get_billing_state(),
 			'billing_city'        => $customer->get_billing_city(),
 			'billing_email'       => $customer->get_billing_email(),
 			'billing_phone'       => $customer->get_billing_phone(),
@@ -137,8 +137,8 @@ class GTM_Server_Side_WC_Helpers {
 			'shipping_company'    => $customer->get_shipping_company(),
 			'shipping_address'    => join( ' ', array( $customer->get_shipping_address_1(), $customer->get_shipping_address_2() ) ),
 			'shipping_postcode'   => $customer->get_shipping_postcode(),
-			'shipping_country'    => $this->get_country( $customer->get_shipping_country() ),
-			'shipping_state'      => $this->get_state( $customer->get_shipping_country(), $customer->get_shipping_state() ),
+			'shipping_country'    => $customer->get_shipping_country(),
+			'shipping_state'      => $customer->get_shipping_state(),
 			'shipping_city'       => $customer->get_shipping_city(),
 		);
 
@@ -166,8 +166,8 @@ class GTM_Server_Side_WC_Helpers {
 			'billing_last_name'   => $order->get_billing_last_name(),
 			'billing_address'     => join( ' ', array( $order->get_billing_address_1(), $order->get_billing_address_2() ) ),
 			'billing_postcode'    => $order->get_billing_postcode(),
-			'billing_country'     => $this->get_country( $order->get_billing_country() ),
-			'billing_state'       => $this->get_state( $order->get_billing_country(), $order->get_billing_state() ),
+			'billing_country'     => $order->get_billing_country(),
+			'billing_state'       => $order->get_billing_state(),
 			'billing_city'        => $order->get_billing_city(),
 			'billing_email'       => $order->get_billing_email(),
 			'billing_phone'       => $order->get_billing_phone(),
@@ -176,8 +176,8 @@ class GTM_Server_Side_WC_Helpers {
 			'shipping_company'    => $order->get_shipping_company(),
 			'shipping_address'    => join( ' ', array( $order->get_shipping_address_1(), $order->get_shipping_address_2() ) ),
 			'shipping_postcode'   => $order->get_shipping_postcode(),
-			'shipping_country'    => $this->get_country( $order->get_shipping_country() ),
-			'shipping_state'      => $this->get_state( $order->get_shipping_country(), $order->get_shipping_state() ),
+			'shipping_country'    => $order->get_shipping_country(),
+			'shipping_state'      => $order->get_shipping_state(),
 			'shipping_city'       => $order->get_shipping_city(),
 		);
 
