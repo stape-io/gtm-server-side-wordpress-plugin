@@ -90,7 +90,7 @@ class GTM_Server_Side_Event_Purchase {
 		);
 
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
-			$data_layer['user_data']                 = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
+			$data_layer['user_data']                 = GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order );
 			$data_layer['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $order->get_customer_id() ) ? 'true' : 'false';
 		}
 		?>
