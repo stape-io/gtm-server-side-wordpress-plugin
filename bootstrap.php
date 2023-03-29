@@ -8,8 +8,6 @@
 defined( 'ABSPATH' ) || exit;
 
 // Definitions.
-define( 'GTM_SERVER_SIDE_VERSION', '2.1.0' );
-
 define( 'GTM_SERVER_SIDE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'GTM_SERVER_SIDE_URL', plugin_dir_url( __FILE__ ) );
 
@@ -69,3 +67,25 @@ add_action(
 	},
 	-1
 );
+
+/**
+ * Return gtm server side version
+ *
+ * @return string
+ */
+function get_gtm_server_side_version() {
+	static $version;
+
+	if ( null === $version ) {
+		$plugin  = get_file_data(
+			GTM_SERVER_SIDE_PATH . 'gtm-server-side.php',
+			array(
+				'version' => 'Version',
+			),
+			false
+		);
+		$version = $plugin['version'];
+	}
+
+	return $version;
+}
