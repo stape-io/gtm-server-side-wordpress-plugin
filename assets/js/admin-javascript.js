@@ -159,7 +159,6 @@ var pluginGtmServerSide = {
 	changeContainerId: function() {
 		var val   = jQuery( '.js-gtm_server_side_placement:checked' ).val();
 		var $elCI = jQuery( '#gtm_server_side_web_container_id' );
-		var $elCU = jQuery( '#gtm_server_side_web_container_url' );
 
 		if ( 'code' === val || 'plugin' === val ) {
 			$elCI.rules(
@@ -168,15 +167,8 @@ var pluginGtmServerSide = {
 					required: true,
 				}
 			);
-			$elCU.rules(
-				'add',
-				{
-					required: true,
-				}
-			);
 		} else {
 			$elCI.rules( 'remove', 'required' );
-			$elCU.rules( 'remove', 'required' );
 		}
 	},
 

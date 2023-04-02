@@ -66,6 +66,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+= 2.1.3 =
+* Settings field "GTM server container URL" is not required
+
 = 2.1.2 =
 * Added support for WordPress 6.2
 

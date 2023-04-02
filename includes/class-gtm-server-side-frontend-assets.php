@@ -34,7 +34,7 @@ class GTM_Server_Side_Frontend_Assets {
 	 * @return void
 	 */
 	public function wp_enqueue_scripts() {
-		wp_enqueue_script( 'gtm-server-side', GTM_SERVER_SIDE_URL . 'assets/js/javascript.js', array( 'jquery' ), GTM_SERVER_SIDE_VERSION, true );
+		wp_enqueue_script( 'gtm-server-side', GTM_SERVER_SIDE_URL . 'assets/js/javascript.js', array( 'jquery' ), get_gtm_server_side_version(), true );
 
 		$scripts = array(
 			'currency' => esc_attr( get_woocommerce_currency() ),
