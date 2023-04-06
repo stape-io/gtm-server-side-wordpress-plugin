@@ -173,8 +173,13 @@ var pluginGtmServerSide = {
 	},
 
 	changeWebIdentifier: function() {
+		var $elWebIdentifier = jQuery( '#gtm_server_side_web_identifier' );
+		if ( 0 === $elWebIdentifier.length ) {
+			return;
+		}
+
 		var $elCookieKeeper = jQuery( '#gtm_server_side_cookie_keeper' );
-		if ( 0 === jQuery( '#gtm_server_side_web_identifier' ).val().length ) {
+		if ( 0 === $elWebIdentifier.val().length ) {
 			$elCookieKeeper
 				.prop( 'checked', false )
 				.prop( 'disabled', true );
