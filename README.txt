@@ -66,6 +66,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+= 2.1.4 =
+* Fix bug on webhooks tab
+
 = 2.1.3 =
 * Settings field "GTM server container URL" is not required
 
