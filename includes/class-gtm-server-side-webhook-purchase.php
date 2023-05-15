@@ -64,6 +64,19 @@ class GTM_Server_Side_Webhook_Purchase {
 		);
 		$request['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $order->get_customer_id() ) ? 'true' : 'false';
 
+		$request_cookies = array(
+			'_fbp'    => filter_input( INPUT_COOKIE, '_fbp', FILTER_DEFAULT ),
+			'_fbc'    => filter_input( INPUT_COOKIE, '_fbc', FILTER_DEFAULT ),
+			'FPGCLAW' => filter_input( INPUT_COOKIE, 'FPGCLAW', FILTER_DEFAULT ),
+			'_gcl_aw' => filter_input( INPUT_COOKIE, '_gcl_aw', FILTER_DEFAULT ),
+			'ttclid'  => filter_input( INPUT_COOKIE, 'ttclid', FILTER_DEFAULT ),
+		);
+		$request_cookies = array_filter( $request_cookies );
+
+		if ( ! empty( $request_cookies ) ) {
+			$request['cookies'] = $request_cookies;
+		}
+
 		GTM_Server_Side_Helpers::send_webhook_request( $request );
 	}
 }

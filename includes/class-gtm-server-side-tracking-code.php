@@ -117,7 +117,7 @@ class GTM_Server_Side_Tracking_Code {
 	private function add_cookie_keeper() {
 		if ( ! GTM_Server_Side_Helpers::is_enable_cookie_keeper() ) {
 			if ( ! empty( $_COOKIE[ GTM_SERVER_SIDE_COOKIE_KEEPER_NAME ] ) ) {
-				$this->set_cookie( true );
+				GTM_Server_Side_Helpers::delete_cookie( GTM_SERVER_SIDE_COOKIE_KEEPER_NAME );
 			}
 			return;
 		}
@@ -126,51 +126,12 @@ class GTM_Server_Side_Tracking_Code {
 			return;
 		}
 
-		$this->set_cookie( false );
-	}
-
-	/**
-	 * Set cookie
-	 *
-	 * @param  bool $is_delete Set cookie or not.
-	 * @return void
-	 */
-	private function set_cookie( $is_delete ) {
-		if ( $is_delete ) {
-			$value   = '';
-			$expires = -1;
-		} else {
-			$value   = md5( wp_rand( PHP_INT_MIN, PHP_INT_MAX ) . '|' . filter_input( INPUT_SERVER, 'HTTP_USER_AGENT', FILTER_DEFAULT ) . '|' . time() );
-			$expires = time() + ( YEAR_IN_SECONDS * 2 );
-		}
-		$path     = '/';
-		$domain   = '.' . wp_parse_url( home_url(), PHP_URL_HOST );
-		$secure   = true;
-		$httponly = false;
-
-		if ( version_compare( PHP_VERSION, '7.3.0', '>=' ) ) {
-			setcookie(
-				GTM_SERVER_SIDE_COOKIE_KEEPER_NAME,
-				$value,
-				array(
-					'expires'  => $expires,
-					'path'     => $path,
-					'domain'   => $domain,
-					'secure'   => $secure,
-					'httponly' => $httponly,
-					'samesite' => 'lax',
-				)
-			);
-		} else {
-			setcookie(
-				GTM_SERVER_SIDE_COOKIE_KEEPER_NAME,
-				$value,
-				$expires,
-				$path,
-				$domain,
-				$secure,
-				$httponly
-			);
-		}
+		GTM_Server_Side_Helpers::set_cookie(
+			array(
+				'name'    => GTM_SERVER_SIDE_COOKIE_KEEPER_NAME,
+				'value'   => md5( wp_rand( PHP_INT_MIN, PHP_INT_MAX ) . '|' . filter_input( INPUT_SERVER, 'HTTP_USER_AGENT', FILTER_DEFAULT ) . '|' . time() ),
+				'expires' => time() + ( YEAR_IN_SECONDS * 2 ),
+			)
+		);
 	}
 }

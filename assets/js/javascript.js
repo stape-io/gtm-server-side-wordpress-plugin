@@ -82,6 +82,43 @@ jQuery( document ).ready(
 				pluginGtmServerSide.pushSimpleProduct( $elForm );
 			}
 		);
+
+		/**
+		 * Delete from minicart
+		 */
+		jQuery( document ).on(
+			'removed_from_cart',
+			function ( e, fragments, cart_hash, $thisbutton ) {
+				if ( ! $thisbutton.data( 'gtm_item_id' ) ) {
+					return;
+				}
+
+				pluginGtmServerSide.removeFromCart(
+					pluginGtmServerSide.removePrefixes( $thisbutton.data() )
+				);
+			}
+		);
+
+		/**
+		 * Delete from page: /cart
+		 */
+		jQuery( document ).on(
+			'click',
+			'.woocommerce-cart-form .product-remove > a',
+			function ( e ) {
+				e.preventDefault();
+
+				var $el = jQuery( e.currentTarget );
+
+				if ( ! $el.data( 'gtm_item_id' ) ) {
+					return;
+				}
+
+				pluginGtmServerSide.removeFromCart(
+					pluginGtmServerSide.removePrefixes( $el.data() )
+				);
+			}
+		);
 	}
 );
 
@@ -150,6 +187,32 @@ var pluginGtmServerSide = {
 			}
 		);
 		this.pushAddToCart( items );
+	},
+
+	/**
+	 * Remove from cart
+	 *
+	 * @param object item
+	 */
+	removeFromCart: function ( item ) {
+		item.quantity = item.quantity || 1;
+		var eventData = {
+			'event': 'remove_from_cart',
+			'ecommerce': {
+				'currency': varGtmServerSide.currency,
+				'items': [
+					item,
+				],
+			},
+		};
+
+		if ( varGtmServerSide.user_data ) {
+			eventData.user_data = {};
+			for ( var key in varGtmServerSide.user_data  ) {
+				eventData.user_data[ key ] = varGtmServerSide.user_data[ key ];
+			}
+		}
+		dataLayer.push( eventData );
 	},
 
 	/**
