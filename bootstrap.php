@@ -39,11 +39,6 @@ define( 'GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL', 'gtm-server-side-admin-group-gene
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER', 'gtm-server-side-admin-group-data-layer' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS', 'gtm-server-side-admin-group-webhooks' );
 
-// Start session.
-if ( ! session_id() ) {
-	session_start();
-}
-
 // Autoload plugin classes.
 spl_autoload_register(
 	function ( $class ) {

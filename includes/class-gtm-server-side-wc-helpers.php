@@ -107,6 +107,28 @@ class GTM_Server_Side_WC_Helpers {
 	}
 
 	/**
+	 * Return formatted product itemss from cart to data layer.
+	 *
+	 * @param  array $cart Cart products.
+	 * @return string
+	 */
+	public function get_cart_data_layer_items( $cart ) {
+		$index  = 1;
+		$result = array();
+		foreach ( $cart as $product_loop ) {
+			$product = $product_loop['data'];
+
+			$array             = $this->get_data_layer_item( $product );
+			$array['quantity'] = intval( $product_loop['quantity'] );
+			$array['index']    = $index++;
+
+			$result[] = $array;
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Return formatted user data to data layer.
 	 *
 	 * @return array
@@ -340,6 +362,15 @@ class GTM_Server_Side_WC_Helpers {
 		}
 		// $price = round( $price, 2, PHP_ROUND_HALF_UP ); phpcs:ignore Squiz.PHP.CommentedOutCode.Found
 		return $price;
+	}
+
+	/**
+	 * Gets the cart contents total (after calculation).
+	 *
+	 * @return string formatted price
+	 */
+	public function get_cart_total() {
+		return wc_prices_include_tax() ? WC()->cart->get_cart_contents_total() + WC()->cart->get_cart_contents_tax() : WC()->cart->get_cart_contents_total();
 	}
 
 	/**

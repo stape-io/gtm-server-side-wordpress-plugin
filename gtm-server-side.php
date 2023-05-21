@@ -10,7 +10,7 @@
  * Plugin Name:       GTM Server Side
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
  * Description:       Google Tag Manager Server Side Integration Made Easy
- * Version:           2.1.5
+ * Version:           2.1.6
  * Author:            Stape
  * Author URI:        https://stape.io
  * License:           GPL-2.0+
@@ -42,6 +42,7 @@ add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_Login::clas
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_Login::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_Register::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_ViewItem::class, 'instance' ) );
+add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_ViewCart::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_BeginCheckout::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_Purchase::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_AddToCart::class, 'instance' ) );

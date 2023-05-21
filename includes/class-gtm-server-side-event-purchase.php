@@ -20,7 +20,7 @@ class GTM_Server_Side_Event_Purchase {
 	 *
 	 * @var string
 	 */
-	private $transaction_key = 'gtm_server_side_order_id';
+	const TRANSACTION_KEY = 'gtm_server_side_order_id';
 
 	/**
 	 * Check order created or not.
@@ -56,7 +56,7 @@ class GTM_Server_Side_Event_Purchase {
 		}
 		$this->is_order_created = true;
 
-		GTM_Server_Side_Helpers::set_session( $this->transaction_key, $order_id );
+		GTM_Server_Side_Helpers::set_session( self::TRANSACTION_KEY, $order_id );
 	}
 
 	/**
@@ -65,7 +65,7 @@ class GTM_Server_Side_Event_Purchase {
 	 * @return void
 	 */
 	public function wp_footer() {
-		$order_id = GTM_Server_Side_Helpers::get_session( $this->transaction_key );
+		$order_id = GTM_Server_Side_Helpers::get_session( self::TRANSACTION_KEY );
 		if ( empty( $order_id ) ) {
 			return;
 		}
@@ -78,14 +78,15 @@ class GTM_Server_Side_Event_Purchase {
 		$data_layer = array(
 			'event'     => 'purchase',
 			'ecommerce' => array(
-				'transaction_id' => esc_attr( $order->get_order_number() ),
-				'affiliation'    => '',
-				'value'          => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total() ),
-				'tax'            => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total_tax() ),
-				'shipping'       => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_shipping_total() ),
-				'currency'       => esc_attr( $order->get_currency() ),
-				'coupon'         => esc_attr( join( ',', $order->get_coupon_codes() ) ),
-				'items'          => GTM_Server_Side_WC_Helpers::instance()->get_order_data_layer_items( $order->get_items() ),
+				'transaction_id'  => esc_attr( $order->get_order_number() ),
+				'affiliation'     => '',
+				'value'           => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total() ),
+				'tax'             => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total_tax() ),
+				'shipping'        => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_shipping_total() ),
+				'currency'        => esc_attr( $order->get_currency() ),
+				'coupon'          => esc_attr( join( ',', $order->get_coupon_codes() ) ),
+				'discount_amount' => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_discount_total() ),
+				'items'           => GTM_Server_Side_WC_Helpers::instance()->get_order_data_layer_items( $order->get_items() ),
 			),
 		);
 
@@ -98,6 +99,6 @@ class GTM_Server_Side_Event_Purchase {
 			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
 		</script>
 		<?php
-		GTM_Server_Side_Helpers::delete_session( $this->transaction_key );
+		GTM_Server_Side_Helpers::javascript_delete_cookie( self::TRANSACTION_KEY );
 	}
 }

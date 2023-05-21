@@ -1,6 +1,6 @@
 <?php
 /**
- * Data Layer Event: register.
+ * Data Layer Event: view_cart.
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
@@ -10,17 +10,10 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Data Layer Event: register.
+ * Data Layer Event: view_cart.
  */
-class GTM_Server_Side_Event_Register {
+class GTM_Server_Side_Event_ViewCart {
 	use GTM_Server_Side_Singleton;
-
-	/**
-	 * Cookie name.
-	 *
-	 * @var string
-	 */
-	const CHECK_NAME = 'gtm_server_side_register';
 
 	/**
 	 * Init.
@@ -32,18 +25,7 @@ class GTM_Server_Side_Event_Register {
 			return;
 		}
 
-		add_action( 'user_register', array( $this, 'user_register' ) );
 		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
-		add_action( 'login_footer', array( $this, 'wp_footer' ) );
-	}
-
-	/**
-	 * WP login hook.
-	 *
-	 * @return void
-	 */
-	public function user_register() {
-		GTM_Server_Side_Helpers::set_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
 	}
 
 	/**
@@ -52,12 +34,25 @@ class GTM_Server_Side_Event_Register {
 	 * @return void
 	 */
 	public function wp_footer() {
-		if ( ! GTM_Server_Side_Helpers::exists_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES ) ) {
+		if ( ! is_cart() ) {
+			return;
+		}
+
+		$cart = WC()->cart->get_cart();
+		if ( empty( $cart ) ) {
 			return;
 		}
 
 		$data_layer = array(
-			'event' => 'sign_up',
+			'event'         => 'view_cart',
+			'cart_quantity' => count( $cart ),
+			'cart_total'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price(
+				GTM_Server_Side_WC_Helpers::instance()->get_cart_total()
+			),
+			'ecommerce'     => array(
+				'currency' => esc_attr( get_woocommerce_currency() ),
+				'items'    => GTM_Server_Side_WC_Helpers::instance()->get_cart_data_layer_items( $cart ),
+			),
 		);
 
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
@@ -68,6 +63,5 @@ class GTM_Server_Side_Event_Register {
 			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
 		</script>
 		<?php
-		GTM_Server_Side_Helpers::javascript_delete_cookie( self::CHECK_NAME );
 	}
 }

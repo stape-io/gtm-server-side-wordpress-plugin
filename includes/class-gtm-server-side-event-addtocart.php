@@ -50,9 +50,10 @@ class GTM_Server_Side_Event_AddToCart {
 			return $link;
 		}
 
-		$data  = $this->get_item( $item['data'] );
-		$attrs = $this->convert_product_data_to_html_attrs( $data );
-		$link  = str_replace( '<a ', '<a ' . join( ' ', $attrs ), $link );
+		$data             = $this->get_item( $item['data'] );
+		$data['quantity'] = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 1;
+		$attrs            = $this->convert_product_data_to_html_attrs( $data );
+		$link             = str_replace( '<a ', '<a ' . join( ' ', $attrs ), $link );
 
 		return $link;
 	}
