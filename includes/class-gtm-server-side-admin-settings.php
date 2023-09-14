@@ -78,7 +78,7 @@ class GTM_Server_Side_Admin_Settings {
 		$placement = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_PLACEMENT );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE,
-			__( 'Add Google Tag Manager web container on all pages', 'gtm-server-side' ),
+			__( 'Add web GTM script onto every page of your website', 'gtm-server-side' ),
 			function() use ( $placement ) {
 				echo '<input
 					type="radio"
@@ -87,14 +87,14 @@ class GTM_Server_Side_Admin_Settings {
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
 					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE, false ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE ) . '">';
-				esc_html_e( 'Select this option if you want to embed the GTM snippet code on your website', 'gtm-server-side' );
+				esc_html_e( 'Select this option if you want to embed the web GTM snippet code onto every page of your website.', 'gtm-server-side' );
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN,
-			__( 'Update existing GTM snippet', 'gtm-server-side' ),
+			__( 'Update existing web GTM script', 'gtm-server-side' ),
 			function() use ( $placement ) {
 				echo '<input
 					type="radio"
@@ -104,7 +104,7 @@ class GTM_Server_Side_Admin_Settings {
 					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN, false ) . '
 					' . ( GTM_Server_Side_Helpers::is_plugin_gtm4wp_enabled() ? '' : 'disabled' ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN ) . '">';
-				esc_html_e( 'This option will work if you already have a GTM snippet inserted through another plugin. This option is not enabled if we can\'t find an existing web container', 'gtm-server-side' );
+				esc_html_e( 'Use this option if you require or have already inserted the web GTM container code manually or through another plugin. In this case GTM Server Side plugin will not add web GTM code onto your website, it will only modify the existing GTM code. This selection becomes available only if the web GTM script has been successfully found on your website.', 'gtm-server-side' );
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
@@ -120,6 +120,7 @@ class GTM_Server_Side_Admin_Settings {
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
 					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE, false ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE ) . '">';
+					esc_html_e( 'Use this option if you do not want to insert web GTM snippet code onto your website.', 'gtm-server-side' );
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
@@ -128,7 +129,7 @@ class GTM_Server_Side_Admin_Settings {
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
-			__( 'GTM Web container ID', 'gtm-server-side' ),
+			__( 'Web Google Tag Manager ID', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="text"
@@ -137,7 +138,7 @@ class GTM_Server_Side_Admin_Settings {
 					pattern="GTM-.*"
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID ) ) . '">';
 				echo '<br>';
-				_e( 'Enter the ID of your <strong>WEB</strong> container', 'gtm-server-side' ); //phpcs:ignore WordPress.Security.EscapeOutput.UnsafePrintingFunction
+				esc_html_e( 'Enter the WEB Google Tag Manager ID, should be formatted as "GTM-XXXXXX".', 'gtm-server-side' ); //phpcs:ignore WordPress.Security.EscapeOutput.UnsafePrintingFunction
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
@@ -146,7 +147,7 @@ class GTM_Server_Side_Admin_Settings {
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL,
-			__( 'GTM server container URL', 'gtm-server-side' ),
+			__( 'Server GTM container URL', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="text"
@@ -155,7 +156,12 @@ class GTM_Server_Side_Admin_Settings {
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL ) . '"
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL ) ) . '">';
 				echo '<br>';
-				esc_html_e( 'Enter the URL of your server container in the format: https://gtm.example.com. Alternatively, leave this field blank, in which case the container will load from the standard googletagmanager.com address', 'gtm-server-side' ); //phpcs:ignore WordPress.Security.EscapeOutput.UnsafePrintingFunction
+				printf(
+					__( 'If you use <a href="%s" target="_blank">stape.io sGTM hosting</a> you can find sGTM container URL following <a href="%s" target="_blank">this guide</a>. Otherwise you can find sGTM container URL in the <a href="%s" target="_blank">container settings</a>.', 'gtm-server-side' ), // phpcs:ignore
+					'https://stape.io/gtm-server-hosting',
+					'https://help.stape.io/hc/en-us/articles/6080905799453-Find-server-container-URL-for-sGTM-container',
+					'https://developers.google.com/tag-platform/tag-manager/server-side/app-engine-setup#4_add_the_server_url_to_google_tag_manager'
+				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
@@ -164,7 +170,7 @@ class GTM_Server_Side_Admin_Settings {
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER,
-			__( 'Stape container identifier or custom loader', 'gtm-server-side' ),
+			__( 'Stape container identifier', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="text"
@@ -174,10 +180,12 @@ class GTM_Server_Side_Admin_Settings {
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) ) . '">';
 				echo '<br>';
 				printf(
-					__( 'If you are using <a href="%s" target="_blank">stape.io</a> - specify the container ID here which you can find in <a href="%s" target="_blank">container settings</a>. <a href="%s" target="_blank">What is this for?</a>','gtm-server-side' ), //phpcs:ignore
-					'https://stape.io',
+					__( 'Follow <a href="%s" target="_blank">this guide</a> to find stape container identifier. Stape container identifier is used to activate <a href="%s" target="_blank">custom loader</a> for your web Google Tag Manager script. Custom loader helps to improve the <a href="%s" target="_blank">accuracy of conversion tracking</a>. This feature is available only if you use <a href="%s" target="_blank">stape.io sGTM hosting</a> and enabled <a href="%s" target="_blank">Custom Loader power up</a>.','gtm-server-side' ), //phpcs:ignore
 					'https://help.stape.io/hc/en-us/articles/9697466601373-How-to-find-the-Stape-container-identifier',
-					'https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers'
+					'https://stape.io/solutions/custom-gtm-loader',
+					'https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers',
+					'https://stape.io/gtm-server-hosting',
+					'https://help.stape.io/hc/en-us/articles/6080917962397-Set-up-custom-web-GTM-loader',
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
@@ -202,7 +210,12 @@ class GTM_Server_Side_Admin_Settings {
 					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ), 'yes', false ) . '
 					value="yes">';
 				echo '<br>';
-				printf( __( 'Activate this option only if you already have this Power-Up set up on Stape.io. <a href="%s" target="_blank">Find out more.</a>', 'gtm-server-side' ), '#' ); //phpcs:ignore
+				printf(
+					__( 'Cookie Keeper is used to <a href="%s" target="_blank">prolong cookie lifetime</a> in Safari and other browsers with ITP. This option available only if you use <a href="%s" target="_blank">stape.io sGTM hosting</a> and set up <a href="%s" target="_blank">Cookie Keeper power up</a>.', 'gtm-server-side' ), //phpcs:ignore
+					'https://stape.io/blog/increase-first-party-cookie-lifetime-set-by-a-third-party-ip',
+					'https://stape.io/gtm-server-hosting',
+					'https://stape.io/blog/increase-first-party-cookie-lifetime-set-by-a-third-party-ip#how-cookie-keeper-works'
+				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
@@ -311,7 +324,7 @@ class GTM_Server_Side_Admin_Settings {
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL,
-			__( 'GTM server container URL', 'gtm-server-side' ),
+			__( 'Server GTM container URL', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="text"
@@ -319,7 +332,7 @@ class GTM_Server_Side_Admin_Settings {
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL ) . '"
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL ) ) . '">';
 				echo '<br>';
-				esc_html_e( 'Enter the URL of your server container in the format: https://gtm.example.com/data', 'gtm-server-side' );
+				printf( __( 'If you use <a href="%s" target="_blank">stape.io sGTM hosting</a> you can find sGTM container URL following <a href="%s" target="_blank">this guide</a>. Otherwise you can find sGTM container URL in the <a href="%s" target="_blank">container settings</a>.', 'gtm-server-side' ), 'https://stape.io/gtm-server-hosting', 'https://help.stape.io/hc/en-us/articles/6080905799453-Find-server-container-URL-for-sGTM-container', 'https://developers.google.com/tag-platform/tag-manager/server-side/app-engine-setup#4_add_the_server_url_to_google_tag_manager' ); // phpcs:ignore
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS
