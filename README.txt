@@ -66,6 +66,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+= 2.1.10 =
+* Changed validation for field - Server GTM container URL
+
 = 2.1.9 =
 * Tested up to WordPress 6.4
 

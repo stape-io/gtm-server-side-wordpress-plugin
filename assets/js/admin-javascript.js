@@ -42,7 +42,7 @@ jQuery( document ).ready(
 				if ( ! value ) {
 					return true;
 				}
-				return /^https:\/\/[\w\-\.]+$/.test( value );
+				return /^https:\/\/[\w\-\.]+(\/[\w\-\.]+)*$/.test( value );
 			},
 			'URL must be entered with https:// and without slashes at the end'
 		);
