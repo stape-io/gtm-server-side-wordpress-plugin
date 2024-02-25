@@ -70,11 +70,18 @@ class GTM_Server_Side_Webhook_Purchase {
 			'FPGCLAW' => filter_input( INPUT_COOKIE, 'FPGCLAW', FILTER_DEFAULT ),
 			'_gcl_aw' => filter_input( INPUT_COOKIE, '_gcl_aw', FILTER_DEFAULT ),
 			'ttclid'  => filter_input( INPUT_COOKIE, 'ttclid', FILTER_DEFAULT ),
+			'_dcid'  => filter_input( INPUT_COOKIE, '_dcid', FILTER_DEFAULT ),
+			'FPID'  => filter_input( INPUT_COOKIE, 'FPID', FILTER_DEFAULT ),
+			'FPLC'  => filter_input( INPUT_COOKIE, 'FPLC', FILTER_DEFAULT ),
 		);
 		$request_cookies = array_filter( $request_cookies );
 
 		if ( ! empty( $request_cookies ) ) {
 			$request['cookies'] = $request_cookies;
+
+			if (isset($request_cookies['_dcid'])) {
+				$request['client_id'] = $request_cookies['_dcid'];
+			}
 		}
 
 		GTM_Server_Side_Helpers::send_webhook_request( $request );
