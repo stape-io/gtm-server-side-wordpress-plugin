@@ -71,6 +71,21 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Return filtering GTM web container ID.
+	 *
+	 * @return string
+	 */
+	public static function get_gtm_filtering_container_id() {
+		$container_id = self::get_gtm_container_id();
+
+		if ( self::has_gtm_container_identifier() ) {
+			$container_id = preg_replace( '/^GTM\-/i', '', $container_id );
+		}
+
+		return $container_id;
+	}
+
+	/**
 	 * Return GTM web container url.
 	 *
 	 * @return string
@@ -86,6 +101,15 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Check has gtm container identifier or not.
+	 *
+	 * @return bool
+	 */
+	public static function has_gtm_container_identifier() {
+		return ! empty( self::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) );
+	}
+
+	/**
 	 * Return GTM identifier.
 	 *
 	 * @return string
@@ -98,6 +122,19 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return $identifier;
+	}
+
+	/**
+	 * Return GTM param id.
+	 *
+	 * @return string
+	 */
+	public static function get_gtm_param_id() {
+		if ( self::has_gtm_container_identifier() ) {
+			return 'st';
+		}
+
+		return 'id';
 	}
 
 	/**
