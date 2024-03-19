@@ -28,6 +28,13 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_data_layer_user_data;
 
 	/**
+	 * Enable or disable data layer custom event name.
+	 *
+	 * @var bool
+	 */
+	private static $is_enable_data_layer_custom_event_name;
+
+	/**
 	 * Enable or disable webhook request.
 	 *
 	 * @var bool
@@ -101,6 +108,15 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Return data layer custom event name.
+	 *
+	 * @return string
+	 */
+	public static function get_data_layer_custom_event_name() {
+		return self::get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME );
+	}
+
+	/**
 	 * Check has gtm container identifier or not.
 	 *
 	 * @return bool
@@ -161,6 +177,19 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return static::$is_enable_data_layer_user_data;
+	}
+
+	/**
+	 * Enable or disable data layer custom event name.
+	 *
+	 * @return string
+	 */
+	public static function is_enable_data_layer_custom_event_name() {
+		if ( null === static::$is_enable_data_layer_custom_event_name ) {
+			static::$is_enable_data_layer_custom_event_name = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_data_layer_custom_event_name();
+		}
+
+		return static::$is_enable_data_layer_custom_event_name;
 	}
 
 	/**
@@ -411,5 +440,18 @@ class GTM_Server_Side_Helpers {
 				'body'    => wp_json_encode( $body ),
 			)
 		);
+	}
+
+	/**
+	 * Return data layer event name.
+	 *
+	 * @param  string $event_name Event name.
+	 * @return string
+	 */
+	public static function get_data_layer_event_name( $event_name ) {
+		if ( self::is_enable_data_layer_custom_event_name() ) {
+			return $event_name . GTM_SERVER_SIDE_DATA_LAYER_CUSTOM_EVENT_NAME;
+		}
+		return $event_name;
 	}
 }

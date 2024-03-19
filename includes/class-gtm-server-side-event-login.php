@@ -57,7 +57,7 @@ class GTM_Server_Side_Event_Login {
 		}
 
 		$data_layer = array(
-			'event' => 'login',
+			'event' => GTM_Server_Side_Helpers::get_data_layer_event_name( 'login' ),
 		);
 
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {

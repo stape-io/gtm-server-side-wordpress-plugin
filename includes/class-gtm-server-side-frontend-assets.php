@@ -37,7 +37,9 @@ class GTM_Server_Side_Frontend_Assets {
 		wp_enqueue_script( 'gtm-server-side', GTM_SERVER_SIDE_URL . 'assets/js/javascript.js', array( 'jquery' ), get_gtm_server_side_version(), true );
 
 		$scripts = array(
-			'currency' => esc_attr( get_woocommerce_currency() ),
+			'currency'                     => esc_attr( get_woocommerce_currency() ),
+			'is_custom_event_name'         => GTM_Server_Side_Helpers::get_data_layer_custom_event_name(),
+			'DATA_LAYER_CUSTOM_EVENT_NAME' => GTM_SERVER_SIDE_DATA_LAYER_CUSTOM_EVENT_NAME,
 		);
 
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {

@@ -16,6 +16,8 @@ define( 'GTM_SERVER_SIDE_AJAX_SECURITY', 'gtm-server-side-admin__xyz' );
 define( 'GTM_SERVER_SIDE_ADMIN_SLUG', 'gtm-server-side-admin-settings' );
 define( 'GTM_SERVER_SIDE_COOKIE_KEEPER_NAME', '_sbp' );
 
+define( 'GTM_SERVER_SIDE_DATA_LAYER_CUSTOM_EVENT_NAME', '_stape' );
+
 define( 'GTM_SERVER_SIDE_FIELD_VERSION', 'gtm_server_side_version' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT', 'gtm_server_side_placement' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID', 'gtm_server_side_web_container_id' );
@@ -24,6 +26,7 @@ define( 'GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER', 'gtm_server_side_web_identifier'
 define( 'GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER', 'gtm_server_side_cookie_keeper' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE', 'gtm_server_side_data_layer_ecommerce' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_USER_DATA', 'gtm_server_side_data_layer_user_data' );
+define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME', 'gtm_server_side_data_layer_custom_event_name' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_ENABLE', 'gtm_server_side_webhooks_enable' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL', 'gtm_server_side_webhooks_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE', 'gtm_server_side_webhooks_purchase' );

@@ -44,7 +44,7 @@ class GTM_Server_Side_Event_ViewCart {
 		}
 
 		$data_layer = array(
-			'event'         => 'view_cart',
+			'event'         => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_cart' ),
 			'cart_quantity' => count( $cart ),
 			'cart_total'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price(
 				GTM_Server_Side_WC_Helpers::instance()->get_cart_total()

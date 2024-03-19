@@ -57,7 +57,7 @@ class GTM_Server_Side_Event_Register {
 		}
 
 		$data_layer = array(
-			'event' => 'sign_up',
+			'event' => GTM_Server_Side_Helpers::get_data_layer_event_name( 'sign_up' ),
 		);
 
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {

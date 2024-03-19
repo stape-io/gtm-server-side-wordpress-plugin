@@ -282,6 +282,30 @@ class GTM_Server_Side_Admin_Settings {
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER
 		);
+
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME,
+			__( 'Decorate dataLayer event name', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="checkbox"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) . '"
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ), 'yes', false ) . '
+					value="yes">';
+					echo '<br>';
+					esc_html_e( 'We will append \'_stape\' to event names in your dataLayer to avoid potential conflicts and/or tag misfire with your existing events.', 'gtm-server-side' );
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER
+		);
 	}
 
 	/**

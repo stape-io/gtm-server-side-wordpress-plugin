@@ -44,7 +44,7 @@ class GTM_Server_Side_Event_BeginCheckout {
 		}
 
 		$data_layer = array(
-			'event'     => 'begin_checkout',
+			'event'     => GTM_Server_Side_Helpers::get_data_layer_event_name( 'begin_checkout' ),
 			'ecommerce' => array(
 				'currency' => esc_attr( get_woocommerce_currency() ),
 				'value'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price(

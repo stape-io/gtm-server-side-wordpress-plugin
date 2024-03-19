@@ -89,6 +89,10 @@ jQuery( document ).ready(
 		jQuery( document ).on(
 			'removed_from_cart',
 			function ( e, fragments, cart_hash, $thisbutton ) {
+				if ( ! $thisbutton.length ) {
+					return;
+				}
+
 				if ( ! $thisbutton.data( 'gtm_item_id' ) ) {
 					return;
 				}
@@ -197,7 +201,7 @@ var pluginGtmServerSide = {
 	removeFromCart: function ( item ) {
 		item.quantity = item.quantity || 1;
 		var eventData = {
-			'event': 'remove_from_cart',
+			'event': this.getDataLayerEventName( 'remove_from_cart' ),
 			'ecommerce': {
 				'currency': varGtmServerSide.currency,
 				'items': [
@@ -329,7 +333,7 @@ var pluginGtmServerSide = {
 		}
 
 		var eventData = {
-			'event': 'add_to_cart',
+			'event': this.getDataLayerEventName( 'add_to_cart' ),
 			'ecommerce': {
 				'currency': varGtmServerSide.currency,
 				'value': value.toFixed( 2 ),
@@ -343,5 +347,18 @@ var pluginGtmServerSide = {
 			}
 		}
 		dataLayer.push( eventData );
+	},
+
+	/**
+	 * Return data layer event name.
+	 *
+	 * @param  string $event_name Event name.
+	 * @return string
+	 */
+	getDataLayerEventName: function( event_name ) {
+		if ( 'yes' === varGtmServerSide.is_custom_event_name ) {
+			return event_name + varGtmServerSide.DATA_LAYER_CUSTOM_EVENT_NAME;
+		}
+		return event_name;
 	}
 };

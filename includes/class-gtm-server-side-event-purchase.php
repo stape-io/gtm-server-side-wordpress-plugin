@@ -76,7 +76,7 @@ class GTM_Server_Side_Event_Purchase {
 		}
 
 		$data_layer = array(
-			'event'     => 'purchase',
+			'event'     => GTM_Server_Side_Helpers::get_data_layer_event_name( 'purchase' ),
 			'ecommerce' => array(
 				'transaction_id'  => esc_attr( $order->get_order_number() ),
 				'affiliation'     => '',
