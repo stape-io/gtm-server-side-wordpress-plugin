@@ -168,6 +168,9 @@ class GTM_Server_Side_WC_Helpers {
 			$fields['shipping_phone'] = $customer->get_shipping_phone();
 		}
 
+		$fields = array_map( 'trim', $fields );
+		$fields = array_filter( $fields );
+
 		return $fields;
 	}
 
@@ -213,6 +216,9 @@ class GTM_Server_Side_WC_Helpers {
 			$data['first_name'] = $user->first_name;
 			$data['last_name']  = $user->last_name;
 		}
+
+		$data = array_map( 'trim', $data );
+		$data = array_filter( $data );
 
 		return $data;
 	}
