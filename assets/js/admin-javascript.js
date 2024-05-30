@@ -63,9 +63,11 @@ jQuery( document ).ready(
 
 		// Tab "General".
 		pluginGtmServerSide.changeContainerId();
+		pluginGtmServerSide.validateContainerIdByPlacementPlugin(); // tmp.
 		jQuery( '.js-gtm_server_side_placement' ).on(
 			'click',
 			function() {
+				pluginGtmServerSide.changeFieldPlacement(); // tmp.
 				pluginGtmServerSide.changeContainerId();
 			}
 		);
@@ -160,7 +162,7 @@ var pluginGtmServerSide = {
 		var val   = jQuery( '.js-gtm_server_side_placement:checked' ).val();
 		var $elCI = jQuery( '#gtm_server_side_web_container_id' );
 
-		if ( 'code' === val || 'plugin' === val ) {
+		if ( [ 'code', 'plugin' ].includes( val ) ) {
 			$elCI.rules(
 				'add',
 				{
@@ -185,6 +187,38 @@ var pluginGtmServerSide = {
 				.prop( 'disabled', true );
 		} else {
 			$elCookieKeeper.prop( 'disabled', false );
+		}
+	},
+
+	changeFieldPlacement: function() {
+		var $placementPlugin = jQuery( 'input[type=hidden]#gtm_server_side_placement-plugin' );
+		if ( ! $placementPlugin.length ) {
+			return;
+		}
+
+		var name = 'gtm_server_side_placement';
+		$placementPlugin.attr( 'name', name + '-tmp' );
+
+		jQuery( '.js-gtm_server_side_placement' ).each(
+			function() {
+				jQuery( this ).attr( 'name', name );
+			}
+		);
+	},
+
+	validateContainerIdByPlacementPlugin: function() {
+		var $placementPlugin = jQuery( 'input[type=hidden]#gtm_server_side_placement-plugin' );
+		if ( ! $placementPlugin.length ) {
+			return;
+		}
+
+		if ( 'plugin' === $placementPlugin.val() ) {
+			jQuery( '#gtm_server_side_web_container_id' ).rules(
+				'add',
+				{
+					required: true,
+				}
+			);
 		}
 	},
 };

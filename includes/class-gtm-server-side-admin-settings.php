@@ -53,10 +53,20 @@ class GTM_Server_Side_Admin_Settings {
 	 * @return void
 	 */
 	public function settings_tab_general() {
+
+		$placement = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_PLACEMENT );
 		add_settings_section(
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
 			__( 'General', 'gtm-server-side' ),
-			null,
+			function() use ( $placement ) {
+				if ( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN === $placement ) {
+					echo '<input
+						type="hidden"
+						id="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN ) . '"
+						name="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
+						value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN ) . '">';
+				}
+			},
 			GTM_SERVER_SIDE_ADMIN_SLUG
 		);
 
@@ -75,16 +85,20 @@ class GTM_Server_Side_Admin_Settings {
 			)
 		);
 
-		$placement = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_PLACEMENT );
+		$field_placement = GTM_SERVER_SIDE_FIELD_PLACEMENT . '-tmp';
+		if ( in_array( $placement, array( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE ), true ) ) {
+			$field_placement = GTM_SERVER_SIDE_FIELD_PLACEMENT;
+		}
+
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE,
 			__( 'Add web GTM script onto every page of your website', 'gtm-server-side' ),
-			function() use ( $placement ) {
+			function() use ( $placement, $field_placement ) {
 				echo '<input
 					type="radio"
 					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE ) . '"
 					class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
-					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
+					name="' . esc_attr( $field_placement ) . '"
 					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE, false ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE ) . '">';
 				esc_html_e( 'Select this option if you want to embed the web GTM snippet code onto every page of your website.', 'gtm-server-side' );
@@ -92,6 +106,7 @@ class GTM_Server_Side_Admin_Settings {
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
+		/* phpcs:ignore Squiz.Commenting.BlockComment.NoCapital *
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN,
 			__( 'Update existing web GTM script', 'gtm-server-side' ),
@@ -109,15 +124,16 @@ class GTM_Server_Side_Admin_Settings {
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
+		/**/
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
 			__( 'Disable', 'gtm-server-side' ),
-			function() use ( $placement ) {
+			function() use ( $placement, $field_placement ) {
 				echo '<input
 					type="radio"
 					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE ) . '"
 					class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
-					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
+					name="' . esc_attr( $field_placement ) . '"
 					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE, false ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE ) . '">';
 					esc_html_e( 'Use this option if you do not want to insert web GTM snippet code onto your website.', 'gtm-server-side' );
