@@ -74,6 +74,19 @@ class GTM_Server_Side_Webhook_Purchase {
 			'FPID'    => filter_input( INPUT_COOKIE, 'FPID', FILTER_DEFAULT ),
 			'FPLC'    => filter_input( INPUT_COOKIE, 'FPLC', FILTER_DEFAULT ),
 		);
+
+		if ( ! empty( $_COOKIE ) ) {
+			$filtered_cookies = array_filter(
+				$_COOKIE,
+				function( $key ) {
+					return preg_match( '/^_ga_.+/', $key );
+				},
+				ARRAY_FILTER_USE_KEY
+			);
+
+			$request_cookies = array_merge( $request_cookies, $filtered_cookies );
+		}
+
 		$request_cookies = array_filter( $request_cookies );
 
 		if ( ! empty( $request_cookies ) ) {
