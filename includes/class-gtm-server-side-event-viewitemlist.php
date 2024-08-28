@@ -1,6 +1,6 @@
 <?php
 /**
- * Data Layer Event: begin_checkout.
+ * Data Layer Event: view_item_list.
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
@@ -10,9 +10,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Data Layer Event: begin_checkout.
+ * Data Layer Event: view_item_list.
  */
-class GTM_Server_Side_Event_BeginCheckout {
+class GTM_Server_Side_Event_ViewItemList {
 	use GTM_Server_Side_Singleton;
 
 	/**
@@ -34,24 +34,21 @@ class GTM_Server_Side_Event_BeginCheckout {
 	 * @return void
 	 */
 	public function wp_footer() {
-		if ( ! is_checkout() ) {
+		if ( ! is_product_category() ) {
 			return;
 		}
 
-		$cart = WC()->cart->get_cart();
-		if ( empty( $cart ) ) {
+		$category = get_queried_object();
+		if ( ! $category instanceof WP_Term ) {
 			return;
 		}
 
 		$data_layer = array(
-			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'begin_checkout' ),
-			'ecomm_pagetype' => 'basket',
+			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_item_list' ),
+			'ecomm_pagetype' => 'category',
 			'ecommerce'      => array(
 				'currency' => esc_attr( get_woocommerce_currency() ),
-				'value'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price(
-					GTM_Server_Side_WC_Helpers::instance()->get_cart_total()
-				),
-				'items'    => GTM_Server_Side_WC_Helpers::instance()->get_cart_data_layer_items( $cart ),
+				'items'    => GTM_Server_Side_WC_Helpers::instance()->get_category_data_layer_items( $category->term_id ),
 			),
 		);
 

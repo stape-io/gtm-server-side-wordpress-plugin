@@ -44,12 +44,13 @@ class GTM_Server_Side_Event_ViewCart {
 		}
 
 		$data_layer = array(
-			'event'         => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_cart' ),
-			'cart_quantity' => count( $cart ),
-			'cart_total'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price(
+			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_cart' ),
+			'ecomm_pagetype' => 'basket',
+			'cart_quantity'  => count( $cart ),
+			'cart_total'     => GTM_Server_Side_WC_Helpers::instance()->formatted_price(
 				GTM_Server_Side_WC_Helpers::instance()->get_cart_total()
 			),
-			'ecommerce'     => array(
+			'ecommerce'      => array(
 				'currency' => esc_attr( get_woocommerce_currency() ),
 				'items'    => GTM_Server_Side_WC_Helpers::instance()->get_cart_data_layer_items( $cart ),
 			),

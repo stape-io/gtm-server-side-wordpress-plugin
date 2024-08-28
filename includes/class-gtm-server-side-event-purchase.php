@@ -76,8 +76,9 @@ class GTM_Server_Side_Event_Purchase {
 		}
 
 		$data_layer = array(
-			'event'     => GTM_Server_Side_Helpers::get_data_layer_event_name( 'purchase' ),
-			'ecommerce' => array(
+			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'purchase' ),
+			'ecomm_pagetype' => 'purchase',
+			'ecommerce'      => array(
 				'transaction_id'  => esc_attr( $order->get_order_number() ),
 				'affiliation'     => '',
 				'value'           => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total() ),

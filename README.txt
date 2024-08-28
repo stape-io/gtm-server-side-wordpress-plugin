@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 6.6.0
-Stable tag: 2.1.18
+Stable tag: 2.1.19
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,6 +66,11 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.1.19 =
+* Added "view_item_list" event
+* "ecomm_pagetype" key added to dataLayer
+* Added Order paid webhook
 
 = 2.1.18 =
 * Added sending _ga_* cookies to webhook for a new order

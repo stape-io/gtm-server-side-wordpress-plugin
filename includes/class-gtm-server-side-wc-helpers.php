@@ -107,10 +107,10 @@ class GTM_Server_Side_WC_Helpers {
 	}
 
 	/**
-	 * Return formatted product itemss from cart to data layer.
+	 * Return formatted product items from cart to data layer.
 	 *
 	 * @param  array $cart Cart products.
-	 * @return string
+	 * @return array
 	 */
 	public function get_cart_data_layer_items( $cart ) {
 		$index  = 1;
@@ -121,6 +121,44 @@ class GTM_Server_Side_WC_Helpers {
 			$array             = $this->get_data_layer_item( $product );
 			$array['quantity'] = intval( $product_loop['quantity'] );
 			$array['index']    = $index++;
+
+			$result[] = $array;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Return formatted product items by category id to data layer.
+	 *
+	 * @param  int $category_id Category id.
+	 * @return array
+	 */
+	public function get_category_data_layer_items( $category_id ) {
+		$index  = 1;
+		$result = array();
+
+		$category = get_term_by( 'id', $category_id, 'product_cat' );
+		if ( ! $category instanceof WP_Term ) {
+			return array();
+		}
+
+		$products = wc_get_products(
+			array(
+				'product_category_id' => $category_id,
+				'limit'               => 10,
+				'orderby'             => 'title',
+				'order'               => 'ASC',
+			)
+		);
+
+		foreach ( $products as $product ) {
+
+			$array                   = $this->get_data_layer_item( $product );
+			$array['item_list_id']   = $category->term_id;
+			$array['item_list_name'] = $category->name;
+			$array['quantity']       = 1;
+			$array['index']          = $index++;
 
 			$result[] = $array;
 		}

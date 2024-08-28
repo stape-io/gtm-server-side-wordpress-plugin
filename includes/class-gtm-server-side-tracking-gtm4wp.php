@@ -57,7 +57,9 @@ class GTM_Server_Side_Tracking_Gtm4wp {
 	public function wp_head() {
 		ob_start();
 
-		gtm4wp_wp_header_begin();
+		if ( function_exists( 'gtm4wp_wp_header_begin' ) ) {
+			gtm4wp_wp_header_begin();
+		}
 
 		echo $this->change_javascript_function( ob_get_clean() ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}

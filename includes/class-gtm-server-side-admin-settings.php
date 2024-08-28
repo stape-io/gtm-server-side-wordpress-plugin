@@ -395,6 +395,32 @@ class GTM_Server_Side_Admin_Settings {
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE ) . '"
 					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE ), 'yes', false ) . '
 					value="yes">';
+					echo '<br>';
+					echo __( 'Purchase event will be sent whenever a new order is created.', 'gtm-server-side' ); // phpcs:ignore
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS
+		);
+
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING,
+			__( 'Order paid webhook', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="checkbox"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING ) . '"
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING ), 'yes', false ) . '
+					value="yes">';
+					echo '<br>';
+					printf( __( 'Order paid event will be sent whenever an order is paid (has "Processing" status as per <a href="%s" target="_blank">Woocommerce documentation</a>).', 'gtm-server-side' ), 'https://woocommerce.com/document/managing-orders/order-statuses/' ); // phpcs:ignore
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS

@@ -45,8 +45,9 @@ class GTM_Server_Side_Event_ViewItem {
 		}
 
 		$data_layer = array(
-			'event'     => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_item' ),
-			'ecommerce' => array(
+			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_item' ),
+			'ecomm_pagetype' => 'product',
+			'ecommerce'      => array(
 				'currency' => esc_attr( get_woocommerce_currency() ),
 				'value'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $product->get_price() ),
 				'items'    => array(

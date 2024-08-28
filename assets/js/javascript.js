@@ -333,7 +333,8 @@ var pluginGtmServerSide = {
 		}
 
 		var eventData = {
-			'event': this.getDataLayerEventName( 'add_to_cart' ),
+			'event':          this.getDataLayerEventName( 'add_to_cart' ),
+			'ecomm_pagetype': 'product',
 			'ecommerce': {
 				'currency': varGtmServerSide.currency,
 				'value': value.toFixed( 2 ),
