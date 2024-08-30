@@ -63,42 +63,7 @@ class GTM_Server_Side_Webhook_Purchase {
 			'user_data' => GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order ),
 		);
 		$request['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $order->get_customer_id() ) ? 'true' : 'false';
-
-		$request_cookies = array(
-			'_fbp'         => filter_input( INPUT_COOKIE, '_fbp', FILTER_DEFAULT ),
-			'_fbc'         => filter_input( INPUT_COOKIE, '_fbc', FILTER_DEFAULT ),
-			'FPGCLAW'      => filter_input( INPUT_COOKIE, 'FPGCLAW', FILTER_DEFAULT ),
-			'_gcl_aw'      => filter_input( INPUT_COOKIE, '_gcl_aw', FILTER_DEFAULT ),
-			'ttclid'       => filter_input( INPUT_COOKIE, 'ttclid', FILTER_DEFAULT ),
-			'_dcid'        => filter_input( INPUT_COOKIE, '_dcid', FILTER_DEFAULT ),
-			'FPID'         => filter_input( INPUT_COOKIE, 'FPID', FILTER_DEFAULT ),
-			'FPLC'         => filter_input( INPUT_COOKIE, 'FPLC', FILTER_DEFAULT ),
-			'_ttp'         => filter_input( INPUT_COOKIE, '_ttp', FILTER_DEFAULT ),
-			'FPGCLGB'      => filter_input( INPUT_COOKIE, 'FPGCLGB', FILTER_DEFAULT ),
-			'li_fat_id'    => filter_input( INPUT_COOKIE, 'li_fat_id', FILTER_DEFAULT ),
-			'taboola_cid'  => filter_input( INPUT_COOKIE, 'taboola_cid', FILTER_DEFAULT ),
-			'outbrain_cid' => filter_input( INPUT_COOKIE, 'outbrain_cid', FILTER_DEFAULT ),
-			'impact_cid'   => filter_input( INPUT_COOKIE, 'impact_cid', FILTER_DEFAULT ),
-			'_epik'        => filter_input( INPUT_COOKIE, '_epik', FILTER_DEFAULT ),
-			'_scid'        => filter_input( INPUT_COOKIE, '_scid', FILTER_DEFAULT ),
-			'_scclid'      => filter_input( INPUT_COOKIE, '_scclid', FILTER_DEFAULT ),
-			'_uetmsclkid'  => filter_input( INPUT_COOKIE, '_uetmsclkid', FILTER_DEFAULT ),
-			'_ga'          => filter_input( INPUT_COOKIE, '_ga', FILTER_DEFAULT ),
-		);
-
-		if ( ! empty( $_COOKIE ) ) {
-			$filtered_cookies = array_filter(
-				$_COOKIE,
-				function( $key ) {
-					return preg_match( '/^_ga_.+/', $key );
-				},
-				ARRAY_FILTER_USE_KEY
-			);
-
-			$request_cookies = array_merge( $request_cookies, $filtered_cookies );
-		}
-
-		$request_cookies = array_filter( $request_cookies );
+		$request_cookies                      = GTM_Server_Side_Helpers::get_request_cookies();
 
 		if ( ! empty( $request_cookies ) ) {
 			$request['cookies'] = $request_cookies;

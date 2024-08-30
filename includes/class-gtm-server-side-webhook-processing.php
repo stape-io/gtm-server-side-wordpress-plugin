@@ -63,6 +63,16 @@ class GTM_Server_Side_Webhook_Processing {
 			'user_data' => GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order ),
 		);
 
+		$request_cookies = GTM_Server_Side_Helpers::get_request_cookies();
+
+		if ( ! empty( $request_cookies ) ) {
+			$request['cookies'] = $request_cookies;
+
+			if ( isset( $request_cookies['_dcid'] ) ) {
+				$request['client_id'] = $request_cookies['_dcid'];
+			}
+		}
+
 		GTM_Server_Side_Helpers::send_webhook_request( $request );
 	}
 }

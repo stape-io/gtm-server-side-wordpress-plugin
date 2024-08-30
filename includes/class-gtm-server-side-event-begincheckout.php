@@ -60,6 +60,7 @@ class GTM_Server_Side_Event_BeginCheckout {
 		}
 		?>
 		<script type="text/javascript">
+			dataLayer.push( { ecommerce: null } );
 			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
 		</script>
 		<?php

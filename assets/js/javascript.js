@@ -216,6 +216,8 @@ var pluginGtmServerSide = {
 				eventData.user_data[ key ] = varGtmServerSide.user_data[ key ];
 			}
 		}
+
+		dataLayer.push( { ecommerce: null } );
 		dataLayer.push( eventData );
 	},
 
@@ -347,6 +349,8 @@ var pluginGtmServerSide = {
 				eventData.user_data[ key ] = varGtmServerSide.user_data[ key ];
 			}
 		}
+
+		dataLayer.push( { ecommerce: null } );
 		dataLayer.push( eventData );
 	},
 
