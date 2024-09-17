@@ -73,7 +73,7 @@ class GTM_Server_Side_Tracking_Code {
 
 		echo '
 		<!-- Google Tag Manager (noscript) -->
-		<noscript><iframe src="' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/ns.html?id=' . esc_attr( GTM_Server_Side_Helpers::get_gtm_filtering_container_id() ) . '"
+		<noscript><iframe src="' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/ns.html?id=' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_id() ) . '"
 		                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 		<!-- End Google Tag Manager (noscript) -->
 		';
@@ -90,8 +90,8 @@ class GTM_Server_Side_Tracking_Code {
 		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 		            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-		        '" . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '.js?' . esc_attr( GTM_Server_Side_Helpers::get_gtm_param_id() ) . "='+i+dl;f.parentNode.insertBefore(j,f);
-		    })(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_filtering_container_id() ) . "');</script>
+		        '" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '.js?' . esc_js( GTM_Server_Side_Helpers::get_gtm_param_id() ) . "='+i+dl;f.parentNode.insertBefore(j,f);
+		    })(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
 		<!-- End Google Tag Manager -->
 		";
 	}
@@ -103,9 +103,9 @@ class GTM_Server_Side_Tracking_Code {
 	 */
 	private function print_cookie_keeper_gtm_code() {
 		echo '
-		<!-- GTM Container Loader By GTM Server Side plugin -->
-		<script>!function(){"use strict";function l(e){for(var t=e,r=0,n=document.cookie.split(";");r<n.length;r++){var o=n[r].split("=");if(o[0].trim()===t)return o[1]}}function s(e){return localStorage.getItem(e)}function u(e){return window[e]}function d(e,t){e=document.querySelector(e);return t?null==e?void 0:e.getAttribute(t):null==e?void 0:e.textContent}var e=window,t=document,r="script",n="dataLayer",o="' . esc_js( GTM_Server_Side_Helpers::get_gtm_filtering_container_id() ) . '",a="' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '",i="",c="' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '",E="cookie",I="_sbp",v="",g=!1;try{var g=!!E&&(m=navigator.userAgent,!!(m=new RegExp("Version/([0-9._]+)(.*Mobile)?.*Safari.*").exec(m)))&&16.4<=parseFloat(m[1]),A="stapeUserId"===E,f=g&&!A?function(e,t,r){void 0===t&&(t="");var n={cookie:l,localStorage:s,jsVariable:u,cssSelector:d},t=Array.isArray(t)?t:[t];if(e&&n[e])for(var o=n[e],a=0,i=t;a<i.length;a++){var c=i[a],c=r?o(c,r):o(c);if(c)return c}else console.warn("invalid uid source",e)}(E,I,v):void 0;g=g&&(!!f||A)}catch(e){console.error(e)}var m=e,E=(m[n]=m[n]||[],m[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"}),t.getElementsByTagName(r)[0]),I="dataLayer"===n?"":"&l="+n,v=f?"&bi="+encodeURIComponent(f):"",A=t.createElement(r),e=g?"kp"+c:c,n=!g&&i?i:a;A.async=!0,A.src=n+"/"+e+".js?st="+o+I+v,null!=(f=E.parentNode)&&f.insertBefore(A,E)}();</script>
-		<!-- END of GTM Container Loader By GTM Server Side plugin -->
+		<!-- Google Tag Manager -->
+		<script>!function(){"use strict";function l(e){for(var t=e,r=0,n=document.cookie.split(";");r<n.length;r++){var o=n[r].split("=");if(o[0].trim()===t)return o[1]}}function s(e){return localStorage.getItem(e)}function u(e){return window[e]}function A(e,t){e=document.querySelector(e);return t?null==e?void 0:e.getAttribute(t):null==e?void 0:e.textContent}var e=window,t=document,r="script",n="dataLayer",o="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '",a="",i="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '",c="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . '",g="cookie",v="_sbp",E="",d=!1;try{var d=!!g&&(m=navigator.userAgent,!!(m=new RegExp("Version/([0-9._]+)(.*Mobile)?.*Safari.*").exec(m)))&&16.4<=parseFloat(m[1]),f="stapeUserId"===g,I=d&&!f?function(e,t,r){void 0===t&&(t="");var n={cookie:l,localStorage:s,jsVariable:u,cssSelector:A},t=Array.isArray(t)?t:[t];if(e&&n[e])for(var o=n[e],a=0,i=t;a<i.length;a++){var c=i[a],c=r?o(c,r):o(c);if(c)return c}else console.warn("invalid uid source",e)}(g,v,E):void 0;d=d&&(!!I||f)}catch(e){console.error(e)}var m=e,g=(m[n]=m[n]||[],m[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"}),t.getElementsByTagName(r)[0]),v=I?"&bi="+encodeURIComponent(I):"",E=t.createElement(r),f=(d&&(i=8<i.length?i.replace(/([a-z]{8}$)/,"kp$1"):"kp"+i),!d&&a?a:o);E.async=!0,E.src=f+"/"+i+".js?"+c+v,null!=(e=g.parentNode)&&e.insertBefore(E,g)}();</script>
+		<!-- End Google Tag Manager -->
 		';
 	}
 

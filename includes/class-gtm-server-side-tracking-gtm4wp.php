@@ -73,7 +73,7 @@ class GTM_Server_Side_Tracking_Gtm4wp {
 	 */
 	public function gtm4wp_get_the_gtm_tag( $html ) {
 		$domain = $this->get_gtm_container_domain();
-		$id     = GTM_Server_Side_Helpers::get_gtm_container_id();
+		$id     = GTM_Server_Side_Helpers::get_raw_gtm_container_id();
 
 		if ( ! empty( $domain ) ) {
 			$html = str_replace( 'www.googletagmanager.com/', esc_attr( $domain ) . '/', $html );
@@ -94,7 +94,7 @@ class GTM_Server_Side_Tracking_Gtm4wp {
 	private function change_javascript_function( $html ) {
 		$domain     = $this->get_gtm_container_domain();
 		$identifier = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
-		$id         = GTM_Server_Side_Helpers::get_gtm_container_id();
+		$id         = GTM_Server_Side_Helpers::get_raw_gtm_container_id();
 
 		if ( ! empty( $domain ) ) {
 			$html = str_replace( 'www.googletagmanager.com/', esc_attr( $domain ) . '/', $html );

@@ -27,11 +27,11 @@ $tab = GTM_Server_Side_Admin_Settings::get_settings_tab(); // phpcs:ignore WordP
 	</div>
 
 	<div class="nav-tab-wrapper wp-clearfix">
-		<a href="<?php echo remove_query_arg( 'tab' ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>" class="nav-tab<?php echo 'general' === $tab ? ' nav-tab-active' : ''; ?>">
+		<a href="<?php echo esc_url( remove_query_arg( 'tab' ) ); ?>" class="nav-tab<?php echo 'general' === $tab ? ' nav-tab-active' : ''; ?>">
 			<?php esc_html_e( 'General', 'gtm-server-side' ); ?>
 		</a>
 		<?php if ( GTM_Server_Side_Helpers::is_plugin_wc_enabled() ) : ?>
-			<a href="<?php echo add_query_arg( array( 'tab' => 'data-layer' ) ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>" class="nav-tab<?php echo 'data-layer' === $tab ? ' nav-tab-active' : ''; ?>">
+			<a href="<?php echo esc_url( add_query_arg( array( 'tab' => 'data-layer' ) ) ); ?>" class="nav-tab<?php echo 'data-layer' === $tab ? ' nav-tab-active' : ''; ?>">
 				<?php esc_html_e( 'Data Layer', 'gtm-server-side' ); ?>
 			</a>
 		<?php else : ?>
@@ -40,7 +40,7 @@ $tab = GTM_Server_Side_Admin_Settings::get_settings_tab(); // phpcs:ignore WordP
 			</div>
 		<?php endif; ?>
 		<?php if ( GTM_Server_Side_Helpers::is_plugin_wc_enabled() ) : ?>
-			<a href="<?php echo add_query_arg( array( 'tab' => 'webhooks' ) ); //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>" class="nav-tab<?php echo 'webhooks' === $tab ? ' nav-tab-active' : ''; ?>">
+			<a href="<?php echo esc_url( add_query_arg( array( 'tab' => 'webhooks' ) ) ); ?>" class="nav-tab<?php echo 'webhooks' === $tab ? ' nav-tab-active' : ''; ?>">
 				<?php esc_html_e( 'Webhooks', 'gtm-server-side' ); ?>
 			</a>
 		<?php else : ?>

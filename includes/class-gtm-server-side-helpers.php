@@ -49,6 +49,13 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_cookie_keeper;
 
 	/**
+	 * Stape analytics support or not.
+	 *
+	 * @var bool
+	 */
+	private static $is_stape_analytics_support;
+
+	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
@@ -69,42 +76,30 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
-	 * Return GTM web container ID.
+	 * Return Raw GTM web container ID (Web Google Tag Manager ID).
 	 *
 	 * @return string
 	 */
-	public static function get_gtm_container_id() {
+	public static function get_raw_gtm_container_id() {
 		return self::get_option( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID );
 	}
 
 	/**
-	 * Return filtering GTM web container ID.
+	 * Return Raw GTM web container url (Server GTM container URL).
 	 *
 	 * @return string
 	 */
-	public static function get_gtm_filtering_container_id() {
-		$container_id = self::get_gtm_container_id();
-
-		if ( self::has_gtm_container_identifier() ) {
-			$container_id = preg_replace( '/^GTM\-/i', '', $container_id );
-		}
-
-		return $container_id;
+	public static function get_raw_gtm_container_url() {
+		return self::get_option( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL );
 	}
 
 	/**
-	 * Return GTM web container url.
+	 * Return Raw web identifier (Stape container identifier).
 	 *
 	 * @return string
 	 */
-	public static function get_gtm_container_url() {
-		$url = self::get_option( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL );
-
-		if ( empty( $url ) ) {
-			return 'https://www.googletagmanager.com';
-		}
-
-		return $url;
+	public static function get_raw_gtm_container_identifier() {
+		return self::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
 	}
 
 	/**
@@ -121,21 +116,93 @@ class GTM_Server_Side_Helpers {
 	 *
 	 * @return bool
 	 */
-	public static function has_gtm_container_identifier() {
-		return ! empty( self::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER ) );
+	private static function has_gtm_container_identifier() {
+		return ! empty( self::get_raw_gtm_container_identifier() );
 	}
 
 	/**
-	 * Return GTM identifier.
+	 * Return filtering GTM web container ID (Web Google Tag Manager ID).
+	 *
+	 * @return string
+	 */
+	public static function get_gtm_container_id() {
+		$container_id = self::get_raw_gtm_container_id();
+
+		if ( ! self::has_gtm_container_identifier() ) {
+			return $container_id;
+		}
+
+		$container_id = self::get_cache_field(
+			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
+			function() use ( $container_id ) {
+				$query_ends = array(
+					'&page=1',
+					'&page=2',
+					'&page=3',
+					'&apiKey=' . mb_substr( md5( self::get_raw_gtm_container_identifier() ), 0, 8 ),
+					'&sort=asc',
+					'&sort=desc',
+				);
+				$random_end = array_rand( $query_ends );
+				$query_end  = $query_ends[ $random_end ];
+
+				$container_params = array(
+					'id=' . $container_id,
+				);
+
+				if ( self::is_stape_analytics_support() ) {
+					$container_params[] = 'as=y';
+				}
+
+				$container_id = sprintf(
+					'%s=%s&%s',
+					self::generate_random_string( 1, 8 ),
+					urlencode( base64_encode( join( '&', $container_params ) ) ), //phpcs:ignore
+					$query_end
+				);
+
+				return $container_id;
+			}
+		);
+
+		return $container_id;
+	}
+
+	/**
+	 * Return GTM web container url (Server GTM container URL).
+	 *
+	 * @return string
+	 */
+	public static function get_gtm_container_url() {
+		$url = self::get_raw_gtm_container_url();
+
+		if ( empty( $url ) ) {
+			return 'https://www.googletagmanager.com';
+		}
+
+		return $url;
+	}
+
+	/**
+	 * Return GTM identifier (Stape container identifier).
 	 *
 	 * @return string
 	 */
 	public static function get_gtm_container_identifier() {
-		$identifier = self::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
-
-		if ( empty( $identifier ) ) {
+		if ( ! self::has_gtm_container_identifier() ) {
 			return 'gtm';
 		}
+
+		$identifier = self::get_cache_field(
+			GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER,
+			function() {
+				$raw_identifier = self::get_raw_gtm_container_identifier();
+				$random_string  = self::generate_gtm_container_identifier_prefix( 1, 5 );
+				$identifier     = $random_string . $raw_identifier;
+
+				return $identifier;
+			}
+		);
 
 		return $identifier;
 	}
@@ -216,6 +283,19 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return static::$is_enable_cookie_keeper;
+	}
+
+	/**
+	 * Enable or disable cookie keeper.
+	 *
+	 * @return string
+	 */
+	public static function is_stape_analytics_support() {
+		if ( null === static::$is_stape_analytics_support ) {
+			static::$is_stape_analytics_support = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT );
+		}
+
+		return static::$is_stape_analytics_support;
 	}
 
 	/**
@@ -498,5 +578,76 @@ class GTM_Server_Side_Helpers {
 		$request_cookies = array_filter( $request_cookies );
 
 		return $request_cookies;
+	}
+
+	/**
+	 * Return generated prefix for GTM container identifier.
+	 *
+	 * @param  int $min_length Min length.
+	 * @param  int $max_length Max length.
+	 * @return string
+	 */
+	public static function generate_gtm_container_identifier_prefix( $min_length, $max_length ) {
+		$max_attempts = 1000;
+
+		do {
+			$random_string = self::generate_random_string( $min_length, $max_length );
+			$valid         = ! preg_match( '/(kp|gt)$/i', $random_string );
+
+			if ( $valid || --$max_attempts <= 0 ) {
+				break;
+			}
+		} while ( true );
+
+		return $random_string;
+	}
+
+	/**
+	 * Return generated random string.
+	 *
+	 * @param  int $min_length Min length.
+	 * @param  int $max_length Max length.
+	 * @return string
+	 */
+	public static function generate_random_string( $min_length, $max_length ) {
+		$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		$length     = wp_rand( $min_length, $max_length );
+
+		$random_string = '';
+		for ( $i = 0; $i < $length; $i++ ) {
+			$random_string .= $characters[ wp_rand( 0, strlen( $characters ) - 1 ) ];
+		}
+
+		return $random_string;
+	}
+
+	/**
+	 * Return field from cahce.
+	 *
+	 * @param  string   $key      Cache key.
+	 * @param  callable $callback callback.
+	 * @return string
+	 */
+	public static function get_cache_field( $key, $callback ) {
+		$key   = $key . '__generated';
+		$cache = get_transient( $key );
+		if ( false !== $cache ) {
+			return $cache;
+		}
+
+		$value = call_user_func( $callback );
+		set_transient( $key, $value, YEAR_IN_SECONDS );
+
+		return $value;
+	}
+
+	/**
+	 * Delete field from cahce.
+	 *
+	 * @param  string $key Cache key.
+	 * @return void
+	 */
+	public static function delete_cache_field( $key ) {
+		delete_transient( $key . '__generated' );
 	}
 }
