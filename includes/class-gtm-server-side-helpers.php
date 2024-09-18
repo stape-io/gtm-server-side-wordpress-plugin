@@ -116,7 +116,7 @@ class GTM_Server_Side_Helpers {
 	 *
 	 * @return bool
 	 */
-	private static function has_gtm_container_identifier() {
+	public static function has_gtm_container_identifier() {
 		return ! empty( self::get_raw_gtm_container_identifier() );
 	}
 
@@ -136,12 +136,12 @@ class GTM_Server_Side_Helpers {
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
 			function() use ( $container_id ) {
 				$query_ends = array(
-					'&page=1',
-					'&page=2',
-					'&page=3',
-					'&apiKey=' . mb_substr( md5( self::get_raw_gtm_container_identifier() ), 0, 8 ),
-					'&sort=asc',
-					'&sort=desc',
+					'page=1',
+					'page=2',
+					'page=3',
+					'apiKey=' . mb_substr( md5( self::get_raw_gtm_container_identifier() ), 0, 8 ),
+					'sort=asc',
+					'sort=desc',
 				);
 				$random_end = array_rand( $query_ends );
 				$query_end  = $query_ends[ $random_end ];
@@ -205,19 +205,6 @@ class GTM_Server_Side_Helpers {
 		);
 
 		return $identifier;
-	}
-
-	/**
-	 * Return GTM param id.
-	 *
-	 * @return string
-	 */
-	public static function get_gtm_param_id() {
-		if ( self::has_gtm_container_identifier() ) {
-			return 'st';
-		}
-
-		return 'id';
 	}
 
 	/**

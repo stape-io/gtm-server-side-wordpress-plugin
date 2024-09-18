@@ -54,10 +54,18 @@ class GTM_Server_Side_Tracking_Code {
 	 */
 	public function head() {
 		if ( GTM_Server_Side_Helpers::is_enable_cookie_keeper() ) {
+
 			$this->print_cookie_keeper_gtm_code();
-		} else {
-			$this->print_default_gtm_code();
+			return;
 		}
+
+		if ( GTM_Server_Side_Helpers::has_gtm_container_identifier() ) {
+
+			$this->print_stape_gtm_code();
+			return;
+		}
+
+		$this->print_default_gtm_code();
 	}
 
 	/**
@@ -87,7 +95,24 @@ class GTM_Server_Side_Tracking_Code {
 	private function print_default_gtm_code() {
 		echo "
 		<!-- Google Tag Manager -->
-		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src=\"" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '.js?' . esc_js( GTM_Server_Side_Helpers::get_gtm_param_id() ) . "\"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
+		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+		            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+		        '" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . ".js?id='+i+dl;f.parentNode.insertBefore(j,f);
+		    })(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
+		<!-- End Google Tag Manager -->
+		";
+	}
+
+	/**
+	 * Print stape GTM Code.
+	 *
+	 * @return void
+	 */
+	private function print_stape_gtm_code() {
+		echo "
+		<!-- Google Tag Manager -->
+		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src=\"" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . ".js?\"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
 		<!-- End Google Tag Manager -->
 		";
 	}
