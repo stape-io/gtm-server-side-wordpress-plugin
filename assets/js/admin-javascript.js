@@ -181,13 +181,17 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		var $elCookieKeeper = jQuery( '#gtm_server_side_cookie_keeper' );
+		this.changeWebIdentifierCheckboxState( $elWebIdentifier, jQuery( '#gtm_server_side_stape_analytics_support' ) );
+		this.changeWebIdentifierCheckboxState( $elWebIdentifier, jQuery( '#gtm_server_side_cookie_keeper' ) );
+	},
+
+	changeWebIdentifierCheckboxState: function( $elWebIdentifier, $el ) {
 		if ( 0 === $elWebIdentifier.val().length ) {
-			$elCookieKeeper
+			$el
 				.prop( 'checked', false )
 				.prop( 'disabled', true );
 		} else {
-			$elCookieKeeper.prop( 'disabled', false );
+			$el.prop( 'disabled', false );
 		}
 	},
 

@@ -230,7 +230,7 @@ class GTM_Server_Side_Admin_Settings {
 					value="yes">';
 				echo '<br>';
 				printf(
-					__( 'Stape container identifier, перед Cookie Keeper - "Tick this checkbox if you are using Stape Analytics. Learn more about it <a href="%s" target="_blank">here</a>."', 'gtm-server-side' ), //phpcs:ignore
+					__( 'Tick this checkbox if you are using Stape Analytics. Learn more about it <a href="%s" target="_blank">here</a>.', 'gtm-server-side' ), //phpcs:ignore
 					'https://stape.io/blog/stape-analytics-measure-the-impact-of-your-server-side-tracking?mtm_campaign=wp_app_settings',
 				);
 			},
