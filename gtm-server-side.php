@@ -10,7 +10,7 @@
  * Plugin Name:       GTM Server Side
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
  * Description:       Enhance conversion tracking by implementing server-side tagging using server Google Tag Manager container. Effortlessly configure data layer events in web GTM, send webhooks, set up custom loader, and extend cookie lifetime.
- * Version:           2.1.20
+ * Version:           2.1.21
  * Author:            Stape
  * Author URI:        https://stape.io
  * License:           GPL-2.0+
