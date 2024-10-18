@@ -110,8 +110,6 @@ jQuery( document ).ready(
 			'click',
 			'.woocommerce-cart-form .product-remove > a',
 			function ( e ) {
-				e.preventDefault();
-
 				var $el = jQuery( e.currentTarget );
 
 				if ( ! $el.data( 'gtm_item_id' ) ) {

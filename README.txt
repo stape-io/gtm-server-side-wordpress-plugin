@@ -69,6 +69,8 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 
 = 2.1.21 =
 * Fix purchase event
+* Removed iframe code
+* Fix remove product from cart
 
 = 2.1.20 =
 * Change JS code

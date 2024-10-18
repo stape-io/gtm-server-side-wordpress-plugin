@@ -35,16 +35,7 @@ class GTM_Server_Side_Tracking_Code {
 		$this->add_cookie_keeper();
 
 		add_action( 'login_head', array( $this, 'head' ) );
-		add_action( 'login_header', array( $this, 'body' ) );
-		add_action( 'login_footer', array( $this, 'body' ) );
-
 		add_action( 'wp_head', array( $this, 'head' ) );
-		add_action( 'body_open', array( $this, 'body' ) );
-		add_action( 'wp_body_open', array( $this, 'body' ) );
-		add_action( 'genesis_before', array( $this, 'body' ) );
-		add_action( 'tha_body_top', array( $this, 'body' ) );
-		add_action( 'body_top', array( $this, 'body' ) );
-		add_action( 'wp_footer', array( $this, 'body' ) );
 	}
 
 	/**
@@ -66,25 +57,6 @@ class GTM_Server_Side_Tracking_Code {
 		}
 
 		$this->print_default_gtm_code();
-	}
-
-	/**
-	 * Add GTM body
-	 *
-	 * @return void
-	 */
-	public function body() {
-		if ( $this->printed_noscript_tag ) {
-			return;
-		}
-		$this->printed_noscript_tag = true;
-
-		echo '
-		<!-- Google Tag Manager (noscript) -->
-		<noscript><iframe src="' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/ns.html?id=' . esc_attr( GTM_Server_Side_Helpers::get_gtm_container_id() ) . '"
-		                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-		<!-- End Google Tag Manager (noscript) -->
-		';
 	}
 
 	/**
