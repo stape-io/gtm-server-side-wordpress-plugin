@@ -65,9 +65,11 @@ class GTM_Server_Side_Event_Purchase {
 	 * @return void
 	 */
 	public function wp_footer() {
+		/* phpcs:ignore
 		if ( ! is_wc_endpoint_url( 'order-received' ) ) {
 			return;
 		}
+		*/
 
 		$order_id = GTM_Server_Side_Helpers::get_session( self::TRANSACTION_KEY );
 		if ( empty( $order_id ) ) {
