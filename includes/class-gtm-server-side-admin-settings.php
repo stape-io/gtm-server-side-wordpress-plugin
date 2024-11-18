@@ -455,6 +455,29 @@ class GTM_Server_Side_Admin_Settings {
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS
 		);
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED,
+			__( 'Order paid webhook', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="checkbox"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED ) . '"
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED ), 'yes', false ) . '
+					value="yes">';
+					echo '<br>';
+					printf( __( 'Order paid event will be sent whenever an order is paid (has "Completed" status as per <a href="%s" target="_blank">Woocommerce documentation</a>).', 'gtm-server-side' ), 'https://woocommerce.com/document/managing-orders/order-statuses/' ); // phpcs:ignore
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS
+		);
 
 		register_setting(
 			GTM_SERVER_SIDE_ADMIN_GROUP,

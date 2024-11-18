@@ -10,9 +10,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Webhook Processing.
+ * Webhook Completed.
  */
-class GTM_Server_Side_Webhook_Processing {
+class GTM_Server_Side_Webhook_Completed {
 	use GTM_Server_Side_Singleton;
 
 	/**
@@ -25,21 +25,21 @@ class GTM_Server_Side_Webhook_Processing {
 			return;
 		}
 
-		add_action( 'woocommerce_order_status_processing', array( $this, 'woocommerce_order_status_processing' ) );
+		add_action( 'woocommerce_order_status_completed', array( $this, 'woocommerce_order_status_completed' ) );
 	}
 
 	/**
-	 * Order change status to processing (Order paid).
+	 * Order change status to completed (Final status of Order).
 	 *
 	 * @param  int $order_id Order id.
 	 * @return void
 	 */
-	public function woocommerce_order_status_processing( $order_id ) {
+	public function woocommerce_order_status_completed( $order_id ) {
 		if ( ! GTM_Server_Side_Helpers::is_enable_webhook() ) {
 			return;
 		}
 
-		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING ) ) {
+		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED ) ) {
 			return;
 		}
 

@@ -86,7 +86,7 @@ class GTM_Server_Side_Event_Purchase {
 			'ecomm_pagetype' => 'purchase',
 			'ecommerce'      => array(
 				'transaction_id'  => esc_attr( $order->get_order_number() ),
-				'affiliation'     => '',
+				'affiliation'     => apply_filters('gtm_server_side_order_affiliation','', $order),
 				'value'           => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total() ),
 				'tax'             => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total_tax() ),
 				'shipping'        => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_shipping_total() ),

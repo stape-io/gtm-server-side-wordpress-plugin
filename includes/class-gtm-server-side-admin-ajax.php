@@ -104,7 +104,7 @@ class GTM_Server_Side_Admin_Ajax {
 			'event'     => 'purchase',
 			'ecommerce' => array(
 				'transaction_id' => '358',
-				'affiliation'    => 'test',
+				'affiliation'    => apply_filters('gtm_server_side_order_affiliation','test', null),
 				'value'          => 18.00,
 				'tax'            => 0,
 				'shipping'       => 0,
@@ -148,7 +148,7 @@ class GTM_Server_Side_Admin_Ajax {
 			'event'     => 'order_paid',
 			'ecommerce' => array(
 				'transaction_id' => '358',
-				'affiliation'    => 'test',
+				'affiliation'    => apply_filters('gtm_server_side_order_affiliation','test', null),
 				'value'          => 18.00,
 				'tax'            => 0,
 				'shipping'       => 0,

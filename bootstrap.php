@@ -32,6 +32,7 @@ define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_ENABLE', 'gtm_server_side_webhooks_enabl
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL', 'gtm_server_side_webhooks_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE', 'gtm_server_side_webhooks_purchase' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING', 'gtm_server_side_webhooks_processing' );
+define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED', 'gtm_server_side_webhooks_completed' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_REFUND', 'gtm_server_side_webhooks_refund' );
 
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE', 'code' );

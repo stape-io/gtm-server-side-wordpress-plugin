@@ -32,6 +32,7 @@ add_action( 'init', array( GTM_Server_Side_Plugin_Upgrade::class, 'instance' ) )
 add_action( 'gtm_server_side', array( GTM_Server_Side_I18n::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Purchase::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Processing::class, 'instance' ) );
+add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Completed::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Refund::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Settings::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Ajax::class, 'instance' ) );
