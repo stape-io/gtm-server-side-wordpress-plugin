@@ -49,7 +49,7 @@ class GTM_Server_Side_WC_Helpers {
 	 */
 	public function get_data_layer_item( $product, array $args = array() ) {
 		if ( ! ( $product instanceof WC_Order_Item ) ) {
-			return;
+			return array();
 		}
 
 		$args = wp_parse_args(
