@@ -441,7 +441,7 @@ class GTM_Server_Side_Admin_Settings {
 		);
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING,
-			__( 'Order paid webhook', 'gtm-server-side' ),
+			__( 'Order paid webhook - processing', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="checkbox"
@@ -464,7 +464,7 @@ class GTM_Server_Side_Admin_Settings {
 		);
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED,
-			__( 'Order paid webhook', 'gtm-server-side' ),
+			__( 'Order paid webhook - completed', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="checkbox"
