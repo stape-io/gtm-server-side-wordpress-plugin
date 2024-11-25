@@ -54,13 +54,19 @@ class GTM_Server_Side_Admin_Ajax {
 			);
 		}
 
-		$is_refund     = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_REFUND );
 		$is_purchase   = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE );
 		$is_processing = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING );
-		if ( empty( $is_purchase ) && empty( $is_refund ) && empty( $is_processing ) ) {
+		$is_completed  = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED );
+		$is_refund     = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_REFUND );
+		if (
+			empty( $is_purchase ) &&
+			empty( $is_processing ) &&
+			empty( $is_completed ) &&
+			empty( $is_refund )
+		) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Purchase or order paid or refund webhook is required.', 'gtm-server-side' ),
+					'message' => __( 'Purchase or order paid processing or order paid completed or refund webhook is required.', 'gtm-server-side' ),
 				)
 			);
 		}
@@ -72,6 +78,10 @@ class GTM_Server_Side_Admin_Ajax {
 
 		if ( ! empty( $is_processing ) ) {
 			$answer[] = $this->send_webhook_processing();
+		}
+
+		if ( ! empty( $is_completed ) ) {
+			$answer[] = $this->send_webhook_completed();
 		}
 
 		if ( ! empty( $is_refund ) ) {
@@ -102,28 +112,7 @@ class GTM_Server_Side_Admin_Ajax {
 	private function send_webhook_purchase() {
 		$request = array(
 			'event'     => 'purchase',
-			'ecommerce' => array(
-				'transaction_id' => '358',
-				'affiliation'    => 'test',
-				'value'          => 18.00,
-				'tax'            => 0,
-				'shipping'       => 0,
-				'currency'       => 'USD',
-				'coupon'         => 'test_coupon',
-				'items'          => array(
-					array(
-						'item_name'      => 'Beanie',
-						'item_brand'     => 'Stape',
-						'item_id'        => '15',
-						'item_sku'       => 'woo-beanie',
-						'price'          => 18.00,
-						'item_category'  => 'Clothing',
-						'item_category2' => 'Accessories',
-						'quantity'       => 1,
-						'index'          => 1,
-					),
-				),
-			),
+			'ecommerce' => $this->get_ecommerce_data(),
 		);
 
 		$result = $this->send_request( $request );
@@ -139,47 +128,49 @@ class GTM_Server_Side_Admin_Ajax {
 	}
 
 	/**
-	 * Send webhooks processing (order paid).
+	 * Send webhooks processing (order paid processing).
 	 *
 	 * @return string
 	 */
 	private function send_webhook_processing() {
 		$request = array(
 			'event'     => 'order_paid',
-			'ecommerce' => array(
-				'transaction_id' => '358',
-				'affiliation'    => 'test',
-				'value'          => 18.00,
-				'tax'            => 0,
-				'shipping'       => 0,
-				'currency'       => 'USD',
-				'coupon'         => 'test_coupon',
-				'items'          => array(
-					array(
-						'item_name'      => 'Beanie',
-						'item_brand'     => 'Stape',
-						'item_id'        => '15',
-						'item_sku'       => 'woo-beanie',
-						'price'          => 18.00,
-						'item_category'  => 'Clothing',
-						'item_category2' => 'Accessories',
-						'quantity'       => 1,
-						'index'          => 1,
-					),
-				),
-			),
+			'ecommerce' => $this->get_ecommerce_data(),
 		);
 
 		$result = $this->send_request( $request );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Some problem with Purchase webhook.', 'gtm-server-side' ),
+					'message' => __( 'Some problem with order paid processing webhook.', 'gtm-server-side' ),
 				)
 			);
 		}
 
-		return __( 'Order paid webhook sent.', 'gtm-server-side' );
+		return __( 'Order paid processing webhook sent.', 'gtm-server-side' );
+	}
+
+	/**
+	 * Send webhooks completed (order paid completed).
+	 *
+	 * @return string
+	 */
+	private function send_webhook_completed() {
+		$request = array(
+			'event'     => 'order_completed',
+			'ecommerce' => $this->get_ecommerce_data(),
+		);
+
+		$result = $this->send_request( $request );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Some problem with order paid completed webhook.', 'gtm-server-side' ),
+				)
+			);
+		}
+
+		return __( 'Order paid completed webhook sent.', 'gtm-server-side' );
 	}
 
 	/**
@@ -244,7 +235,7 @@ class GTM_Server_Side_Admin_Ajax {
 	}
 
 	/**
-	 * Return user request test data
+	 * Return user request test data.
 	 *
 	 * @return array
 	 */
@@ -273,6 +264,36 @@ class GTM_Server_Side_Admin_Ajax {
 			'first_name'          => 'Test',
 			'last_name'           => 'Name',
 			'new_customer'        => 'false',
+		);
+	}
+
+	/**
+	 * Return ecommerce test data.
+	 *
+	 * @return array
+	 */
+	private function get_ecommerce_data() {
+		return array(
+			'transaction_id' => '358',
+			'affiliation'    => 'test',
+			'value'          => 18.00,
+			'tax'            => 0,
+			'shipping'       => 0,
+			'currency'       => 'USD',
+			'coupon'         => 'test_coupon',
+			'items'          => array(
+				array(
+					'item_name'      => 'Beanie',
+					'item_brand'     => 'Stape',
+					'item_id'        => '15',
+					'item_sku'       => 'woo-beanie',
+					'price'          => 18.00,
+					'item_category'  => 'Clothing',
+					'item_category2' => 'Accessories',
+					'quantity'       => 1,
+					'index'          => 1,
+				),
+			),
 		);
 	}
 }

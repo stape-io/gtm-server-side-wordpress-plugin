@@ -29,7 +29,7 @@ class GTM_Server_Side_Webhook_Processing {
 	}
 
 	/**
-	 * Order change status to processing (Order paid).
+	 * Order change status to processing.
 	 *
 	 * @param  int $order_id Order id.
 	 * @return void
