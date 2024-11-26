@@ -50,6 +50,7 @@ class GTM_Server_Side_Webhook_Processing {
 
 		$request = array(
 			'event'     => 'order_paid',
+			'cart_hash' => $order->get_cart_hash(),
 			'ecommerce' => array(
 				'transaction_id' => esc_attr( $order->get_order_number() ),
 				'affiliation'    => '',

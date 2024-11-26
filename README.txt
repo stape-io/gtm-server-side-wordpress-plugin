@@ -69,6 +69,7 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 
 = 2.1.24 =
 * Added Order paid completed webhook
+* Added cart_hash key to webhooks
 
 = 2.1.23 =
 * Fix purchase event
