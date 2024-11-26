@@ -54,12 +54,13 @@ jQuery( document ).ready(
 				}
 
 				var isPurchaseChecked   = jQuery( '#gtm_server_side_webhooks_purchase' ).is( ':checked' );
-				var isRefundChecked     = jQuery( '#gtm_server_side_webhooks_refund' ).is( ':checked' );
 				var isProcessingChecked = jQuery( '#gtm_server_side_webhooks_processing' ).is( ':checked' );
+				var isCompletedChecked  = jQuery( '#gtm_server_side_webhooks_completed' ).is( ':checked' );
+				var isRefundChecked     = jQuery( '#gtm_server_side_webhooks_refund' ).is( ':checked' );
 
-				return isPurchaseChecked || isRefundChecked || isProcessingChecked;
+				return isPurchaseChecked || isProcessingChecked || isCompletedChecked || isRefundChecked;
 			},
-			'Select purchase and/or refund webhook'
+			'Select one or more webhooks'
 		);
 
 		// Tab "General".

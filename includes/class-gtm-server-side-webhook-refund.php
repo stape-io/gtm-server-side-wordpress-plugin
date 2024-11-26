@@ -51,8 +51,9 @@ class GTM_Server_Side_Webhook_Refund {
 
 		$request = array(
 			'event'     => 'refund',
+			'cart_hash' => $order->get_cart_hash(),
 			'ecommerce' => array(
-				'transaction_id' => $refund_id,
+				'transaction_id' => esc_attr( $order->get_order_number() ),
 				'value'          => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total() ),
 				'currency'       => esc_attr( $order->get_currency() ),
 				'items'          => GTM_Server_Side_WC_Helpers::instance()->get_order_data_layer_items( $order->get_items() ),

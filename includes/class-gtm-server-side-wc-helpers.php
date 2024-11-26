@@ -96,6 +96,10 @@ class GTM_Server_Side_WC_Helpers {
 		foreach ( $items as $item_loop ) {
 			$product = $item_loop->get_product();
 
+			if ( ! ( $product instanceof WC_Product ) ) {
+				continue;
+			}
+
 			$array             = $this->get_data_layer_item( $product );
 			$array['quantity'] = intval( $item_loop->get_quantity() );
 			$array['index']    = $index++;
@@ -117,6 +121,10 @@ class GTM_Server_Side_WC_Helpers {
 		$result = array();
 		foreach ( $cart as $product_loop ) {
 			$product = $product_loop['data'];
+
+			if ( ! ( $product instanceof WC_Product ) ) {
+				continue;
+			}
 
 			$array             = $this->get_data_layer_item( $product );
 			$array['quantity'] = intval( $product_loop['quantity'] );

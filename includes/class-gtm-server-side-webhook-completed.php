@@ -1,6 +1,6 @@
 <?php
 /**
- * Webhook Purchase.
+ * Webhook Completed.
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
@@ -10,9 +10,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Webhook Purchase.
+ * Webhook Completed.
  */
-class GTM_Server_Side_Webhook_Purchase {
+class GTM_Server_Side_Webhook_Completed {
 	use GTM_Server_Side_Singleton;
 
 	/**
@@ -25,31 +25,31 @@ class GTM_Server_Side_Webhook_Purchase {
 			return;
 		}
 
-		add_action( 'woocommerce_new_order', array( $this, 'woocommerce_new_order' ), 10, 2 );
+		add_action( 'woocommerce_order_status_completed', array( $this, 'woocommerce_order_status_completed' ) );
 	}
 
 	/**
-	 * New order create.
+	 * Order change status to completed.
 	 *
-	 * @param  int      $order_id Order id.
-	 * @param  WC_Order $order Order id.
+	 * @param  int $order_id Order id.
 	 * @return void
 	 */
-	public function woocommerce_new_order( $order_id, $order ) {
+	public function woocommerce_order_status_completed( $order_id ) {
 		if ( ! GTM_Server_Side_Helpers::is_enable_webhook() ) {
 			return;
 		}
 
-		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE ) ) {
+		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED ) ) {
 			return;
 		}
 
+		$order = wc_get_order( $order_id );
 		if ( ! ( $order instanceof WC_Order ) ) {
 			return;
 		}
 
-		$request                              = array(
-			'event'     => 'purchase',
+		$request = array(
+			'event'     => 'order_completed',
 			'cart_hash' => $order->get_cart_hash(),
 			'ecommerce' => array(
 				'transaction_id' => esc_attr( $order->get_order_number() ),
@@ -63,8 +63,8 @@ class GTM_Server_Side_Webhook_Purchase {
 			),
 			'user_data' => GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order ),
 		);
-		$request['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $order->get_customer_id() ) ? 'true' : 'false';
-		$request_cookies                      = GTM_Server_Side_Helpers::get_request_cookies();
+
+		$request_cookies = GTM_Server_Side_Helpers::get_request_cookies();
 
 		if ( ! empty( $request_cookies ) ) {
 			$request['cookies'] = $request_cookies;
@@ -75,12 +75,12 @@ class GTM_Server_Side_Webhook_Purchase {
 		}
 
 		/**
-		 * Allows modification of purchase webhook payload.
+		 * Allows modification of processing order webhook payload.
 		 *
 		 * @param array  $request Webhook payload data.
 		 * @param object $order   WC_Order instance.
 		 */
-		$request = apply_filters( 'gtm_server_side_purchase_webhook_payload', $request, $order );
+		$request = apply_filters( 'gtm_server_side_processing_webhook_payload', $request, $order );
 
 		GTM_Server_Side_Helpers::send_webhook_request( $request );
 	}
