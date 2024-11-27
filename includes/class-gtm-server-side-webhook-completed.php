@@ -80,7 +80,7 @@ class GTM_Server_Side_Webhook_Completed {
 		 * @param array  $request Webhook payload data.
 		 * @param object $order   WC_Order instance.
 		 */
-		$request = apply_filters( 'gtm_server_side_processing_webhook_payload', $request, $order );
+		$request = apply_filters( 'gtm_server_side_completed_webhook_payload', $request, $order );
 
 		GTM_Server_Side_Helpers::send_webhook_request( $request );
 	}
