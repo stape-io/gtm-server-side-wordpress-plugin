@@ -23,7 +23,6 @@ define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT', 'gtm_server_side_placement' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID', 'gtm_server_side_web_container_id' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL', 'gtm_server_side_web_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER', 'gtm_server_side_web_identifier' );
-define( 'GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT', 'gtm_server_side_stape_analytics_support' );
 define( 'GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER', 'gtm_server_side_cookie_keeper' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE', 'gtm_server_side_data_layer_ecommerce' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_USER_DATA', 'gtm_server_side_data_layer_user_data' );

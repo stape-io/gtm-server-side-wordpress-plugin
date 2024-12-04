@@ -150,10 +150,6 @@ class GTM_Server_Side_Helpers {
 					'id=' . $container_id,
 				);
 
-				if ( self::is_stape_analytics_support() ) {
-					$container_params[] = 'as=y';
-				}
-
 				$container_id = sprintf(
 					'%s=%s&%s',
 					self::generate_random_string( 1, 8 ),
@@ -270,19 +266,6 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return static::$is_enable_cookie_keeper;
-	}
-
-	/**
-	 * Enable or disable cookie keeper.
-	 *
-	 * @return string
-	 */
-	public static function is_stape_analytics_support() {
-		if ( null === static::$is_stape_analytics_support ) {
-			static::$is_stape_analytics_support = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT );
-		}
-
-		return static::$is_stape_analytics_support;
 	}
 
 	/**
