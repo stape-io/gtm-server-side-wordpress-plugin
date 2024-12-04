@@ -26,7 +26,6 @@ class GTM_Server_Side_Admin_Settings {
 		add_filter( 'plugin_action_links', array( $this, 'plugin_action_links' ), 10, 2 );
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER, array( $this, 'clear_cache_field' ), 10, 2 );
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID, array( $this, 'clear_cache_field' ), 10, 2 );
-		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT, array( $this, 'clear_cache_field' ), 10, 2 );
 	}
 
 	/**
@@ -205,33 +204,6 @@ class GTM_Server_Side_Admin_Settings {
 					'https://stape.io/blog/avoiding-google-tag-manager-blocking-by-adblockers',
 					'https://stape.io/gtm-server-hosting',
 					'https://help.stape.io/hc/en-us/articles/6080917962397-Set-up-custom-web-GTM-loader',
-				);
-			},
-			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
-		);
-
-		register_setting(
-			GTM_SERVER_SIDE_ADMIN_GROUP,
-			GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT,
-			array(
-				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
-			)
-		);
-		add_settings_field(
-			GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT,
-			__( 'Stape Analytics support', 'gtm-server-side' ),
-			function() {
-				echo '<input
-					type="checkbox"
-					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT ) . '"
-					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT ) . '"
-					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_STAPE_ANALYTICS_SUPPORT ), 'yes', false ) . '
-					value="yes">';
-				echo '<br>';
-				printf(
-					__( 'Tick this checkbox if you are using Stape Analytics. Learn more about it <a href="%s" target="_blank">here</a>.', 'gtm-server-side' ), //phpcs:ignore
-					'https://stape.io/blog/stape-analytics-measure-the-impact-of-your-server-side-tracking?mtm_campaign=wp_app_settings',
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,

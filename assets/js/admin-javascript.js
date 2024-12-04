@@ -182,7 +182,6 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		this.changeWebIdentifierCheckboxState( $elWebIdentifier, jQuery( '#gtm_server_side_stape_analytics_support' ) );
 		this.changeWebIdentifierCheckboxState( $elWebIdentifier, jQuery( '#gtm_server_side_cookie_keeper' ) );
 	},
 
