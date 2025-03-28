@@ -37,7 +37,7 @@ The **GTM Server Side** plugin by [stape.io](https://stape.io) is the easiest wa
 ## Installation
 
 1. Unzip and upload the `gtm-server-side` folder to the `/wp-content/plugins/` directory.
-2. Activate the plugin through the **Plugins'** menu in WordPress.
+2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Go to **Settings > GTM Server Side**, enter your GTM Server Side URL, and configure additional options.
 
 ## Frequently Asked Questions
