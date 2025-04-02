@@ -19,7 +19,7 @@ GTM Server Side plugin by stape.io features:
 * Add web Google Tag Manager script on every website page.
 * Work with any other WP plugin that inserts gtm script on the website.
 * Adds custom loader, which makes Google Tag Manager and Google Analytics tracking invisible to ad blockers and other tracking prevention mechanisms.
-* Sends events to GTM server side without any js library and optimizes page speed.
+* Sends events to GTM server side without any JS library and optimizes page speed.
 * Adds e-commerce Data Layer events.
 * Adds user data to Data Layer events.
 * Sends webhooks.
@@ -32,9 +32,9 @@ Benefits of GTM Server Side plugin by stape.io:
 
 == Installation ==
 
-1. Unzip and upload the "gtm-server-side" to the '/wp-content/plugins/' directory
-2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to Settings / GTM Server Side and enter your GTM Server Side url and set additional options
+1. Unzip and upload the "gtm-server-side" to the "/wp-content/plugins/" directory.
+2. Activate the plugin through the "Plugins" menu in WordPress.
+3. Go to "Settings / GTM Server Side" and enter your GTM Server Side URL and set additional options.
 
 == Frequently Asked Questions ==
 
@@ -44,25 +44,25 @@ Please refer to the official <a href="https://marketingplatform.google.com/about
 
 = What is Google Tag Manager Server Side =
 
-Please refer to the technical description of <a href="https://stape.io/blog/what-is-google-tag-manager-server-side-tracking">Google Tag Manager Server Side </a>.
+Please refer to the technical description of <a href="https://stape.io/blog/what-is-google-tag-manager-server-side-tracking">Google Tag Manager Server Side</a>.
 
 = Where I can get GTM Server Side url =
 
-Please refer to blog post <a href="https://stape.io/blog/how-to-set-up-google-tag-manager-server-side-container">how to set up Google Tag Manager Server Side Container </a>.
+Please refer to blog post <a href="https://stape.io/blog/how-to-set-up-google-tag-manager-server-side-container">how to set up Google Tag Manager Server Side Container</a>.
 
 = Does the plugin support WooCommerce =
 
-Yes, please refer to the blog post on how to setup <a href="https://stape.io/blog/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container">server side Tagging For WordPress with WooCommerce </a>.
+Yes, please refer to the blog post on how to setup <a href="https://stape.io/blog/how-to-add-google-analytics-and-facebook-pixels-to-wordpress-using-google-tag-manager-server-container">server side Tagging For WordPress with WooCommerce</a>.
 
 = Can I integrate Facebook Conversion API with Google Tag Manager server side =
 
-Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How to Setup Facebook Conversion API </a>.
+Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How to Setup Facebook Conversion API</a>.
 
 == Screenshots ==
 
 1. General plugin settings.
 2. Data Layer settings.
-2. Webhooks settings.
+3. Webhooks settings.
 4. Menu item in the settings panel.
 
 == Changelog ==
