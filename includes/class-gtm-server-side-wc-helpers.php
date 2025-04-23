@@ -101,6 +101,7 @@ class GTM_Server_Side_WC_Helpers {
 			}
 
 			$array             = $this->get_data_layer_item( $product );
+			$array['price']    = round( $item_loop->get_total() / $item_loop->get_quantity(), wc_get_price_decimals() );
 			$array['quantity'] = intval( $item_loop->get_quantity() );
 			$array['index']    = $index++;
 
