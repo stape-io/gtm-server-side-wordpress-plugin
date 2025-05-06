@@ -67,7 +67,7 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
   <img alt="General plugin settings" src=".wordpress-org/screenshot-1.png" width="850"/>
 
-1. Data Layer settings.
+2. Data Layer settings.
 
   <img alt="Data Layer settings" src=".wordpress-org/screenshot-2.png" width="850"/>
 
