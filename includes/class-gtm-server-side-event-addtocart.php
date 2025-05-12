@@ -80,6 +80,10 @@ class GTM_Server_Side_Event_AddToCart {
 		$data['index']    = isset( $woocommerce_loop['loop'] ) ? intval( $woocommerce_loop['loop'] ) : 1;
 		$attrs            = $this->convert_product_data_key( $data );
 
+		if ( ! isset( $args['attributes'] ) || ! is_array( $args['attributes'] ) ) {
+			$args['attributes'] = array();
+		}
+
 		$args['attributes'] = $args['attributes'] + $attrs;
 
 		return $args;
