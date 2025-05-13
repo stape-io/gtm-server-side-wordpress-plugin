@@ -100,7 +100,18 @@ class GTM_Server_Side_WC_Helpers {
 				continue;
 			}
 
-			$array             = $this->get_data_layer_item( $product );
+			$array = $this->get_data_layer_item( $product );
+
+			$subtotal = $item_loop->get_subtotal();
+			$total    = $item_loop->get_total();
+			$discount = $subtotal - $total;
+
+			if ( $discount > 0 ) {
+				$price          = floatval( $product->get_price() ) - $discount;
+				$array['price'] = $this->formatted_price( $price );
+			}
+
+			$array['discount'] = $this->formatted_price( $discount );
 			$array['quantity'] = intval( $item_loop->get_quantity() );
 			$array['index']    = $index++;
 
