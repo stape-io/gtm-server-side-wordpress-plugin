@@ -85,7 +85,7 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 <details>
   <summary>Version 2 changelog</summary>
 
-### 2.1.30
+### 2.1.31
 - Added login & signup events to GTM datapusher
 
 ### 2.1.30
