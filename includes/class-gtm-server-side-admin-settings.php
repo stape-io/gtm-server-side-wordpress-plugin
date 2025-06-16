@@ -271,7 +271,7 @@ class GTM_Server_Side_Admin_Settings {
 					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE ), 'yes', false ) . '
 					value="yes">';
 				echo '<br>';
-				esc_html_e( 'This option only works with Woocommerce shops. Adds basic events and their data: Login, SignUp, ViewItem, AddToCart, BeginCheckout, Purchase.', 'gtm-server-side' );
+				esc_html_e( 'This option only works with Woocommerce shops. Adds basic events and their data: Login, SignUp, ViewItem, AddToCart, BeginCheckout, Purchase. On cached websites ensure to implement gtm_server_side_is_page_cached filter.', 'gtm-server-side' );
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER
@@ -295,7 +295,7 @@ class GTM_Server_Side_Admin_Settings {
 					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_USER_DATA ), 'yes', false ) . '
 					value="yes">';
 				echo '<br>';
-				esc_html_e( 'All events for authorised users will have their personal details (name, surname, email, etc.) available. Their billing details will be available on the purchase event.', 'gtm-server-side' );
+				esc_html_e( 'All events for authorised users on uncached pages, will have their personal details (name, surname, email, etc.) available. Their billing details will be available on the purchase event. Page is marked as cached using `gtm_server_side_is_page_cached` filter.', 'gtm-server-side' );
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER

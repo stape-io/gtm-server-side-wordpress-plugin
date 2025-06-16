@@ -52,6 +52,10 @@ class GTM_Server_Side_Event_Register {
 	 * @return void
 	 */
 	public function wp_footer() {
+		if ( ! GTM_Server_Side_Helpers::can_output_sensitive_data() ) {
+			return;
+		}
+
 		if ( ! GTM_Server_Side_Helpers::exists_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES ) ) {
 			return;
 		}
@@ -60,9 +64,10 @@ class GTM_Server_Side_Event_Register {
 			'event' => GTM_Server_Side_Helpers::get_data_layer_event_name( 'sign_up' ),
 		);
 
-		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
+		if ( GTM_Server_Side_WC_Helpers::instance()->should_output_user_data() ) {
 			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
 		}
+		echo GTM_SENSITIVE_DATA_NOTICE; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 		<script type="text/javascript">
 			dataLayer.push( { ecommerce: null } );

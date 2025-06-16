@@ -34,6 +34,10 @@ class GTM_Server_Side_Event_BeginCheckout {
 	 * @return void
 	 */
 	public function wp_footer() {
+		if ( ! GTM_Server_Side_Helpers::can_output_sensitive_data() ) {
+			return;
+		}
+
 		if ( ! is_checkout() ) {
 			return;
 		}
@@ -55,9 +59,10 @@ class GTM_Server_Side_Event_BeginCheckout {
 			),
 		);
 
-		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
+		if ( GTM_Server_Side_WC_Helpers::instance()->should_output_user_data() ) {
 			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
 		}
+		echo GTM_SENSITIVE_DATA_NOTICE; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 		<script type="text/javascript">
 			dataLayer.push( { ecommerce: null } );

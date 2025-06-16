@@ -52,8 +52,9 @@ class GTM_Server_Side_Event_ViewItemList {
 			),
 		);
 
-		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
+		if ( GTM_Server_Side_WC_Helpers::instance()->should_output_user_data() ) {
 			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
+			echo GTM_SENSITIVE_DATA_NOTICE; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		}
 		?>
 		<script type="text/javascript">
