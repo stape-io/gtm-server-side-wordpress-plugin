@@ -136,10 +136,10 @@ class GTM_Server_Side_Helpers {
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
 			function() use ( $container_id ) {
 				$query_ends = array(
-					'page=1',
-					'page=2',
-					'page=3',
-					'apiKey=' . mb_substr( md5( self::get_raw_gtm_container_identifier() ), 0, 8 ),
+					'cgm=nmB',
+					'asq=2',
+					'tl=dr',
+					'type=' . mb_substr( md5( self::get_raw_gtm_container_identifier() ), 0, 8 ),
 					'sort=asc',
 					'sort=desc',
 				);
