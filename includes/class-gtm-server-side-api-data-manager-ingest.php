@@ -47,7 +47,7 @@ class GTM_Server_Side_API_Data_Manager_Ingest {
 		}
 
 		if ( ! GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $order->get_customer_id() ) ) {
-			// return false;
+			return false;
 		}
 
 		GTM_Server_Side_Handler_Data_Manager_Ingest::instance()->send_order( $order );
