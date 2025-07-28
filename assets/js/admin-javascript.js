@@ -124,6 +124,26 @@ jQuery( document ).ready(
 				);
 			}
 		);
+		// ----------
+
+		// Tab "Customer Match".
+		pluginGtmServerSide.initTabCustomerMatch();
+		jQuery( '#gtm_server_side_field_cust_match_user_share_email, #gtm_server_side_field_cust_match_user_share_phone' ).on(
+			'click',
+			pluginGtmServerSide.initTabCustomerMatch
+		);
+
+		let $backfill         = jQuery( '#gtm_server_side_field_cust_match_backfill' );
+		let isBackfillChecked = $backfill.is( ':checked' );
+		$backfill.on(
+			'click',
+			function() {
+				if ( true === isBackfillChecked ) {
+					jQuery( '#gtm-server-side-btn-submit' ).prop( 'disabled', jQuery( this ).is( ':checked' ) );
+				}
+			}
+		);
+		// ----------
 	}
 );
 
@@ -157,6 +177,20 @@ var pluginGtmServerSide = {
 			$elPurchase.prop( 'disabled', false );
 			$elRefund.prop( 'disabled', false );
 			$btnTest.prop( 'disabled', false );
+		}
+	},
+
+	initTabCustomerMatch: function() {
+		let isShareEmailChecked = jQuery( '#gtm_server_side_field_cust_match_user_share_email' ).is( ':checked' );
+		let isSharePhoneChecked = jQuery( '#gtm_server_side_field_cust_match_user_share_phone' ).is( ':checked' );
+		let $shareAddress       = jQuery( '#gtm_server_side_field_cust_match_user_share_address' );
+
+		if ( isShareEmailChecked && isSharePhoneChecked ) {
+			$shareAddress.prop( 'disabled', false );
+		} else {
+			$shareAddress
+				.prop( 'checked', false )
+				.prop( 'disabled', true );
 		}
 	},
 
