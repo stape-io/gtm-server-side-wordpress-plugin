@@ -104,6 +104,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 			GTM_SERVER_SIDE_ADMIN_GROUP_CUSTOMER_MATCH
 		);
 
+		/* phpcs:ignore
 		register_setting(
 			GTM_SERVER_SIDE_ADMIN_GROUP,
 			GTM_SERVER_SIDE_FIELD_CUST_MATCH_AUDIENCE_ID,
@@ -129,6 +130,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_CUSTOMER_MATCH
 		);
+		*/
 
 		register_setting(
 			GTM_SERVER_SIDE_ADMIN_GROUP,

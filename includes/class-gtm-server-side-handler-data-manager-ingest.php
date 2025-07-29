@@ -173,7 +173,9 @@ class GTM_Server_Side_Handler_Data_Manager_Ingest {
 		// Options.
 		$option_login_cust_id = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_LOGIN_CUST_ID, '' );
 		$option_oper_cust_id  = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_OPER_CUST_ID, '' );
-		$option_audience_id   = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_AUDIENCE_ID, '' );
+		$option_audience_id   = 'stape_wp_purchasers';
+		// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
+		// $option_audience_id   = GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_AUDIENCE_ID, '' );
 
 		if ( ! empty( $option_login_cust_id ) ) {
 			$req_destinations['linkedAccount'] = array(
