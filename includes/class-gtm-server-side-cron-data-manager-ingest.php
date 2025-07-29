@@ -105,6 +105,12 @@ class GTM_Server_Side_Cron_Data_Manager_Ingest {
 				'date_created'              => '<' . GTM_Server_Side_Helpers::get_cust_match_backfill_date(),
 				'status'                    => 'any',
 				'gtm_server_side_processed' => true,
+				'meta_query'                => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'     => self::META_KEY_PROCESSED,
+						'compare' => 'NOT EXISTS',
+					),
+				),
 			)
 		);
 
@@ -161,15 +167,15 @@ class GTM_Server_Side_Cron_Data_Manager_Ingest {
 			$email_processed[] = $user_data['email_address'];
 		}
 
-		$api_result = $data_manager_ingest->send_bulk_data( $users_data );
-
-		if ( is_wp_error( $api_result ) ) {
-			return;
+		if ( ! empty( $users_data ) ) {
+			$data_manager_ingest->send_bulk_data( $users_data );
 		}
 
-		foreach ( $orders as $order ) {
-			$order->update_meta_data( self::META_KEY_PROCESSED, 'yes' );
-			$order->save();
+		if ( ! empty( $orders ) ) {
+			foreach ( $orders as $order ) {
+				$order->update_meta_data( self::META_KEY_PROCESSED, 'yes' );
+				$order->save();
+			}
 		}
 
 		update_option( self::EMAIL_PROCESSED, $email_processed, false );

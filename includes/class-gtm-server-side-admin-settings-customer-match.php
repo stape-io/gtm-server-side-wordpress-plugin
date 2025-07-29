@@ -263,10 +263,12 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					echo '<path d="M19 10C19 8.01761 18.3455 6.09069 17.1381 4.51842C15.9307 2.94615 14.238 1.81651 12.3227 1.30489C10.4075 0.793274 8.37693 0.928313 6.54632 1.68904C4.7157 2.44976 3.18747 3.79361 2.1989 5.51192C1.21033 7.23023 0.816749 9.22686 1.07926 11.1918C1.34177 13.1567 2.24568 14.98 3.65065 16.3785C5.05562 17.7771 6.88303 18.6726 8.84914 18.9261C10.8153 19.1796 12.8101 18.7769 14.5238 17.7804" stroke="#BBC3C9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
 					echo '</svg>';
 
+					echo '<div>';
 					printf(
 						__( 'Sync in progress… This may take a few minutes. <a href="%s" target="_blank">You can Abort backfill</a> at any time — existing data will not be synced.', 'gtm-server-side' ), // phpcs:ignore
 						'https://stape.io/helpdesk'
 					);
+					echo '</div>';
 					echo '</div>';
 				}
 
