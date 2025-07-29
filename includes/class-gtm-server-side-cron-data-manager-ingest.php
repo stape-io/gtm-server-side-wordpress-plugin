@@ -95,25 +95,26 @@ class GTM_Server_Side_Cron_Data_Manager_Ingest {
 			return array();
 		}
 
-		$query = new WC_Order_Query(
-			array(
-				'type'                      => 'shop_order',
-				'orderby'                   => 'date',
-				'order'                     => 'DESC',
-				'return'                    => 'ids',
-				'limit'                     => $limit,
-				'date_created'              => '<' . GTM_Server_Side_Helpers::get_cust_match_backfill_date(),
-				'status'                    => 'any',
-				'gtm_server_side_processed' => true,
-				'meta_query'                => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-					array(
-						'key'     => self::META_KEY_PROCESSED,
-						'compare' => 'NOT EXISTS',
-					),
+		$params = array(
+			'type'                      => 'shop_order',
+			'orderby'                   => 'date',
+			'order'                     => 'DESC',
+			'return'                    => 'ids',
+			'limit'                     => $limit,
+			'date_query'                => array(
+				'before' => GTM_Server_Side_Helpers::get_cust_match_backfill_date(),
+			),
+			'status'                    => 'any',
+			'gtm_server_side_processed' => true,
+			'meta_query'                => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'     => self::META_KEY_PROCESSED,
+					'compare' => 'NOT EXISTS',
 				),
-			)
+			),
 		);
 
+		$query     = new WC_Order_Query( $params );
 		$order_ids = $query->get_orders();
 
 		return $order_ids;
