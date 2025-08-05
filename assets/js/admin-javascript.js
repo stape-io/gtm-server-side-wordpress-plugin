@@ -143,6 +143,15 @@ jQuery( document ).ready(
 				}
 			}
 		);
+		jQuery( '.js-gtm-server-side-backfill-btn-abort-backfill' ).on(
+			'click',
+			function( e ) {
+				e.preventDefault();
+
+				jQuery( '#gtm_server_side_field_cust_match_backfill' ).prop( 'checked', false );
+				jQuery( '#gtm-server-side-btn-submit' ).prop( 'disabled', false ).click();
+			}
+		);
 		// ----------
 	}
 );

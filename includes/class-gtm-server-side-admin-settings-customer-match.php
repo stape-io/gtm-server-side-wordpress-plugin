@@ -266,10 +266,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					echo '</svg>';
 
 					echo '<div>';
-					printf(
-						__( 'Sync in progress… This may take a few minutes. <a href="%s" target="_blank">You can Abort backfill</a> at any time — existing data will not be synced.', 'gtm-server-side' ), // phpcs:ignore
-						'https://stape.io/helpdesk'
-					);
+					echo __( 'Sync in progress… This may take a few minutes. <a href="#" class="js-gtm-server-side-backfill-btn-abort-backfill">You can Abort backfill</a> at any time — existing data will not be synced.', 'gtm-server-side' ); // phpcs:ignore
 					echo '</div>';
 					echo '</div>';
 				}
