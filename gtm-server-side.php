@@ -36,6 +36,7 @@ add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Purchase::class, '
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Processing::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Completed::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Refund::class, 'instance' ) );
+add_action( 'gtm_server_side', array( GTM_Server_Side_API_Data_Manager_Ingest::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Settings::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Ajax::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Assets::class, 'instance' ) );
@@ -51,4 +52,3 @@ add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_ViewCart::c
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_BeginCheckout::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_Purchase::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Event_AddToCart::class, 'instance' ) );
-add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_API_Data_Manager_Ingest::class, 'instance' ) );
