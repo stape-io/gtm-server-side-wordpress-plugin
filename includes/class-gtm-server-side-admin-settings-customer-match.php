@@ -45,7 +45,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 				echo '<br>';
 				printf(
 					__( 'Specify your Stape container API key. <a href="%s" target="_blank">How to find your container API key.</a>', 'gtm-server-side' ), // phpcs:ignore
-					'https://stape.io/helpdesk',
+					'https://stape.io/helpdesk/knowledgebase/how-to-find-stape-container-api-key',
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
@@ -71,7 +71,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 				echo '<br>';
 				printf(
 					__( 'Destination account ID for Audience upload. <a href="%s" target="_blank">How to find Operating Customer ID.</a>', 'gtm-server-side' ), // phpcs:ignore
-					'https://stape.io/helpdesk',
+					'https://stape.io/helpdesk/knowledgebase/how-to-find-customer-id-operating-customer-id#how-to-find-the-operating-customer-id',
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
@@ -97,7 +97,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 				echo '<br>';
 				printf(
 					__( 'Login Customer ID - account associated with Stape Connection. <a href="%s" target="_blank">How to find Loging Customer ID.</a>', 'gtm-server-side' ), // phpcs:ignore
-					'https://stape.io/helpdesk',
+					'https://stape.io/helpdesk/knowledgebase/how-to-find-customer-id-operating-customer-id#how-to-find-the-customer-id',
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
@@ -266,7 +266,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					echo '</svg>';
 
 					echo '<div>';
-					echo __( 'Sync in progress… This may take a few minutes. <a href="#" class="js-gtm-server-side-backfill-btn-abort-backfill">You can Abort backfill</a> at any time — existing data will not be synced.', 'gtm-server-side' ); // phpcs:ignore
+					echo __( 'Sync in progress… This may take a few minutes. <a href="#" class="js-gtm-server-side-backfill-btn-abort-backfill">You can Abort backfill</a> at any time — existing data will not be synced.', 'gtm-server-side' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					echo '</div>';
 					echo '</div>';
 				}
@@ -279,6 +279,10 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					esc_html_e( 'Great! Backfill is complete.', 'gtm-server-side' );
 					echo '</div>';
 				}
+
+				echo '<div class="gtm-server-side-backfill-info">';
+				echo __( 'A new audience list named <strong>stape_wp_purchasers</strong> will be automatically created in your Customer Lists in Google Ads.', 'gtm-server-side' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo '</div>';
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_CUSTOMER_MATCH

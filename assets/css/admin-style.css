@@ -32,6 +32,10 @@
 	}
 }
 
+.gtm-server-side-backfill-info {
+	margin-top: 20px;
+}
+
 .gtm-server-side-backfill-processing {
 	animation: gtm-server-side-spin 2s linear infinite;
 }
