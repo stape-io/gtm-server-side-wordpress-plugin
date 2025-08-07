@@ -61,7 +61,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 		);
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_OPER_CUST_ID,
-			__( 'Google ADS Operating Customer ID', 'gtm-server-side' ),
+			__( 'Google Ads Operating customer ID', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="text"
@@ -70,7 +70,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_OPER_CUST_ID ) ) . '">';
 				echo '<br>';
 				printf(
-					__( 'Destination account ID for Audience upload. <a href="%s" target="_blank">How to find Operating Customer ID.</a>', 'gtm-server-side' ), // phpcs:ignore
+					__( 'Destination account ID for Customer Match upload. <a href="%s" target="_blank">How to find Operating сustomer ID.</a>', 'gtm-server-side' ), // phpcs:ignore
 					'https://stape.io/helpdesk/knowledgebase/how-to-find-customer-id-operating-customer-id#how-to-find-the-operating-customer-id',
 				);
 			},
@@ -87,7 +87,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 		);
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_LOGIN_CUST_ID,
-			__( 'Google Ads Login Customer ID', 'gtm-server-side' ),
+			__( 'Google Ads customer ID', 'gtm-server-side' ),
 			function() {
 				echo '<input
 					type="text"
@@ -96,7 +96,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_LOGIN_CUST_ID ) ) . '">';
 				echo '<br>';
 				printf(
-					__( 'Login Customer ID - account associated with Stape Connection. <a href="%s" target="_blank">How to find Loging Customer ID.</a>', 'gtm-server-side' ), // phpcs:ignore
+					__( 'Google Ads account ID used for authorization. <a href="%s" target="_blank">How to find customer ID.</a>', 'gtm-server-side' ), // phpcs:ignore
 					'https://stape.io/helpdesk/knowledgebase/how-to-find-customer-id-operating-customer-id#how-to-find-the-customer-id',
 				);
 			},
@@ -254,7 +254,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_BACKFILL ), GTM_SERVER_SIDE_FIELD_VALUE_YES, false ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_VALUE_YES ) . '">';
 				echo '<br>';
-				esc_html_e( 'Selecting this option will ensure existing customers are also sync as per above settings. If not selected only newly added customers will be synced', 'gtm-server-side' );
+				esc_html_e( 'Select to sync existing contacts using the settings above. Unselect to sync only new contacts that reach the configured statuses.', 'gtm-server-side' );
 
 				if (
 					GTM_SERVER_SIDE_FIELD_VALUE_YES === GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_BACKFILL ) &&
@@ -266,7 +266,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 					echo '</svg>';
 
 					echo '<div>';
-					echo __( 'Sync in progress… This may take a few minutes. <a href="#" class="js-gtm-server-side-backfill-btn-abort-backfill">You can Abort backfill</a> at any time — existing data will not be synced.', 'gtm-server-side' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					echo __( 'Sync in progress… This may take a few minutes. To stop backfill, <a href="#" class="js-gtm-server-side-backfill-btn-abort-backfill">click here</a>.', 'gtm-server-side' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 					echo '</div>';
 					echo '</div>';
 				}
@@ -281,7 +281,7 @@ class GTM_Server_Side_Admin_Settings_Customer_Match {
 				}
 
 				echo '<div class="gtm-server-side-backfill-info">';
-				echo __( 'A new audience list named <strong>stape_wp_purchasers</strong> will be automatically created in your Customer Lists in Google Ads.', 'gtm-server-side' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo __( 'A new Customer list named <b>stape_wp_purchasers</b> will be automatically created in your Google Ads audiences.', 'gtm-server-side' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo '</div>';
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
