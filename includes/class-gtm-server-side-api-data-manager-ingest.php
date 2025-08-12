@@ -46,7 +46,7 @@ class GTM_Server_Side_API_Data_Manager_Ingest {
 			return false;
 		}
 
-		$customer_id = $order->get_customer_id();
+		$customer_id = (int) $order->get_customer_id();
 		if ( $customer_id > 0 && ! GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $customer_id ) ) {
 			return false;
 		}

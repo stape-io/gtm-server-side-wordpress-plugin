@@ -87,6 +87,7 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 ### 2.1.32
 - Added "Customer Match" settings
+- Fix: new_customer value
 
 ### 2.1.31
 - Request parameters have been changed
