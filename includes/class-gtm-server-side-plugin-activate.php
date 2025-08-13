@@ -36,5 +36,9 @@ class GTM_Server_Side_Plugin_Activate {
 		if ( empty( get_option( GTM_SERVER_SIDE_FIELD_PLACEMENT ) ) ) {
 			update_option( GTM_SERVER_SIDE_FIELD_PLACEMENT, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE );
 		}
+
+		if ( empty( get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) ) ) {
+			update_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
+		}
 	}
 }

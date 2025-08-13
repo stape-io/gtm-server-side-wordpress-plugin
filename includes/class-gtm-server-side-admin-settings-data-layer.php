@@ -89,7 +89,7 @@ class GTM_Server_Side_Admin_Settings_Data_Layer {
 					type="checkbox"
 					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) . '"
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) . '"
-					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ), 'yes', false ) . '
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ), GTM_SERVER_SIDE_FIELD_VALUE_YES, false ) . '
 					value="yes">';
 					echo '<br>';
 					esc_html_e( 'We will append \'_stape\' to event names in your dataLayer to avoid potential conflicts and/or tag misfire with your existing events.', 'gtm-server-side' );

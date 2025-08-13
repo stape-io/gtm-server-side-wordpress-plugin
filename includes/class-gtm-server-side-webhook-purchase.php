@@ -48,7 +48,7 @@ class GTM_Server_Side_Webhook_Purchase {
 			return;
 		}
 
-		$request                              = array(
+		$request = array(
 			'event'     => 'purchase',
 			'cart_hash' => $order->get_cart_hash(),
 			'ecommerce' => array(
