@@ -59,11 +59,12 @@ class GTM_Server_Side_Helpers {
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
+	 * @param string $default Default value.
 	 *
 	 * @return string|bool
 	 */
-	public static function get_option( $option ) {
-		return get_option( $option, false );
+	public static function get_option( $option, $default = false ) {
+		return get_option( $option, $default );
 	}
 
 	/**
@@ -266,6 +267,38 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return static::$is_enable_cookie_keeper;
+	}
+
+	/**
+	 * Return cust. match backfill date.
+	 *
+	 * @return string
+	 */
+	public static function get_cust_match_backfill_date() {
+		$option = get_option( GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_DATE, false );
+		if ( ! $option ) {
+			$option = wp_date( 'Y-m-d H:i:s' );
+			update_option( GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_DATE, $option, false );
+		}
+
+		return $option;
+	}
+
+	/**
+	 * Return gtm server side api key.
+	 *
+	 * @return string
+	 */
+	public static function get_stape_container_api_key() {
+		static $cache;
+
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$cache = self::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_CONTAINER_API_KEY, false );
+
+		return $cache;
 	}
 
 	/**

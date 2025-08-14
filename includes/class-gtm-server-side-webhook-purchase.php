@@ -48,7 +48,7 @@ class GTM_Server_Side_Webhook_Purchase {
 			return;
 		}
 
-		$request                              = array(
+		$request = array(
 			'event'     => 'purchase',
 			'cart_hash' => $order->get_cart_hash(),
 			'ecommerce' => array(
@@ -64,9 +64,15 @@ class GTM_Server_Side_Webhook_Purchase {
 			),
 			'user_data' => GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order ),
 		);
-		$request['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $order->get_customer_id() ) ? 'true' : 'false';
-		$request_cookies                      = GTM_Server_Side_Helpers::get_request_cookies();
 
+		$customer_id                          = (int) $order->get_customer_id();
+		$request['user_data']['new_customer'] = 'true';
+
+		if ( $customer_id > 0 && ! GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $customer_id ) ) {
+			$request['user_data']['new_customer'] = 'false';
+		}
+
+		$request_cookies = GTM_Server_Side_Helpers::get_request_cookies();
 		if ( ! empty( $request_cookies ) ) {
 			$request['cookies'] = $request_cookies;
 

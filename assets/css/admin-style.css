@@ -21,3 +21,30 @@
 	background: #dcdcde;
 	cursor: not-allowed;
 }
+
+.gtm-server-side-backfill-wrapper {
+	display: flex;
+	align-items: center;
+	margin-top: 5px;
+
+	svg {
+		margin-right: 5px;
+	}
+}
+
+.gtm-server-side-backfill-info {
+	margin-top: 20px;
+}
+
+.gtm-server-side-backfill-processing {
+	animation: gtm-server-side-spin 2s linear infinite;
+}
+
+@keyframes gtm-server-side-spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}

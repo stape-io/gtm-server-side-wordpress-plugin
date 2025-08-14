@@ -19,14 +19,24 @@ define( 'GTM_SERVER_SIDE_COOKIE_KEEPER_NAME', '_sbp' );
 define( 'GTM_SERVER_SIDE_DATA_LAYER_CUSTOM_EVENT_NAME', '_stape' );
 
 define( 'GTM_SERVER_SIDE_FIELD_VERSION', 'gtm_server_side_version' );
+
+// Tab: General.
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT', 'gtm_server_side_placement' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID', 'gtm_server_side_web_container_id' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL', 'gtm_server_side_web_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER', 'gtm_server_side_web_identifier' );
 define( 'GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER', 'gtm_server_side_cookie_keeper' );
+// Values for field `GTM_SERVER_SIDE_FIELD_PLACEMENT`.
+define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE', 'code' );
+define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN', 'plugin' );
+define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE', 'disable' );
+
+// Tab: Data Layer.
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE', 'gtm_server_side_data_layer_ecommerce' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_USER_DATA', 'gtm_server_side_data_layer_user_data' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME', 'gtm_server_side_data_layer_custom_event_name' );
+
+// Tab: Webhooks.
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_ENABLE', 'gtm_server_side_webhooks_enable' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_CONTAINER_URL', 'gtm_server_side_webhooks_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_PURCHASE', 'gtm_server_side_webhooks_purchase' );
@@ -34,15 +44,34 @@ define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_PROCESSING', 'gtm_server_side_webhooks_p
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_COMPLETED', 'gtm_server_side_webhooks_completed' );
 define( 'GTM_SERVER_SIDE_FIELD_WEBHOOKS_REFUND', 'gtm_server_side_webhooks_refund' );
 
-define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE', 'code' );
-define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN', 'plugin' );
-define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE', 'disable' );
+// Tab: Customer Match.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_CONTAINER_API_KEY', 'gtm_server_side_field_cust_match_container_api_key' ); // Container API Key.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_OPER_CUST_ID', 'gtm_server_side_field_cust_match_gads_oper_cust_id' ); // Google ADS Operating Customer ID.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_GADS_LOGIN_CUST_ID', 'gtm_server_side_field_cust_match_gads_login_cust_id' ); // Google ADS Login Customer ID.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_AUDIENCE_ID', 'gtm_server_side_field_cust_match_audience_id' ); // Audience ID.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_USER_SHARE_EMAIL', 'gtm_server_side_field_cust_match_user_share_email' ); // User data: Share email.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_USER_SHARE_PHONE', 'gtm_server_side_field_cust_match_user_share_phone' ); // User data: Share phone.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_USER_SHARE_ADDRESS', 'gtm_server_side_field_cust_match_user_share_address' ); // User data: Share address.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_CONSENT', 'gtm_server_side_field_cust_match_consent' ); // Consent.
+define( 'GTM_SERVER_SIDE_FIELD_CUST_MATCH_BACKFILL', 'gtm_server_side_field_cust_match_backfill' ); // Backfill: (value: yes).
+// Values for field `GTM_SERVER_SIDE_FIELD_CUST_MATCH_CONSENT`.
+define( 'GTM_SERVER_SIDE_FIELD_CONSENT_VALUE_STATUS_UNSPECIFIED', 'CONSENT_STATUS_UNSPECIFIED' );
+define( 'GTM_SERVER_SIDE_FIELD_CONSENT_VALUE_GRANTED', 'CONSENT_GRANTED' );
+define( 'GTM_SERVER_SIDE_FIELD_CONSENT_VALUE_DENIED', 'CONSENT_DENIED' );
+
 define( 'GTM_SERVER_SIDE_FIELD_VALUE_YES', 'yes' );
 
+// Settings.
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP', 'gtm-server-side-admin-group' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL', 'gtm-server-side-admin-group-general' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER', 'gtm-server-side-admin-group-data-layer' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS', 'gtm-server-side-admin-group-webhooks' );
+define( 'GTM_SERVER_SIDE_ADMIN_GROUP_CUSTOMER_MATCH', 'gtm-server-side-admin-group-customer-match' );
+
+// Version: 2.1.32.
+define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_DATE', 'gtm_server_side_cust_match_backfill_date' );
+define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_FINISHED', 'gtm_server_side_cust_match_backfill_finished' );
+
 
 // Autoload plugin classes.
 spl_autoload_register(
@@ -53,6 +82,7 @@ spl_autoload_register(
 		}
 	}
 );
+
 
 // Create custom hooks.
 add_action(
@@ -67,6 +97,7 @@ add_action(
 	},
 	-1
 );
+
 
 /**
  * Return gtm server side version
