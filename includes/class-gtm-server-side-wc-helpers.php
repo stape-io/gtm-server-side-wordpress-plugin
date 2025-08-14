@@ -411,6 +411,15 @@ class GTM_Server_Side_WC_Helpers {
 	}
 
 	/**
+	 * Check if user data can be output (considering cache protection).
+	 *
+	 * @return bool
+	 */
+	public function should_output_user_data() {
+		return $this->is_enable_user_data() && GTM_Server_Side_Helpers::can_output_sensitive_data();
+	}
+
+	/**
 	 * Return formatted price
 	 *
 	 * @param  mixed $price Price.

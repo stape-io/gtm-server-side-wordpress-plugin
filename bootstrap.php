@@ -43,6 +43,7 @@ define( 'GTM_SERVER_SIDE_ADMIN_GROUP', 'gtm-server-side-admin-group' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL', 'gtm-server-side-admin-group-general' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_DATA_LAYER', 'gtm-server-side-admin-group-data-layer' );
 define( 'GTM_SERVER_SIDE_ADMIN_GROUP_WEBHOOKS', 'gtm-server-side-admin-group-webhooks' );
+define( 'GTM_SENSITIVE_DATA_NOTICE', '<!-- DO NOT CACHE -->' );
 
 // Autoload plugin classes.
 spl_autoload_register(

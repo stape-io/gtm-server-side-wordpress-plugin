@@ -56,6 +56,13 @@ class GTM_Server_Side_Helpers {
 	private static $is_stape_analytics_support;
 
 	/**
+	 * Cache detection result.
+	 *
+	 * @var bool|null
+	 */
+	private static $is_page_cached;
+
+	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
@@ -619,5 +626,27 @@ class GTM_Server_Side_Helpers {
 	 */
 	public static function delete_cache_field( $key ) {
 		delete_transient( $key . '__generated' );
+	}
+
+	/**
+	 * Check if the current page is cached.
+	 *
+	 * @return bool
+	 */
+	public static function is_page_cached() {
+		if ( null === static::$is_page_cached ) {
+			static::$is_page_cached = apply_filters( 'gtm_server_side_is_page_cached', false );
+		}
+
+		return static::$is_page_cached;
+	}
+
+	/**
+	 * Check if sensitive data can be output (not on cached pages).
+	 *
+	 * @return bool
+	 */
+	public static function can_output_sensitive_data() {
+		return ! static::is_page_cached();
 	}
 }
