@@ -13,6 +13,8 @@ defined( 'ABSPATH' ) || exit;
  * Admin settings, tab: Customer Match.
  */
 class GTM_Server_Side_Admin_Settings_Customer_Match {
+	const TAB = 'customer-match';
+
 	/**
 	 * Tab.
 	 *
