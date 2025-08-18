@@ -34,24 +34,24 @@ class GTM_Server_Side_Admin_Settings {
 	 *
 	 * @since    1.0.0
 	 */
-    public function admin_init() {
+	public function admin_init() {
 
-        switch ( self::get_settings_tab() ) :
-            case 'data-layer':
-                GTM_Server_Side_Admin_Settings_Data_Layer::tab();
-                break;
+		switch ( self::get_settings_tab() ) :
+			case 'data-layer':
+				GTM_Server_Side_Admin_Settings_Data_Layer::tab();
+				break;
             case GTM_Server_Side_Admin_Settings_Webhooks::TAB:
-                GTM_Server_Side_Admin_Settings_Webhooks::tab();
-                break;
+				GTM_Server_Side_Admin_Settings_Webhooks::tab();
+				break;
             case GTM_Server_Side_Admin_Settings_Customer_Match::TAB:
-                GTM_Server_Side_Admin_Settings_Customer_Match::tab();
-                break;
-            case 'general':
-            default:
-                GTM_Server_Side_Admin_Settings_General::tab();
-                break;
-        endswitch;
-    }
+				GTM_Server_Side_Admin_Settings_Customer_Match::tab();
+				break;
+			case 'general':
+			default:
+				GTM_Server_Side_Admin_Settings_General::tab();
+				break;
+		endswitch;
+	}
 
 	/**
 	 * Add settings menu.
