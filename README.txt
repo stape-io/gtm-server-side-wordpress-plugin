@@ -67,6 +67,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 
 == Changelog ==
 
+= 2.1.33 =
+* Add description for tab Customer Match
+
 = 2.1.32 =
 * Added "Customer Match" settings
 * Fix: new_customer value

@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * Admin settings, tab: Webhooks.
  */
 class GTM_Server_Side_Admin_Settings_Webhooks {
+    const TAB = 'webhooks';
 	/**
 	 * Tab.
 	 *
