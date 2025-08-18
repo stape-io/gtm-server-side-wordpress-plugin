@@ -34,107 +34,107 @@ class GTM_Server_Side_Admin_Settings {
 	 *
 	 * @since    1.0.0
 	 */
-	public function admin_init() {
+    public function admin_init() {
 
-		switch ( self::get_settings_tab() ) :
-			case 'data-layer':
-				GTM_Server_Side_Admin_Settings_Data_Layer::tab();
-				break;
+        switch ( self::get_settings_tab() ) :
+            case 'data-layer':
+                GTM_Server_Side_Admin_Settings_Data_Layer::tab();
+                break;
             case GTM_Server_Side_Admin_Settings_Webhooks::TAB:
-				GTM_Server_Side_Admin_Settings_Webhooks::tab();
-				break;
+                GTM_Server_Side_Admin_Settings_Webhooks::tab();
+                break;
             case GTM_Server_Side_Admin_Settings_Customer_Match::TAB:
-				GTM_Server_Side_Admin_Settings_Customer_Match::tab();
-				break;
-			case 'general':
-			default:
-				GTM_Server_Side_Admin_Settings_General::tab();
-				break;
-		endswitch;
+                GTM_Server_Side_Admin_Settings_Customer_Match::tab();
+                break;
+            case 'general':
+            default:
+                GTM_Server_Side_Admin_Settings_General::tab();
+                break;
+        endswitch;
+    }
+
+	/**
+	 * Add settings menu.
+	 *
+	 * @since    1.0.0
+	 */
+	public function admin_menu() {
+		add_options_page(
+			__( 'GTM Server Side', 'gtm-server-side' ),
+			__( 'GTM Server Side', 'gtm-server-side' ),
+			'manage_options',
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			function() {
+				wp_enqueue_style( 'gtm-server-side-admin' );
+				wp_enqueue_script( 'gtm-server-side-admin' );
+
+				load_template( GTM_SERVER_SIDE_PATH . 'templates/class-gtm-server-side-admin.php', false );
+			},
+			27
+		);
 	}
 
-    /**
-     * Add settings menu.
-     *
-     * @since    1.0.0
-     */
-    public function admin_menu() {
-        add_options_page(
-            __( 'GTM Server Side', 'gtm-server-side' ),
-            __( 'GTM Server Side', 'gtm-server-side' ),
-            'manage_options',
-            GTM_SERVER_SIDE_ADMIN_SLUG,
-            function() {
-                wp_enqueue_style( 'gtm-server-side-admin' );
-                wp_enqueue_script( 'gtm-server-side-admin' );
+	/**
+	 * Add plugin links.
+	 *
+	 * @param array  $links Links.
+	 * @param string $file File.
+	 *
+	 * @return mixed
+	 */
+	public function plugin_action_links( $links, $file ) {
+		if ( strpos( $file, '/gtm-server-side.php' ) === false ) {
+			return $links;
+		}
 
-                load_template( GTM_SERVER_SIDE_PATH . 'templates/class-gtm-server-side-admin.php', false );
-            },
-            27
-        );
-    }
+		$settings_link = '<a href="' . menu_page_url( GTM_SERVER_SIDE_ADMIN_SLUG, false ) . '">' . esc_html( __( 'Settings' ) ) . '</a>';
 
-    /**
-     * Add plugin links.
-     *
-     * @param array  $links Links.
-     * @param string $file File.
-     *
-     * @return mixed
-     */
-    public function plugin_action_links( $links, $file ) {
-        if ( strpos( $file, '/gtm-server-side.php' ) === false ) {
-            return $links;
-        }
+		array_unshift( $links, $settings_link );
 
-        $settings_link = '<a href="' . menu_page_url( GTM_SERVER_SIDE_ADMIN_SLUG, false ) . '">' . esc_html( __( 'Settings' ) ) . '</a>';
+		return $links;
+	}
 
-        array_unshift( $links, $settings_link );
+	/**
+	 * Clear cache field, after update some fields.
+	 *
+	 * @param  string $old_value Old value.
+	 * @param  string $new_value New value.
+	 * @return void
+	 */
+	public function clear_cache_field( $old_value, $new_value ) {
+		if ( $old_value !== $new_value ) {
+			GTM_Server_Side_Helpers::delete_cache_field( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID );
+			GTM_Server_Side_Helpers::delete_cache_field( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
+		}
+	}
 
-        return $links;
-    }
+	/**
+	 * Change option backfill.
+	 *
+	 * @param  string $old_value Old value.
+	 * @param  string $new_value New value.
+	 * @return void
+	 */
+	public function change_option_backfill( $old_value, $new_value ) {
+		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== $new_value ) {
+			GTM_Server_Side_Cron_Data_Manager_Ingest::instance()->deactivation();
+		}
+	}
 
-    /**
-     * Clear cache field, after update some fields.
-     *
-     * @param  string $old_value Old value.
-     * @param  string $new_value New value.
-     * @return void
-     */
-    public function clear_cache_field( $old_value, $new_value ) {
-        if ( $old_value !== $new_value ) {
-            GTM_Server_Side_Helpers::delete_cache_field( GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID );
-            GTM_Server_Side_Helpers::delete_cache_field( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
-        }
-    }
-
-    /**
-     * Change option backfill.
-     *
-     * @param  string $old_value Old value.
-     * @param  string $new_value New value.
-     * @return void
-     */
-    public function change_option_backfill( $old_value, $new_value ) {
-        if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== $new_value ) {
-            GTM_Server_Side_Cron_Data_Manager_Ingest::instance()->deactivation();
-        }
-    }
-
-    /**
-     * Return settings tab.
-     *
-     * @return string
-     */
-    public static function get_settings_tab() {
-        $tab = filter_input( INPUT_GET, 'tab', FILTER_DEFAULT );
-        if ( ! empty( $tab ) ) {
-            return $tab;
-        }
-        $tab = filter_input( INPUT_POST, 'tab', FILTER_DEFAULT );
-        if ( ! empty( $tab ) ) {
-            return $tab;
-        }
-        return 'general';
-    }
+	/**
+	 * Return settings tab.
+	 *
+	 * @return string
+	 */
+	public static function get_settings_tab() {
+		$tab = filter_input( INPUT_GET, 'tab', FILTER_DEFAULT );
+		if ( ! empty( $tab ) ) {
+			return $tab;
+		}
+		$tab = filter_input( INPUT_POST, 'tab', FILTER_DEFAULT );
+		if ( ! empty( $tab ) ) {
+			return $tab;
+		}
+		return 'general';
+	}
 }
