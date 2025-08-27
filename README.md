@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.7.1
 
-**Stable tag:** 2.1.32
+**Stable tag:** 2.1.35
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,15 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+### 2.1.35
+- Fix tab Customer Match
+
+### 2.1.34
+- Fix tab Customer Match
+
+### 2.1.33
+- Add description for tab Customer Match
 
 ### 2.1.32
 - Added "Customer Match" settings
