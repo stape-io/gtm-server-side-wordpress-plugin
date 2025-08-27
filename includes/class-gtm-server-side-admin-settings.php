@@ -32,7 +32,7 @@ class GTM_Server_Side_Admin_Settings {
 	/**
 	 * Add settings menu.
 	 *
-	 * @since    1.0.0
+	 * @since 1.0.0
 	 */
 	public function admin_init() {
 
