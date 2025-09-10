@@ -51,6 +51,7 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		$data             = $this->get_item( $item['data'] );
+		$data             = $this->get_formatted_data_attributes( $data );
 		$data['quantity'] = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 1;
 		$attrs            = $this->convert_product_data_to_html_attrs( $data );
 		$link             = str_replace( '<a ', '<a ' . join( ' ', $attrs ), $link );
@@ -76,6 +77,7 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		$data             = $this->get_item( $product );
+		$data             = $this->get_formatted_data_attributes( $data );
 		$data['quantity'] = isset( $args['quantity'] ) ? intval( $args['quantity'] ) : 1;
 		$data['index']    = isset( $woocommerce_loop['loop'] ) ? intval( $woocommerce_loop['loop'] ) : 1;
 		$attrs            = $this->convert_product_data_key( $data );
@@ -106,6 +108,7 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		$data  = $this->get_item( $product );
+		$data  = $this->get_formatted_data_attributes( $data );
 		$attrs = $this->convert_product_data_to_html_attrs( $data );
 		$html  = str_replace( '<li ', '<li ' . join( ' ', $attrs ), $html );
 
@@ -198,5 +201,21 @@ class GTM_Server_Side_Event_AddToCart {
 		$array['index'] = 1;
 
 		return $array;
+	}
+
+	/**
+	 * Return formatted data attributes.
+	 *
+	 * @param  array $attrs Attrs.
+	 * @return array
+	 */
+	private function get_formatted_data_attributes( $attrs ) {
+
+		if ( isset( $attrs['imageUrl'] ) ) {
+			$attrs['image-url'] = $attrs['imageUrl'];
+			unset( $attrs['imageUrl'] );
+		}
+
+		return $attrs;
 	}
 }

@@ -34,7 +34,6 @@ class GTM_Server_Side_Event_Login {
 
 		add_action( 'wp_login', array( $this, 'wp_login' ) );
 		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
-
 	}
 
 	/**
