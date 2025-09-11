@@ -40,10 +40,10 @@ class GTM_Server_Side_Admin_Settings {
 			case 'data-layer':
 				GTM_Server_Side_Admin_Settings_Data_Layer::tab();
 				break;
-            case GTM_Server_Side_Admin_Settings_Webhooks::TAB:
+			case GTM_Server_Side_Admin_Settings_Webhooks::TAB:
 				GTM_Server_Side_Admin_Settings_Webhooks::tab();
 				break;
-            case GTM_Server_Side_Admin_Settings_Customer_Match::TAB:
+			case GTM_Server_Side_Admin_Settings_Customer_Match::TAB:
 				GTM_Server_Side_Admin_Settings_Customer_Match::tab();
 				break;
 			case 'general':

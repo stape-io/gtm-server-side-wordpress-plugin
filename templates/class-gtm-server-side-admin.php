@@ -66,16 +66,16 @@ $tab = GTM_Server_Side_Admin_Settings::get_settings_tab(); // phpcs:ignore WordP
 	<form action="options.php" method="post" class="js-form-gtm-server-side">
 		<input type="hidden" name="tab" value="<?php echo esc_attr( $tab ); ?>" ?>
 
-        <?php if ( GTM_Server_Side_Admin_Settings_Customer_Match::TAB === $tab ) : ?>
-            <p>
-                <?php printf( __( 'Customer Match functionality requires authentication on Stape. Please follow <a href="%s" target="_blank">this guide</a>.', 'gtm-server-side' ), 'https://stape.io/blog/customer-list-google-ads' ); // phpcs:ignore ?>
-            </p>
-        <?php endif; ?>
+		<?php if ( GTM_Server_Side_Admin_Settings_Customer_Match::TAB === $tab ) : ?>
+			<p>
+				<?php printf( __( 'Customer Match functionality requires authentication on Stape. Please follow <a href="%s" target="_blank">this guide</a>.', 'gtm-server-side' ), 'https://stape.io/blog/customer-list-google-ads' ); // phpcs:ignore ?>
+			</p>
+		<?php endif; ?>
 
 		<?php settings_fields( GTM_SERVER_SIDE_ADMIN_GROUP ); ?>
 		<?php do_settings_sections( GTM_SERVER_SIDE_ADMIN_SLUG ); ?>
 
-        <?php if ( GTM_Server_Side_Admin_Settings_Webhooks::TAB === $tab ) : ?>
+		<?php if ( GTM_Server_Side_Admin_Settings_Webhooks::TAB === $tab ) : ?>
 			<table class="form-table" role="presentation">
 				<tbody>
 					<tr>

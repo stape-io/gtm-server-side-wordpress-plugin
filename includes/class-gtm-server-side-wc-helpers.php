@@ -62,6 +62,7 @@ class GTM_Server_Side_WC_Helpers {
 			'item_id'    => esc_attr( $product->get_id() ),
 			'item_sku'   => esc_attr( $product->get_sku() ),
 			'price'      => $this->formatted_price( $product->get_price() ),
+			'imageUrl'   => $this->get_product_image_url( $product ),
 		);
 
 		if ( true === $args['add_variations'] ) {
@@ -460,5 +461,25 @@ class GTM_Server_Side_WC_Helpers {
 		}
 
 		return $states[ $state_code ] ?? '';
+	}
+
+	/**
+	 * Return product image url.
+	 *
+	 * @param  WC_Product $product Product.
+	 * @return string
+	 */
+	private function get_product_image_url( $product ) {
+		$image_id = $product->get_image_id();
+		if ( empty( $image_id ) ) {
+			return '';
+		}
+
+		$image_url = wp_get_attachment_url( $image_id );
+		if ( empty( $image_url ) ) {
+			return '';
+		}
+
+		return $image_url;
 	}
 }

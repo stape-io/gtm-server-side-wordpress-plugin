@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.7.1
 
-**Stable tag:** 2.1.35
+**Stable tag:** 2.1.36
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,10 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+### 2.1.36
+- Added imageUrl field to dataLayer
+- Added header "x-stape-app-version"
 
 ### 2.1.35
 - Fix tab Customer Match

@@ -34,7 +34,8 @@ class GTM_Server_Side_Tracking_Code {
 
 		$this->add_cookie_keeper();
 
-		add_action( 'login_head', array( $this, 'head' ) );
+		// phpcs:ignore Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
+		// add_action( 'login_head', array( $this, 'head' ) );
 		add_action( 'wp_head', array( $this, 'head' ) );
 	}
 
