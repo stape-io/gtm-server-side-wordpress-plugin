@@ -69,6 +69,7 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 
 = 2.1.36 =
 * Added imageUrl field to dataLayer
+* Added header "x-stape-app-version"
 
 = 2.1.35 =
 * Fix tab Customer Match

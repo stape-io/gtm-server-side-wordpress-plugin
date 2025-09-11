@@ -87,6 +87,7 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 ### 2.1.36
 - Added imageUrl field to dataLayer
+- Added header "x-stape-app-version"
 
 ### 2.1.35
 - Fix tab Customer Match

@@ -226,8 +226,9 @@ class GTM_Server_Side_Admin_Ajax {
 			$this->container_url,
 			array(
 				'headers' => array(
-					'cache-control' => 'no-cache',
-					'content-type'  => 'application/json',
+					'cache-control'       => 'no-cache',
+					'content-type'        => 'application/json',
+					'x-stape-app-version' => get_gtm_server_side_version(),
 				),
 				'body'    => wp_json_encode( $body ),
 			)
