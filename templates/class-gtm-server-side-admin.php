@@ -94,7 +94,10 @@ $tab = GTM_Server_Side_Admin_Settings::get_settings_tab(); // phpcs:ignore WordP
 		<?php endif; ?>
 
 		<?php
-		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES === GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_BACKFILL ) ) :
+		if (
+			GTM_Server_Side_Admin_Settings_Customer_Match::TAB === $tab &&
+			GTM_SERVER_SIDE_FIELD_VALUE_YES === GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_CUST_MATCH_BACKFILL )
+		) :
 			submit_button(
 				'',
 				'primary',
