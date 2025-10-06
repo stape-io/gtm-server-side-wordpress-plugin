@@ -60,8 +60,8 @@ class GTM_Server_Side_Admin_Settings {
 	 */
 	public function admin_menu() {
 		add_options_page(
-			__( 'GTM Server Side', 'gtm-server-side' ),
-			__( 'GTM Server Side', 'gtm-server-side' ),
+			__( 'Stape Conversion Tracking', 'gtm-server-side' ),
+			__( 'Stape Conversion Tracking', 'gtm-server-side' ),
 			'manage_options',
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			function() {
