@@ -35,6 +35,9 @@ class GTM_Server_Side_Event_AddToCart {
 		add_filter( 'woocommerce_blocks_product_grid_item_html', array( $this, 'woocommerce_blocks_product_grid_item_html' ), 10, 3 );
 		add_action( 'woocommerce_after_add_to_cart_button', array( $this, 'woocommerce_after_add_to_cart_button' ) );
 		add_filter( 'woocommerce_grouped_product_list_column_quantity', array( $this, 'woocommerce_grouped_product_list_column_quantity' ), 10, 2 );
+
+		add_filter( 'gtm_server_side_before_html_data_attributes', array( $this, 'format_data_attributes' ) );
+		add_filter( 'gtm_server_side_after_html_data_attributes', array( $this, 'attach_data_to_event_select_item' ), 20, 3 );
 	}
 
 	/**
@@ -51,9 +54,10 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		$data             = $this->get_item( $item['data'] );
-		$data             = $this->get_formatted_data_attributes( $data );
+		$data             = apply_filters( 'gtm_server_side_before_html_data_attributes', $data, 'remove_from_cart', 'woocommerce_cart_item_remove_link' );
 		$data['quantity'] = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 1;
-		$attrs            = $this->convert_product_data_to_html_attrs( $data );
+		$data             = $this->convert_product_data_to_html_attrs( $data );
+		$attrs            = apply_filters( 'gtm_server_side_after_html_data_attributes', $data, 'remove_from_cart', 'woocommerce_cart_item_remove_link' );
 		$link             = str_replace( '<a ', '<a ' . join( ' ', $attrs ), $link );
 
 		return $link;
@@ -77,10 +81,11 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		$data             = $this->get_item( $product );
-		$data             = $this->get_formatted_data_attributes( $data );
+		$data             = apply_filters( 'gtm_server_side_before_html_data_attributes', $data, 'add_to_cart', 'woocommerce_loop_add_to_cart_args' );
 		$data['quantity'] = isset( $args['quantity'] ) ? intval( $args['quantity'] ) : 1;
 		$data['index']    = isset( $woocommerce_loop['loop'] ) ? intval( $woocommerce_loop['loop'] ) : 1;
-		$attrs            = $this->convert_product_data_key( $data );
+		$data             = $this->convert_product_data_key( $data );
+		$attrs            = apply_filters( 'gtm_server_side_after_html_data_attributes', $data, 'add_to_cart', 'woocommerce_loop_add_to_cart_args' );
 
 		if ( ! isset( $args['attributes'] ) || ! is_array( $args['attributes'] ) ) {
 			$args['attributes'] = array();
@@ -108,8 +113,9 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		$data  = $this->get_item( $product );
-		$data  = $this->get_formatted_data_attributes( $data );
-		$attrs = $this->convert_product_data_to_html_attrs( $data );
+		$data  = apply_filters( 'gtm_server_side_before_html_data_attributes', $data, 'add_to_cart', 'woocommerce_blocks_product_grid_item_html' );
+		$data  = $this->convert_product_data_to_html_attrs( $data );
+		$attrs = apply_filters( 'gtm_server_side_after_html_data_attributes', $data, 'add_to_cart', 'woocommerce_blocks_product_grid_item_html' );
 		$html  = str_replace( '<li ', '<li ' . join( ' ', $attrs ), $html );
 
 		return $html;
@@ -159,6 +165,80 @@ class GTM_Server_Side_Event_AddToCart {
 	}
 
 	/**
+	 * Formatted data attributes.
+	 *
+	 * @param  array $data Attrs.
+	 * @return array
+	 */
+	public function format_data_attributes( $data ) {
+		if ( isset( $data['imageUrl'] ) ) {
+			$data['image-url'] = $data['imageUrl'];
+			unset( $data['imageUrl'] );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Attach data to event select item.
+	 *
+	 * @param  array  $data Attrs.
+	 * @param  string $type Type.
+	 * @param  string $caller_hook Caller hook.
+	 * @return array
+	 */
+	public function attach_data_to_event_select_item( $data, $type, $caller_hook ) {
+		if ( 'add_to_cart' !== $type ) {
+			return $data;
+		}
+
+		$first_key = false;
+		if ( is_array( $data ) ) {
+			$first_key = array_key_first( $data );
+		}
+
+		if ( false === $first_key ) {
+			return $data;
+		}
+
+		$pagetype       = null;
+		$collection_id  = null;
+		$item_list_name = null;
+
+		if ( is_search() ) {
+			$pagetype = 'search';
+		} elseif ( is_shop() ) {
+			$pagetype = 'shop';
+		} elseif ( is_product_category() ) {
+			$pagetype = 'category';
+		} elseif ( is_product_tag() ) {
+			$pagetype = 'tag';
+		} elseif ( 'woocommerce_blocks_product_grid_item_html' === $caller_hook ) {
+			$pagetype = 'grid';
+		}
+
+		if ( is_product_category() || is_product_tag() ) {
+			$term = get_queried_object();
+			if ( $term instanceof WP_Term ) {
+				$collection_id  = $term->term_id;
+				$item_list_name = $term->name;
+			}
+		}
+
+		if ( is_int( $first_key ) ) {
+			$data[] = 'data-custom_gtm_pagetype="' . esc_attr( $pagetype ) . '"';
+			$data[] = 'data-custom_gtm_collection_id="' . esc_attr( $collection_id ) . '"';
+			$data[] = 'data-custom_gtm_item_list_name="' . esc_attr( $item_list_name ) . '"';
+		} else {
+			$data['data-custom_gtm_pagetype']       = esc_attr( $pagetype );
+			$data['data-custom_gtm_collection_id']  = esc_attr( $collection_id );
+			$data['data-custom_gtm_item_list_name'] = esc_attr( $item_list_name );
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Convert product data key.
 	 *
 	 * @param  array $data Data.
@@ -201,21 +281,5 @@ class GTM_Server_Side_Event_AddToCart {
 		$array['index'] = 1;
 
 		return $array;
-	}
-
-	/**
-	 * Return formatted data attributes.
-	 *
-	 * @param  array $attrs Attrs.
-	 * @return array
-	 */
-	private function get_formatted_data_attributes( $attrs ) {
-
-		if ( isset( $attrs['imageUrl'] ) ) {
-			$attrs['image-url'] = $attrs['imageUrl'];
-			unset( $attrs['imageUrl'] );
-		}
-
-		return $attrs;
 	}
 }

@@ -35,9 +35,11 @@ jQuery( document ).ready(
 					return;
 				}
 
-				pluginGtmServerSide.pushAddToCart(
-					pluginGtmServerSide.removePrefixes( el.dataset )
-				);
+				let gtmData    = pluginGtmServerSide.getGtmItemData( el.dataset );
+				let customData = pluginGtmServerSide.getCustomItemData( el.dataset );
+
+				pluginGtmServerSide.pushAddToCart( gtmData );
+				pluginGtmServerSide.pushSelectItem( gtmData, customData );
 			}
 		);
 
@@ -54,9 +56,11 @@ jQuery( document ).ready(
 					return;
 				}
 
-				pluginGtmServerSide.pushAddToCart(
-					pluginGtmServerSide.removePrefixes( $el.data() )
-				);
+				let gtmData    = pluginGtmServerSide.getGtmItemData( $el.data() );
+				let customData = pluginGtmServerSide.getCustomItemData( $el.data() );
+
+				pluginGtmServerSide.pushAddToCart( gtmData );
+				pluginGtmServerSide.pushSelectItem( gtmData, customData );
 			}
 		);
 
@@ -98,7 +102,7 @@ jQuery( document ).ready(
 				}
 
 				pluginGtmServerSide.removeFromCart(
-					pluginGtmServerSide.removePrefixes( $thisbutton.data() )
+					pluginGtmServerSide.getGtmItemData( $thisbutton.data() )
 				);
 			}
 		);
@@ -117,7 +121,7 @@ jQuery( document ).ready(
 				}
 
 				pluginGtmServerSide.removeFromCart(
-					pluginGtmServerSide.removePrefixes( $el.data() )
+					pluginGtmServerSide.getGtmItemData( $el.data() )
 				);
 			}
 		);
@@ -129,7 +133,7 @@ var pluginGtmServerSide = {
 		var item = this.convertInputsToObject(
 			$elForm.find( '[name^=gtm_]' )
 		);
-		item     = this.removePrefixes( item );
+		item     = this.getGtmItemData( item );
 
 		var $elQty = $elForm.find( '[name=quantity]' );
 		if ( $elQty.length ) {
@@ -143,7 +147,7 @@ var pluginGtmServerSide = {
 		var item = this.convertInputsToObject(
 			$elForm.find( '[name^=gtm_]' )
 		);
-		item     = this.removePrefixes( item );
+		item     = this.getGtmItemData( item );
 
 		var $elQty = $elForm.find( '[name=quantity]' );
 		if ( $elQty.length ) {
@@ -242,7 +246,7 @@ var pluginGtmServerSide = {
 					}
 
 					if ( originalValue < currentValue ) {
-						var item         = $this.removePrefixes( elDataset.dataset );
+						var item         = $this.getGtmItemData( elDataset.dataset );
 						item['quantity'] = currentValue - originalValue;
 
 						$this.pushAddToCart( item );
@@ -253,22 +257,42 @@ var pluginGtmServerSide = {
 	},
 
 	/**
-	 * Remove field prefixes.
+	 * Return gtm custom data.
 	 *
 	 * @param object items List items.
 	 * @returns object
 	 */
-	removePrefixes: function ( items ) {
-		var item = {};
+	getGtmItemData: function ( items ) {
+		return this._getItemData( items, 'gtm_' );
+	},
+
+	/**
+	 * Return gtm custom data.
+	 *
+	 * @param object items List items.
+	 * @returns object
+	 */
+	getCustomItemData: function ( items ) {
+		return this._getItemData( items, 'custom_gtm_' );
+	},
+
+	/**
+	 * Return item data.
+	 *
+	 * @param object items List items.
+	 * @returns object
+	 */
+	_getItemData: function ( items, prefix ) {
+		var result = {};
 		for ( var key in items ) {
-			if ( 0 !== key.indexOf( 'gtm_' ) ) {
+			if ( 0 !== key.indexOf( prefix ) ) {
 				continue;
 			}
 
-			var itemKey     = key.replace( 'gtm_', '' )
-			item[ itemKey ] = items[key];
+			var itemKey       = key.replace( prefix, '' )
+			result[ itemKey ] = items[ key ];
 		}
-		return item;
+		return result;
 	},
 
 	/**
@@ -317,6 +341,39 @@ var pluginGtmServerSide = {
 	 * @param mixed item List items.
 	 */
 	pushAddToCart: function ( item ) {
+		this._pushToDataLayer( item, 'add_to_cart', 'product' )
+	},
+
+	/**
+	 * Push add_to_cart to dataLayer.
+	 *
+	 * @param object item List items.
+	 * @param object custom Custom data.
+	 */
+	pushSelectItem: function ( item, custom ) {
+		if ( custom?.pagetype ) { // phpcs:ignore WordPress.WhiteSpace.OperatorSpacing.NoSpaceBefore, WordPress.WhiteSpace.OperatorSpacing.NoSpaceAfter
+			this._pushToDataLayer(
+				item,
+				'select_item',
+				custom.pagetype,
+				{
+					collection_id:  custom?.collection_id,  // phpcs:ignore WordPress.WhiteSpace.OperatorSpacing.NoSpaceBefore, WordPress.WhiteSpace.OperatorSpacing.NoSpaceAfter
+					item_list_name: custom?.item_list_name, // phpcs:ignore WordPress.WhiteSpace.OperatorSpacing.NoSpaceBefore, WordPress.WhiteSpace.OperatorSpacing.NoSpaceAfter
+				}
+			)
+		}
+	},
+
+	/**
+	 * Push to dataLayer.
+	 *
+	 * @param object originalItem List items.
+	 * @param string event Event name.
+	 * @param string pagetype Page type name.
+	 * @param object customEcommerce Ecommerce data.
+	 */
+	_pushToDataLayer: function ( originalItem, event, pagetype, customEcommerce = {} ) {
+		item = Object.assign( {}, originalItem );
 		if ( item.item_id ) {
 			item = [ item ];
 		}
@@ -332,14 +389,16 @@ var pluginGtmServerSide = {
 			items.push( item_loop );
 		}
 
+		let eventDataEcommerce = {
+			'currency': varGtmServerSide.currency,
+			'value': value.toFixed( 2 ),
+			'items': items,
+		}
+
 		var eventData = {
-			'event':          this.getDataLayerEventName( 'add_to_cart' ),
-			'ecomm_pagetype': 'product',
-			'ecommerce': {
-				'currency': varGtmServerSide.currency,
-				'value': value.toFixed( 2 ),
-				'items': items,
-			},
+			'event':          this.getDataLayerEventName( event ),
+			'ecomm_pagetype': pagetype,
+			'ecommerce': Object.assign( {}, eventDataEcommerce, customEcommerce ),
 		};
 		if ( varGtmServerSide.user_data ) {
 			eventData.user_data = {};
