@@ -180,15 +180,15 @@ class GTM_Server_Side_Handler_Data_Manager_Ingest {
 
 		if ( ! empty( $option_login_cust_id ) ) {
 			$req_destinations['linkedAccount'] = array(
-				'product'   => 'GOOGLE_ADS',
-				'accountId' => $option_login_cust_id,
+				'accountType' => 'GOOGLE_ADS',
+				'accountId'   => $option_login_cust_id,
 			);
 		}
 
 		if ( ! empty( $option_oper_cust_id ) ) {
 			$req_destinations['operatingAccount'] = array(
-				'product'   => 'GOOGLE_ADS',
-				'accountId' => $option_oper_cust_id,
+				'accountType' => 'GOOGLE_ADS',
+				'accountId'   => $option_oper_cust_id,
 			);
 		}
 

@@ -546,32 +546,57 @@ class GTM_Server_Side_Helpers {
 	 */
 	public static function get_request_cookies() {
 		$request_cookies = array(
-			'_fbp'         => filter_input( INPUT_COOKIE, '_fbp', FILTER_DEFAULT ),
-			'_fbc'         => filter_input( INPUT_COOKIE, '_fbc', FILTER_DEFAULT ),
-			'FPGCLAW'      => filter_input( INPUT_COOKIE, 'FPGCLAW', FILTER_DEFAULT ),
-			'_gcl_aw'      => filter_input( INPUT_COOKIE, '_gcl_aw', FILTER_DEFAULT ),
-			'ttclid'       => filter_input( INPUT_COOKIE, 'ttclid', FILTER_DEFAULT ),
-			'_dcid'        => filter_input( INPUT_COOKIE, '_dcid', FILTER_DEFAULT ),
-			'FPID'         => filter_input( INPUT_COOKIE, 'FPID', FILTER_DEFAULT ),
-			'FPLC'         => filter_input( INPUT_COOKIE, 'FPLC', FILTER_DEFAULT ),
-			'_ttp'         => filter_input( INPUT_COOKIE, '_ttp', FILTER_DEFAULT ),
-			'FPGCLGB'      => filter_input( INPUT_COOKIE, 'FPGCLGB', FILTER_DEFAULT ),
-			'li_fat_id'    => filter_input( INPUT_COOKIE, 'li_fat_id', FILTER_DEFAULT ),
-			'taboola_cid'  => filter_input( INPUT_COOKIE, 'taboola_cid', FILTER_DEFAULT ),
-			'outbrain_cid' => filter_input( INPUT_COOKIE, 'outbrain_cid', FILTER_DEFAULT ),
-			'impact_cid'   => filter_input( INPUT_COOKIE, 'impact_cid', FILTER_DEFAULT ),
-			'_epik'        => filter_input( INPUT_COOKIE, '_epik', FILTER_DEFAULT ),
-			'_scid'        => filter_input( INPUT_COOKIE, '_scid', FILTER_DEFAULT ),
-			'_scclid'      => filter_input( INPUT_COOKIE, '_scclid', FILTER_DEFAULT ),
-			'_uetmsclkid'  => filter_input( INPUT_COOKIE, '_uetmsclkid', FILTER_DEFAULT ),
-			'_ga'          => filter_input( INPUT_COOKIE, '_ga', FILTER_DEFAULT ),
+			'_fbp'                       => filter_input( INPUT_COOKIE, '_fbp', FILTER_DEFAULT ),
+			'_fbc'                       => filter_input( INPUT_COOKIE, '_fbc', FILTER_DEFAULT ),
+			'FPGCLAW'                    => filter_input( INPUT_COOKIE, 'FPGCLAW', FILTER_DEFAULT ),
+			'_gcl_aw'                    => filter_input( INPUT_COOKIE, '_gcl_aw', FILTER_DEFAULT ),
+			'ttclid'                     => filter_input( INPUT_COOKIE, 'ttclid', FILTER_DEFAULT ),
+			'_dcid'                      => filter_input( INPUT_COOKIE, '_dcid', FILTER_DEFAULT ),
+			'FPID'                       => filter_input( INPUT_COOKIE, 'FPID', FILTER_DEFAULT ),
+			'FPLC'                       => filter_input( INPUT_COOKIE, 'FPLC', FILTER_DEFAULT ),
+			'_ttp'                       => filter_input( INPUT_COOKIE, '_ttp', FILTER_DEFAULT ),
+			'FPGCLGB'                    => filter_input( INPUT_COOKIE, 'FPGCLGB', FILTER_DEFAULT ),
+			'li_fat_id'                  => filter_input( INPUT_COOKIE, 'li_fat_id', FILTER_DEFAULT ),
+			'taboola_cid'                => filter_input( INPUT_COOKIE, 'taboola_cid', FILTER_DEFAULT ),
+			'outbrain_cid'               => filter_input( INPUT_COOKIE, 'outbrain_cid', FILTER_DEFAULT ),
+			'impact_cid'                 => filter_input( INPUT_COOKIE, 'impact_cid', FILTER_DEFAULT ),
+			'_epik'                      => filter_input( INPUT_COOKIE, '_epik', FILTER_DEFAULT ),
+			'_scid'                      => filter_input( INPUT_COOKIE, '_scid', FILTER_DEFAULT ),
+			'_scclid'                    => filter_input( INPUT_COOKIE, '_scclid', FILTER_DEFAULT ),
+			'_uetmsclkid'                => filter_input( INPUT_COOKIE, '_uetmsclkid', FILTER_DEFAULT ),
+			'_ga'                        => filter_input( INPUT_COOKIE, '_ga', FILTER_DEFAULT ),
+			'euconsent-v2'               => filter_input( INPUT_COOKIE, 'euconsent-v2', FILTER_DEFAULT ),
+			'addtl_consent'              => filter_input( INPUT_COOKIE, 'addtl_consent', FILTER_DEFAULT ),
+			'usprivacy'                  => filter_input( INPUT_COOKIE, 'usprivacy', FILTER_DEFAULT ),
+			'OptanonConsent'             => filter_input( INPUT_COOKIE, 'OptanonConsent', FILTER_DEFAULT ),
+			'CookieConsent'              => filter_input( INPUT_COOKIE, 'CookieConsent', FILTER_DEFAULT ),
+			'didomi_token'               => filter_input( INPUT_COOKIE, 'didomi_token', FILTER_DEFAULT ),
+			'didomi_dcs'                 => filter_input( INPUT_COOKIE, 'didomi_dcs', FILTER_DEFAULT ),
+			'axeptio_cookies'            => filter_input( INPUT_COOKIE, 'axeptio_cookies', FILTER_DEFAULT ),
+			'axeptio_authorized_vendors' => filter_input( INPUT_COOKIE, 'axeptio_authorized_vendors', FILTER_DEFAULT ),
+			'cookieyes-consent'          => filter_input( INPUT_COOKIE, 'cookieyes-consent', FILTER_DEFAULT ),
+			'complianz_consent_status'   => filter_input( INPUT_COOKIE, 'complianz_consent_status', FILTER_DEFAULT ),
+			'borlabs-cookie'             => filter_input( INPUT_COOKIE, 'borlabs-cookie', FILTER_DEFAULT ),
+			'uc_settings'                => filter_input( INPUT_COOKIE, 'uc_settings', FILTER_DEFAULT ),
 		);
 
 		if ( ! empty( $_COOKIE ) ) {
 			$filtered_cookies = array_filter(
 				$_COOKIE,
 				function( $key ) {
-					return preg_match( '/^_ga_.+/', $key );
+					if ( preg_match( '/^_ga_.+/', $key ) ) {
+						return true;
+					}
+
+					if ( 0 === strpos( $key, '_iub_cs-' ) ) {
+						return true;
+					}
+
+					if ( 0 === strpos( $key, 'cmplz_' ) ) {
+						return true;
+					}
+
+					return false;
 				},
 				ARRAY_FILTER_USE_KEY
 			);

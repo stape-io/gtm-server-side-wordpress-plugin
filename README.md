@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.7.1
 
-**Stable tag:** 2.1.38
+**Stable tag:** 2.1.39
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,10 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+### 2.1.39
+- Rename "product" to "accountType"
+- Added some cookies to the purchase webhook list
 
 ### 2.1.38
 - Added "select_item" event
