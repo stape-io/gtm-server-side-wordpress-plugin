@@ -97,6 +97,10 @@ class GTM_Server_Side_Event_Purchase {
 			),
 		);
 
+		if ( GTM_Server_Side_Helpers::is_enable_data_layer_custom_event_name() ) {
+			$data_layer['cart_state'] = GTM_Server_Side_State_Helpers::instance()->get_order_data( $order );
+		}
+
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
 			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order );
 
