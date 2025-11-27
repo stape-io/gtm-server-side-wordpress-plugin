@@ -219,6 +219,12 @@ var pluginGtmServerSide = {
 			}
 		}
 
+		if ( 'yes' === varGtmServerSide.is_custom_event_name ) {
+			this._pushWithStateCartData( eventData );
+
+			return;
+		}
+
 		dataLayer.push( { ecommerce: null } );
 		dataLayer.push( eventData );
 	},
@@ -407,6 +413,12 @@ var pluginGtmServerSide = {
 			}
 		}
 
+		if ( 'add_to_cart' === event && 'yes' === varGtmServerSide.is_custom_event_name ) {
+			this._pushWithStateCartData( eventData );
+
+			return;
+		}
+
 		dataLayer.push( { ecommerce: null } );
 		dataLayer.push( eventData );
 	},
@@ -422,5 +434,34 @@ var pluginGtmServerSide = {
 			return event_name + varGtmServerSide.DATA_LAYER_CUSTOM_EVENT_NAME;
 		}
 		return event_name;
+	},
+
+	/**
+	 * Push dataLayer with state cart data.
+	 *
+	 * @param object eventData eventData object.
+	 * @return void
+	 */
+	_pushWithStateCartData: function( eventData ) {
+		jQuery.post(
+			varGtmServerSide.ajax,
+			{
+				action: 'gtm_server_side_state_cart_data',
+				security: varGtmServerSide.security,
+			},
+			function ( response ) {
+				if ( ! response.success ) {
+					dataLayer.push( { ecommerce: null } );
+					dataLayer.push( eventData );
+
+					return false;
+				}
+
+				eventData['cart_state'] = response.data;
+
+				dataLayer.push( { ecommerce: null } );
+				dataLayer.push( eventData );
+			}
+		);
 	}
 };

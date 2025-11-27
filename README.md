@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.7.1
 
-**Stable tag:** 2.1.39
+**Stable tag:** 2.1.40
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+### 2.1.40
+- Added "cart_state" to DataLayer
 
 ### 2.1.39
 - Rename "product" to "accountType"

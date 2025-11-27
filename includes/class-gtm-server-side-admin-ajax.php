@@ -1,6 +1,6 @@
 <?php
 /**
- * Assets for admin.
+ * Ajax for admin.
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
@@ -10,7 +10,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Assets for admin.
+ * Ajax for admin.
  */
 class GTM_Server_Side_Admin_Ajax {
 	use GTM_Server_Side_Singleton;
