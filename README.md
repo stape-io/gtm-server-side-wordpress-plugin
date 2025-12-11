@@ -4,9 +4,9 @@
 
 **Requires at least:** 5.2.0
 
-**Tested up to:** 6.7.1
+**Tested up to:** 6.9.0
 
-**Stable tag:** 2.1.40
+**Stable tag:** 2.1.41
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.1.41
+- Tested up to WordPress 6.9.0
 
 ### 2.1.40
 - Added "cart_state" to DataLayer
