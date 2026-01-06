@@ -40,10 +40,11 @@ class GTM_Server_Side_Event_Register {
 	/**
 	 * WP login hook.
 	 *
+	 * @param int $user_id User ID.
 	 * @return void
 	 */
-	public function user_register() {
-		GTM_Server_Side_Helpers::set_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
+	public function user_register( $user_id ) {
+		update_user_meta( $user_id, self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
 	}
 
 	/**
@@ -52,7 +53,12 @@ class GTM_Server_Side_Event_Register {
 	 * @return void
 	 */
 	public function wp_footer() {
-		if ( ! GTM_Server_Side_Helpers::exists_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES ) ) {
+		if ( ! is_user_logged_in() ) {
+			return;
+		}
+
+		$user_id = get_current_user_id();
+		if ( get_user_meta( $user_id, self::CHECK_NAME, true ) !== GTM_SERVER_SIDE_FIELD_VALUE_YES ) {
 			return;
 		}
 
@@ -69,6 +75,6 @@ class GTM_Server_Side_Event_Register {
 			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
 		</script>
 		<?php
-		GTM_Server_Side_Helpers::javascript_delete_cookie( self::CHECK_NAME );
+		delete_user_meta( $user_id, self::CHECK_NAME );
 	}
 }

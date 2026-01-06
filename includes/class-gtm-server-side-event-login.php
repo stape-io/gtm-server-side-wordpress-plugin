@@ -42,7 +42,7 @@ class GTM_Server_Side_Event_Login {
 	 * @return void
 	 */
 	public function wp_login() {
-		GTM_Server_Side_Helpers::set_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
+		GTM_Server_Side_Storage_Facade::set( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
 	}
 
 	/**
@@ -51,7 +51,7 @@ class GTM_Server_Side_Event_Login {
 	 * @return void
 	 */
 	public function wp_footer() {
-		if ( ! GTM_Server_Side_Helpers::exists_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES ) ) {
+		if ( ! GTM_Server_Side_Storage_Facade::has_value( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES ) ) {
 			return;
 		}
 
@@ -68,6 +68,6 @@ class GTM_Server_Side_Event_Login {
 			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
 		</script>
 		<?php
-		GTM_Server_Side_Helpers::javascript_delete_cookie( self::CHECK_NAME );
+		GTM_Server_Side_Storage_Facade::delete( self::CHECK_NAME );
 	}
 }

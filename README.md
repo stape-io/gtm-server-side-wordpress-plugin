@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.9.0
 
-**Stable tag:** 2.1.41
+**Stable tag:** 2.1.43
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,12 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.1.43
+- Fixed header warning.
+
+## 2.1.42
+- Fixed "gtm_server_side_state_cart_data" ajax request.
 
 ## 2.1.41
 - Tested up to WordPress 6.9.0

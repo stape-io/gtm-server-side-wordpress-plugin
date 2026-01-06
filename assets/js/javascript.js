@@ -437,12 +437,12 @@ var pluginGtmServerSide = {
 	},
 
 	/**
-	 * Push dataLayer with state cart data.
+	 * Internal helper: actually performs the AJAX request and pushes to the dataLayer.
 	 *
-	 * @param object eventData eventData object.
-	 * @return void
+	 * @param {object} eventData eventData object.
+	 * @return {void}
 	 */
-	_pushWithStateCartData: function( eventData ) {
+	_sendStateCartDataAjax: function( eventData ) {
 		jQuery.post(
 			varGtmServerSide.ajax,
 			{
@@ -450,7 +450,7 @@ var pluginGtmServerSide = {
 				security: varGtmServerSide.security,
 			},
 			function ( response ) {
-				if ( ! response.success ) {
+				if ( ! response || ! response.success ) {
 					dataLayer.push( { ecommerce: null } );
 					dataLayer.push( eventData );
 
@@ -462,6 +462,54 @@ var pluginGtmServerSide = {
 				dataLayer.push( { ecommerce: null } );
 				dataLayer.push( eventData );
 			}
+		);
+	},
+
+	/**
+	 * Push dataLayer with state cart data
+	 *
+	 * @param {object} eventData Event data object.
+	 * @return {void}
+	 */
+	_pushWithStateCartData: function( eventData ) {
+		let self  = this;
+		let fired = false;
+
+		var handler = function( event, xhr, settings ) {
+			if ( fired ) {
+				return;
+			}
+
+			if ( ! settings || ! settings.url ) {
+				return;
+			}
+
+			let url = settings.url;
+
+			if (
+				url.indexOf( 'wc-ajax=add_to_cart' ) !== -1 ||
+				url.indexOf( 'wc-ajax=remove_from_cart' ) !== -1
+			) {
+				fired = true;
+
+				jQuery( document ).off( 'ajaxComplete', handler );
+
+				self._sendStateCartDataAjax( eventData );
+			}
+		};
+
+		jQuery( document ).on( 'ajaxComplete', handler );
+
+		setTimeout(
+			function() {
+				if ( fired ) {
+					return;
+				}
+
+				jQuery( document ).off( 'ajaxComplete', handler );
+				self._sendStateCartDataAjax( eventData );
+			},
+			1500
 		);
 	}
 };

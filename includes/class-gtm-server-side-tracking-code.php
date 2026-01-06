@@ -111,7 +111,7 @@ class GTM_Server_Side_Tracking_Code {
 	private function add_cookie_keeper() {
 		if ( ! GTM_Server_Side_Helpers::is_enable_cookie_keeper() ) {
 			if ( ! empty( $_COOKIE[ GTM_SERVER_SIDE_COOKIE_KEEPER_NAME ] ) ) {
-				GTM_Server_Side_Helpers::delete_cookie( GTM_SERVER_SIDE_COOKIE_KEEPER_NAME );
+				GTM_Server_Side_Cookie_Helper::delete( GTM_SERVER_SIDE_COOKIE_KEEPER_NAME );
 			}
 			return;
 		}
@@ -120,10 +120,10 @@ class GTM_Server_Side_Tracking_Code {
 			return;
 		}
 
-		GTM_Server_Side_Helpers::set_cookie(
+		GTM_Server_Side_Cookie_Helper::set(
+			GTM_SERVER_SIDE_COOKIE_KEEPER_NAME,
+			md5( wp_rand( PHP_INT_MIN, PHP_INT_MAX ) . '|' . filter_input( INPUT_SERVER, 'HTTP_USER_AGENT', FILTER_DEFAULT ) . '|' . time() ),
 			array(
-				'name'    => GTM_SERVER_SIDE_COOKIE_KEEPER_NAME,
-				'value'   => md5( wp_rand( PHP_INT_MIN, PHP_INT_MAX ) . '|' . filter_input( INPUT_SERVER, 'HTTP_USER_AGENT', FILTER_DEFAULT ) . '|' . time() ),
 				'expires' => time() + ( YEAR_IN_SECONDS * 2 ),
 			)
 		);
