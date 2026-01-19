@@ -10,7 +10,7 @@
  * Plugin Name:       Stape Conversion Tracking
  * Plugin URI:        https://wordpress.org/plugins/gtm-server-side/
  * Description:       Enhance conversion tracking by implementing server-side tagging using server Google Tag Manager container. Effortlessly configure data layer events in web GTM, send webhooks, set up custom loader, and extend cookie lifetime.
- * Version:           2.1.41
+ * Version:           2.1.42
  * Author:            Stape
  * Author URI:        https://stape.io
  * License:           GPL-2.0+
@@ -42,6 +42,7 @@ add_action( 'gtm_server_side', array( GTM_Server_Side_Frontend_Ajax::class, 'ins
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Settings::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Ajax::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Assets::class, 'instance' ) );
+add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Customer_Loader_Options_Watcher::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Frontend_Assets::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Tracking_Code::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Tracking_Gtm4wp::class, 'instance' ) );

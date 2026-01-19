@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.9.0
 
-**Stable tag:** 2.1.41
+**Stable tag:** 2.1.42
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.1.42
+- Added customer loader via API.
 
 ## 2.1.41
 - Tested up to WordPress 6.9.0
