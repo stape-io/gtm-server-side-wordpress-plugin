@@ -45,7 +45,10 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	public function head() {
-		if ( GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) {
+		if (
+			GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() &&
+			GTM_SERVER_SIDE_FIELD_VALUE_YES === GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API_ALLOWED )
+		) {
 
 			$this->print_gtm_custom_loader_from_api();
 			return;

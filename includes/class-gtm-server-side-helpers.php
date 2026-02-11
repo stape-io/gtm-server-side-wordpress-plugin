@@ -49,13 +49,6 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_cookie_keeper;
 
 	/**
-	 * Stape analytics support or not.
-	 *
-	 * @var bool
-	 */
-	private static $is_stape_analytics_support;
-
-	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.

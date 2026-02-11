@@ -74,6 +74,8 @@ define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_FINISHED', 'gtm_server_side_cust_ma
 
 // d20260118.
 define( 'GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API', 'gtm_server_side_gtm_custom_loader_from_api' );
+// d20260210.
+define( 'GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API_ALLOWED', 'gtm_server_side_gtm_custom_loader_from_api_allowed' );
 
 
 // Autoload plugin classes.

@@ -87,6 +87,7 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 ## 2.1.42
 - Added customer loader via API.
+- Fixed "gtm_server_side_state_cart_data" ajax request.
 
 ## 2.1.41
 - Tested up to WordPress 6.9.0

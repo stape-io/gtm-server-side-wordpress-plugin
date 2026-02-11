@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * CRON.
  */
-class GTM_Server_Side_Cron_Data_Manager_Ingest {
+class GTM_Server_Side_Data_Manager_Ingest_Cron {
 	use GTM_Server_Side_Singleton;
 
 	const HOOK         = 'gtm_server_side_send_api_data_manager_ingest';
