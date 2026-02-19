@@ -72,6 +72,11 @@ define( 'GTM_SERVER_SIDE_ADMIN_GROUP_CUSTOMER_MATCH', 'gtm-server-side-admin-gro
 define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_DATE', 'gtm_server_side_cust_match_backfill_date' );
 define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_FINISHED', 'gtm_server_side_cust_match_backfill_finished' );
 
+// d20260118.
+define( 'GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API', 'gtm_server_side_gtm_custom_loader_from_api' );
+// d20260210.
+define( 'GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API_ALLOWED', 'gtm_server_side_gtm_custom_loader_from_api_allowed' );
+
 
 // Autoload plugin classes.
 spl_autoload_register(

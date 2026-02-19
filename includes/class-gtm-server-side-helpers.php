@@ -49,13 +49,6 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_cookie_keeper;
 
 	/**
-	 * Stape analytics support or not.
-	 *
-	 * @var bool
-	 */
-	private static $is_stape_analytics_support;
-
-	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
@@ -113,12 +106,38 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Return gtm custom loader from api.
+	 *
+	 * @return string
+	 */
+	public static function get_gtm_custom_loader_from_api() {
+		static $cache = null;
+
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$cache = self::get_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API );
+
+		return $cache;
+	}
+
+	/**
 	 * Check has gtm container identifier or not.
 	 *
 	 * @return bool
 	 */
 	public static function has_gtm_container_identifier() {
 		return ! empty( self::get_raw_gtm_container_identifier() );
+	}
+
+	/**
+	 * Check has gtm custom loader from api or not.
+	 *
+	 * @return bool
+	 */
+	public static function has_gtm_custom_loader_from_api() {
+		return ! empty( self::get_gtm_custom_loader_from_api() );
 	}
 
 	/**

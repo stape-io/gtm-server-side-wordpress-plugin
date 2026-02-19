@@ -32,7 +32,8 @@ register_deactivation_hook( __FILE__, array( GTM_Server_Side_Plugin_Deactivate::
 add_action( 'init', array( GTM_Server_Side_Plugin_Upgrade::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_I18n::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_WC_Order::class, 'instance' ) );
-add_action( 'gtm_server_side', array( GTM_Server_Side_Cron_Data_Manager_Ingest::class, 'instance' ) );
+add_action( 'gtm_server_side', array( GTM_Server_Side_Customer_Loader_Cron::class, 'instance' ) );
+add_action( 'gtm_server_side', array( GTM_Server_Side_Data_Manager_Ingest_Cron::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Purchase::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Processing::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Completed::class, 'instance' ) );
@@ -42,6 +43,7 @@ add_action( 'gtm_server_side', array( GTM_Server_Side_Frontend_Ajax::class, 'ins
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Settings::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Ajax::class, 'instance' ) );
 add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Admin_Assets::class, 'instance' ) );
+add_action( 'gtm_server_side_admin', array( GTM_Server_Side_Customer_Loader_Options_Watcher::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Frontend_Assets::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Tracking_Code::class, 'instance' ) );
 add_action( 'gtm_server_side_frontend', array( GTM_Server_Side_Tracking_Gtm4wp::class, 'instance' ) );

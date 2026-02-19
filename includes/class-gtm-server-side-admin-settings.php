@@ -117,7 +117,7 @@ class GTM_Server_Side_Admin_Settings {
 	 */
 	public function change_option_backfill( $old_value, $new_value ) {
 		if ( GTM_SERVER_SIDE_FIELD_VALUE_YES !== $new_value ) {
-			GTM_Server_Side_Cron_Data_Manager_Ingest::instance()->deactivation();
+			GTM_Server_Side_Data_Manager_Ingest_Cron::instance()->deactivation();
 		}
 	}
 
