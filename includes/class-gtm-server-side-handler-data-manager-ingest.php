@@ -157,7 +157,10 @@ class GTM_Server_Side_Handler_Data_Manager_Ingest {
 			$request_data['audienceMembers'] = $request_audience_members;
 		}
 
-		$request_data['encoding'] = 'HEX';
+		$request_data['encoding']       = 'HEX';
+		$request_data['termsOfService'] = array(
+			'customerMatchTermsOfServiceStatus' => 'ACCEPTED',
+		);
 
 		return $request_data;
 	}
