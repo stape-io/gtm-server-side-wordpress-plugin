@@ -44,6 +44,7 @@ class GTM_Server_Side_Admin_Settings_General {
 					$allows = array(
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE,
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN,
+						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
 					);
 					return in_array( $value, $allows, true ) ? $value : GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE;
@@ -91,6 +92,23 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
 		/**/
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
+			__( 'Load GTM with consent', 'gtm-server-side' ),
+			function() use ( $placement, $field_placement ) {
+				echo '<input
+					type="radio"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT ) . '"
+					class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
+					name="' . esc_attr( $field_placement ) . '"
+					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT, false ) . '
+					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT ) . '">';
+					esc_html_e( 'Select this option if you want GTM not to execute until the visitor consent management platform (CMP) grants ad_storage or analytics_storage consent.', 'gtm-server-side' );
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+		);
+
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
 			__( 'Disable', 'gtm-server-side' ),

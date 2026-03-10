@@ -16,27 +16,23 @@ class GTM_Server_Side_Tracking_Code {
 	use GTM_Server_Side_Singleton;
 
 	/**
-	 * If no script tag is printed.
-	 *
-	 * @var bool
-	 */
-	private $printed_noscript_tag = false;
-
-	/**
 	 * Init.
 	 *
 	 * @return void
 	 */
 	public function init() {
-		if ( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE !== GTM_Server_Side_Helpers::get_option_container_placement() ) {
+		if (
+			! GTM_Server_Side_Helpers::is_enable_placement_code() &&
+			! GTM_Server_Side_Helpers::is_enable_placement_gtm_consent()
+		) {
 			return;
 		}
 
 		$this->add_cookie_keeper();
 
 		// phpcs:ignore Squiz.PHP.CommentedOutCode.Found, Squiz.Commenting.InlineComment.InvalidEndChar
-		// add_action( 'login_head', array( $this, 'head' ) );
-		add_action( 'wp_head', array( $this, 'head' ) );
+		// add_action( 'login_head', array( $this, 'wp_head' ) );
+		add_action( 'wp_head', array( $this, 'wp_head' ) );
 	}
 
 	/**
@@ -44,21 +40,22 @@ class GTM_Server_Side_Tracking_Code {
 	 *
 	 * @return void
 	 */
-	public function head() {
-		if ( GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) {
+	public function wp_head() {
+		if ( GTM_Server_Side_Helpers::is_enable_placement_gtm_consent() ) {
+			$this->print_gtm_consent_loader();
+		}
 
+		if ( GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) {
 			$this->print_gtm_custom_loader_from_api();
 			return;
 		}
 
 		if ( GTM_Server_Side_Helpers::is_enable_cookie_keeper() ) {
-
 			$this->print_cookie_keeper_gtm_code();
 			return;
 		}
 
 		if ( GTM_Server_Side_Helpers::has_gtm_container_identifier() ) {
-
 			$this->print_stape_gtm_code();
 			return;
 		}
@@ -72,9 +69,10 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	private function print_default_gtm_code() {
-		echo "
+		// phpcs:ignore Squiz.Strings.DoubleQuoteUsage.NotRequired
+		echo "\n
 		<!-- Google Tag Manager -->
-		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+		<script" . $this->print_tag_script_attrs() /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ . ">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': 
 		            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 		        '" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . ".js?id='+i+dl;f.parentNode.insertBefore(j,f);
@@ -89,9 +87,10 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	private function print_stape_gtm_code() {
-		echo "
+		// phpcs:ignore Squiz.Strings.DoubleQuoteUsage.NotRequired
+		echo "\n
 		<!-- Google Tag Manager -->
-		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src=\"" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . ".js?\"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
+		<script" . $this->print_tag_script_attrs() /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ . ">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src=\"" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . ".js?\"+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
 		<!-- End Google Tag Manager -->
 		";
 	}
@@ -104,9 +103,18 @@ class GTM_Server_Side_Tracking_Code {
 	private function print_cookie_keeper_gtm_code() {
 		echo '
 		<!-- Google Tag Manager -->
-		<script>!function(){"use strict";function l(e){for(var t=e,r=0,n=document.cookie.split(";");r<n.length;r++){var o=n[r].split("=");if(o[0].trim()===t)return o[1]}}function s(e){return localStorage.getItem(e)}function u(e){return window[e]}function A(e,t){e=document.querySelector(e);return t?null==e?void 0:e.getAttribute(t):null==e?void 0:e.textContent}var e=window,t=document,r="script",n="dataLayer",o="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '",a="",i="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '",c="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . '",g="cookie",v="_sbp",E="",d=!1;try{var d=!!g&&(m=navigator.userAgent,!!(m=new RegExp("Version/([0-9._]+)(.*Mobile)?.*Safari.*").exec(m)))&&16.4<=parseFloat(m[1]),f="stapeUserId"===g,I=d&&!f?function(e,t,r){void 0===t&&(t="");var n={cookie:l,localStorage:s,jsVariable:u,cssSelector:A},t=Array.isArray(t)?t:[t];if(e&&n[e])for(var o=n[e],a=0,i=t;a<i.length;a++){var c=i[a],c=r?o(c,r):o(c);if(c)return c}else console.warn("invalid uid source",e)}(g,v,E):void 0;d=d&&(!!I||f)}catch(e){console.error(e)}var m=e,g=(m[n]=m[n]||[],m[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"}),t.getElementsByTagName(r)[0]),v=I?"&bi="+encodeURIComponent(I):"",E=t.createElement(r),f=(d&&(i=8<i.length?i.replace(/([a-z]{8}$)/,"kp$1"):"kp"+i),!d&&a?a:o);E.async=!0,E.src=f+"/"+i+".js?"+c+v,null!=(e=g.parentNode)&&e.insertBefore(E,g)}();</script>
+		<script' . $this->print_tag_script_attrs() /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ . '>!function(){"use strict";function l(e){for(var t=e,r=0,n=document.cookie.split(";");r<n.length;r++){var o=n[r].split("=");if(o[0].trim()===t)return o[1]}}function s(e){return localStorage.getItem(e)}function u(e){return window[e]}function A(e,t){e=document.querySelector(e);return t?null==e?void 0:e.getAttribute(t):null==e?void 0:e.textContent}var e=window,t=document,r="script",n="dataLayer",o="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '",a="",i="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . '",c="' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . '",g="cookie",v="_sbp",E="",d=!1;try{var d=!!g&&(m=navigator.userAgent,!!(m=new RegExp("Version/([0-9._]+)(.*Mobile)?.*Safari.*").exec(m)))&&16.4<=parseFloat(m[1]),f="stapeUserId"===g,I=d&&!f?function(e,t,r){void 0===t&&(t="");var n={cookie:l,localStorage:s,jsVariable:u,cssSelector:A},t=Array.isArray(t)?t:[t];if(e&&n[e])for(var o=n[e],a=0,i=t;a<i.length;a++){var c=i[a],c=r?o(c,r):o(c);if(c)return c}else console.warn("invalid uid source",e)}(g,v,E):void 0;d=d&&(!!I||f)}catch(e){console.error(e)}var m=e,g=(m[n]=m[n]||[],m[n].push({"gtm.start":(new Date).getTime(),event:"gtm.js"}),t.getElementsByTagName(r)[0]),v=I?"&bi="+encodeURIComponent(I):"",E=t.createElement(r),f=(d&&(i=8<i.length?i.replace(/([a-z]{8}$)/,"kp$1"):"kp"+i),!d&&a?a:o);E.async=!0,E.src=f+"/"+i+".js?"+c+v,null!=(e=g.parentNode)&&e.insertBefore(E,g)}();</script>
 		<!-- End Google Tag Manager -->
 		';
+	}
+
+	/**
+	 * Print GTM Consent Loader Code.
+	 *
+	 * @return void
+	 */
+	private function print_gtm_consent_loader() {
+		echo '<script>!function(){"use strict";for(var t={window:window,gtmVariable:"dataLayer",onConsentGranted:function(){var t,e,n;t="custom-loader",(t=document.getElementById(t))&&"text/plain"===t.type&&(t.type="text/javascript",n=t.cloneNode(!0),null!=(e=t.parentNode))&&e.replaceChild(n,t)}},e=t.window,n=t.gtmVariable,a=t.onConsentGranted,r=((t=e)[n]||(t[n]=[]),!1),o=t[n],d=function(){r||(r=!0,a())},i=function(t){return!(!t||"consent"!==t[0]||-1===["default","update"].indexOf(t[1])||!(t=t[2])||"object"!=typeof t||"granted"!==t.ad_storage&&"granted"!==t.analytics_storage)},u=o.push,l=(o.push=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];var n=u.apply(o,t);return i(t[0])&&d(),n},t[n]),c=l.length-1;0<=c;c--){var p=l[c];if(i(p))return d()}}();</script>';
 	}
 
 	/**
@@ -115,7 +123,23 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	private function print_gtm_custom_loader_from_api() {
-		echo GTM_Server_Side_Helpers::get_gtm_custom_loader_from_api(); /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */
+		$code = GTM_Server_Side_Helpers::get_gtm_custom_loader_from_api();
+		if ( GTM_Server_Side_Helpers::is_enable_placement_gtm_consent() ) {
+			$code = str_replace( '<script', '<script' . $this->print_tag_script_attrs(), $code );
+		}
+		echo $code; /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */
+	}
+
+	/**
+	 * Print tag script attrs.
+	 *
+	 * @return string
+	 */
+	private function print_tag_script_attrs() {
+		if ( GTM_Server_Side_Helpers::is_enable_placement_gtm_consent() ) {
+			return ' type="text/plain" id="custom-loader"';
+		}
+		return '';
 	}
 
 	/**
