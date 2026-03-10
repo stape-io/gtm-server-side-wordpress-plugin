@@ -289,6 +289,24 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Check container placement is code or not.
+	 *
+	 * @return bool
+	 */
+	public static function is_enable_placement_code() {
+		return GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE === self::get_option_container_placement();
+	}
+
+	/**
+	 * Check container placement is GTM Consent or not.
+	 *
+	 * @return bool
+	 */
+	public static function is_enable_placement_gtm_consent() {
+		return GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT === self::get_option_container_placement();
+	}
+
+	/**
 	 * Return cust. match backfill date.
 	 *
 	 * @return string
