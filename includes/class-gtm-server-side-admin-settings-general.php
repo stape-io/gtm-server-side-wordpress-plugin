@@ -44,8 +44,8 @@ class GTM_Server_Side_Admin_Settings_General {
 					$allows = array(
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE,
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN,
-						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
+						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
 					);
 					return in_array( $value, $allows, true ) ? $value : GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE;
 				},
@@ -53,7 +53,7 @@ class GTM_Server_Side_Admin_Settings_General {
 		);
 
 		$field_placement = GTM_SERVER_SIDE_FIELD_PLACEMENT . '-tmp';
-		if ( in_array( $placement, array( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE ), true ) ) {
+		if ( in_array( $placement, array( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT ), true ) ) {
 			$field_placement = GTM_SERVER_SIDE_FIELD_PLACEMENT;
 		}
 
