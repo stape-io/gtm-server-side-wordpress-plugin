@@ -152,6 +152,23 @@ jQuery( document ).ready(
 				jQuery( '#gtm-server-side-btn-submit' ).prop( 'disabled', false ).click();
 			}
 		);
+
+		let idsForSubmitEnabled = [
+			'#gtm_server_side_field_cust_match_container_api_key',
+			'#gtm_server_side_field_cust_match_gads_oper_cust_id',
+			'#gtm_server_side_field_cust_match_gads_login_cust_id',
+			'#gtm_server_side_field_cust_match_consent',
+			'#gtm_server_side_field_cust_match_user_share_email',
+			'#gtm_server_side_field_cust_match_user_share_phone',
+			'#gtm_server_side_field_cust_match_user_share_address',
+		];
+
+		jQuery( idsForSubmitEnabled.join( ',' ) ).on(
+			'change keyup',
+			function() {
+				jQuery( '#gtm-server-side-btn-submit' ).prop( 'disabled', false );
+			}
+		);
 		// ----------
 	}
 );
