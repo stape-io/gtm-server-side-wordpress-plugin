@@ -54,7 +54,7 @@ class GTM_Server_Side_Helpers {
 	 * @param string $option The option ID.
 	 * @param string $default Default value.
 	 *
-	 * @return string|bool
+	 * @return mixed
 	 */
 	public static function get_option( $option, $default = false ) {
 		return get_option( $option, $default );
@@ -118,6 +118,26 @@ class GTM_Server_Side_Helpers {
 		}
 
 		$cache = self::get_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API );
+
+		return $cache;
+	}
+
+	/**
+	 * Return gtm exclude roles.
+	 *
+	 * @return array
+	 */
+	public static function get_gtm_exclude_roles() {
+		static $cache = null;
+
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$cache = self::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES, array() );
+		if ( ! is_array( $cache ) ) {
+			$cache = array();
+		}
 
 		return $cache;
 	}
@@ -304,6 +324,15 @@ class GTM_Server_Side_Helpers {
 	 */
 	public static function is_enable_placement_gtm_consent() {
 		return GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT === self::get_option_container_placement();
+	}
+
+	/**
+	 * Check container placement is GTM Exclude Roles or not.
+	 *
+	 * @return bool
+	 */
+	public static function is_enable_placement_gtm_exclude_roles() {
+		return GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES === self::get_option_container_placement();
 	}
 
 	/**

@@ -66,11 +66,13 @@ jQuery( document ).ready(
 		// Tab "General".
 		pluginGtmServerSide.changeContainerId();
 		pluginGtmServerSide.validateContainerIdByPlacementPlugin(); // tmp.
+		pluginGtmServerSide.changeExcludeGtmUserRoles();
 		jQuery( '.js-gtm_server_side_placement' ).on(
 			'click',
 			function() {
 				pluginGtmServerSide.changeFieldPlacement(); // tmp.
 				pluginGtmServerSide.changeContainerId();
+				pluginGtmServerSide.changeExcludeGtmUserRoles();
 			}
 		);
 		pluginGtmServerSide.changeWebIdentifier();
@@ -233,6 +235,17 @@ var pluginGtmServerSide = {
 			);
 		} else {
 			$elCI.rules( 'remove', 'required' );
+		}
+	},
+
+	changeExcludeGtmUserRoles: function() {
+		let val = jQuery( '.js-gtm_server_side_placement:checked' ).val();
+		let $el = jQuery( '.js-gtm-server-side-gtm-exclude-roles' );
+
+		if ( 'gtm_exclude_roles' === val ) {
+			$el.show();
+		} else {
+			$el.hide();
 		}
 	},
 

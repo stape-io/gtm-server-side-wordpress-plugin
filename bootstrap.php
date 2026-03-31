@@ -26,11 +26,13 @@ define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID', 'gtm_server_side_web_container
 define( 'GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL', 'gtm_server_side_web_container_url' );
 define( 'GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER', 'gtm_server_side_web_identifier' );
 define( 'GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER', 'gtm_server_side_cookie_keeper' );
+define( 'GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES', 'gtm_server_side_gtm_exclude_roles' );
 // Values for field `GTM_SERVER_SIDE_FIELD_PLACEMENT`.
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE', 'code' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN', 'plugin' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE', 'disable' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT', 'gtm_consent' );
+define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES', 'gtm_exclude_roles' );
 
 // Tab: Data Layer.
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE', 'gtm_server_side_data_layer_ecommerce' );
