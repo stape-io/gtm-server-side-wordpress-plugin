@@ -137,6 +137,7 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES,
 			__( 'Exclude GTM for user roles', 'gtm-server-side' ),
 			function() {
+				echo '<div class="gtm-server-side-gtm-exclude-roles">';
 				echo '<input
 					type="checkbox"
 					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES ) . '"
@@ -161,6 +162,7 @@ class GTM_Server_Side_Admin_Settings_General {
 					}
 					echo '</div>';
 				}
+				echo '</div>';
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL

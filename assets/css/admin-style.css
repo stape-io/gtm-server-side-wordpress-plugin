@@ -48,3 +48,8 @@
 		transform: rotate(360deg);
 	}
 }
+
+#gtm-server-side-admin-settings:has( #gtm_server_side_placement-disable:checked ) .gtm-server-side-gtm-exclude-roles {
+	opacity: 0.4;
+	pointer-events: none;
+}
