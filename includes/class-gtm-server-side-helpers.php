@@ -49,6 +49,13 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_cookie_keeper;
 
 	/**
+	 * Enable or disable GTM exclude roles.
+	 *
+	 * @var bool
+	 */
+	private static $is_enable_gtm_exclude_roles;
+
+	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
@@ -123,18 +130,18 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
-	 * Return gtm exclude roles.
+	 * Return gtm exclude list roles.
 	 *
 	 * @return array
 	 */
-	public static function get_gtm_exclude_roles() {
+	public static function get_gtm_exclude_list_roles() {
 		static $cache = null;
 
 		if ( null !== $cache ) {
 			return $cache;
 		}
 
-		$cache = self::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES, array() );
+		$cache = self::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES, array() );
 		if ( ! is_array( $cache ) ) {
 			$cache = array();
 		}
@@ -309,6 +316,19 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Enable or disable GTM exclude roles.
+	 *
+	 * @return string
+	 */
+	public static function is_enable_gtm_exclude_roles() {
+		if ( null === static::$is_enable_gtm_exclude_roles ) {
+			static::$is_enable_gtm_exclude_roles = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES );
+		}
+
+		return static::$is_enable_gtm_exclude_roles;
+	}
+
+	/**
 	 * Check container placement is code or not.
 	 *
 	 * @return bool
@@ -324,15 +344,6 @@ class GTM_Server_Side_Helpers {
 	 */
 	public static function is_enable_placement_gtm_consent() {
 		return GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT === self::get_option_container_placement();
-	}
-
-	/**
-	 * Check container placement is GTM Exclude Roles or not.
-	 *
-	 * @return bool
-	 */
-	public static function is_enable_placement_gtm_exclude_roles() {
-		return GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES === self::get_option_container_placement();
 	}
 
 	/**

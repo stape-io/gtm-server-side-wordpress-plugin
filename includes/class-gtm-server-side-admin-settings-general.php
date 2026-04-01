@@ -46,7 +46,6 @@ class GTM_Server_Side_Admin_Settings_General {
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN,
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
 						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
-						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES,
 					);
 					return in_array( $value, $allows, true ) ? $value : GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE;
 				},
@@ -58,7 +57,6 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE,
 			GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
 			GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
-			GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES,
 		);
 		if ( in_array( $placement, $allowed_placements, true ) ) {
 			$field_placement = GTM_SERVER_SIDE_FIELD_PLACEMENT;
@@ -116,6 +114,58 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
 
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES,
+			array(
+				'sanitize_callback' => function( $value ) {
+					if ( ! is_array( $value ) ) {
+						return array();
+					}
+					return array_map( 'sanitize_text_field', $value );
+				},
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES,
+			__( 'Exclude GTM for user roles', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="checkbox"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES ) . '"
+					class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES ) . '"
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES ), GTM_SERVER_SIDE_FIELD_VALUE_YES, false ) . '
+					value="yes">';
+					esc_html_e( 'Select this option to prevent GTM from loading for specific logged-in user roles.', 'gtm-server-side' );
+
+				if ( function_exists( 'wp_roles' ) ) {
+					$roles         = wp_roles()->roles;
+					$exclude_roles = GTM_Server_Side_Helpers::get_gtm_exclude_list_roles();
+
+					echo '<div class="js-gtm-server-side-gtm-exclude-roles-block">';
+					foreach ( $roles as $role_key => $role ) {
+						echo '<br><label><input
+							type="checkbox"
+							name="' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES ) . '[]"
+							' . checked( in_array( $role_key, $exclude_roles, true ), true, false ) . '
+							value="' . esc_attr( $role_key ) . '"
+						> ' . esc_html( $role['name'] ) . '</label>';
+					}
+					echo '</div>';
+				}
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+		);
+
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE,
 			__( 'Disable', 'gtm-server-side' ),
@@ -128,51 +178,6 @@ class GTM_Server_Side_Admin_Settings_General {
 					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE, false ) . '
 					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE ) . '">';
 					esc_html_e( 'Use this option if you do not want to insert web GTM snippet code onto your website.', 'gtm-server-side' );
-			},
-			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
-		);
-
-		register_setting(
-			GTM_SERVER_SIDE_ADMIN_GROUP,
-			GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES,
-			array(
-				'sanitize_callback' => function( $value ) {
-					if ( ! is_array( $value ) ) {
-						return array();
-					}
-					return array_map( 'sanitize_text_field', $value );
-				},
-			)
-		);
-		add_settings_field(
-			GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES,
-			__( 'Exclude GTM for user roles', 'gtm-server-side' ),
-			function() use ( $placement, $field_placement ) {
-				echo '<input
-					type="radio"
-					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT . '-' . GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES ) . '"
-					class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
-					name="' . esc_attr( $field_placement ) . '"
-					' . checked( $placement, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES, false ) . '
-					value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_EXCLUDE_ROLES ) . '">';
-					esc_html_e( 'Select this option to prevent GTM from loading for specific logged-in user roles.', 'gtm-server-side' );
-
-				if ( function_exists( 'wp_roles' ) ) {
-					$roles         = wp_roles()->roles;
-					$exclude_roles = GTM_Server_Side_Helpers::get_gtm_exclude_roles();
-
-					echo '<div class="js-gtm-server-side-gtm-exclude-roles">';
-					foreach ( $roles as $role_key => $role ) {
-						echo '<br><label><input
-							type="checkbox"
-							name="' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES ) . '[]"
-							' . checked( in_array( $role_key, $exclude_roles, true ), true, false ) . '
-							value="' . esc_attr( $role_key ) . '"
-						> ' . esc_html( $role['name'] ) . '</label>';
-					}
-					echo '</div>';
-				}
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
@@ -259,7 +264,7 @@ class GTM_Server_Side_Admin_Settings_General {
 					type="checkbox"
 					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ) . '"
 					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ) . '"
-					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ), 'yes', false ) . '
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ), GTM_SERVER_SIDE_FIELD_VALUE_YES, false ) . '
 					value="yes">';
 				echo '<br>';
 				printf(

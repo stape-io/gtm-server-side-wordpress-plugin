@@ -66,13 +66,11 @@ jQuery( document ).ready(
 		// Tab "General".
 		pluginGtmServerSide.changeContainerId();
 		pluginGtmServerSide.validateContainerIdByPlacementPlugin(); // tmp.
-		pluginGtmServerSide.changeExcludeGtmUserRoles();
 		jQuery( '.js-gtm_server_side_placement' ).on(
 			'click',
 			function() {
 				pluginGtmServerSide.changeFieldPlacement(); // tmp.
 				pluginGtmServerSide.changeContainerId();
-				pluginGtmServerSide.changeExcludeGtmUserRoles();
 			}
 		);
 		pluginGtmServerSide.changeWebIdentifier();
@@ -81,6 +79,12 @@ jQuery( document ).ready(
 			function() {
 				pluginGtmServerSide.changeWebIdentifier();
 			}
+		);
+
+		pluginGtmServerSide.changeExcludeGtmUserRoles();
+		jQuery( '.js-gtm_server_side_gtm_exclude_roles' ).on(
+			'click',
+			pluginGtmServerSide.changeExcludeGtmUserRoles
 		);
 		// ----------
 
@@ -239,13 +243,13 @@ var pluginGtmServerSide = {
 	},
 
 	changeExcludeGtmUserRoles: function() {
-		let val = jQuery( '.js-gtm_server_side_placement:checked' ).val();
-		let $el = jQuery( '.js-gtm-server-side-gtm-exclude-roles' );
+		let $elRole = jQuery( '.js-gtm_server_side_gtm_exclude_roles' );
+		let $block  = jQuery( '.js-gtm-server-side-gtm-exclude-roles-block' );
 
-		if ( 'gtm_exclude_roles' === val ) {
-			$el.show();
+		if ( $elRole.is( ':checked' ) ) {
+			$block.show();
 		} else {
-			$el.hide();
+			$block.hide();
 		}
 	},
 
