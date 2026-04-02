@@ -21,6 +21,16 @@ jQuery( document ).ready(
 						url: true,
 						webhooksContainerUrl: true,
 					},
+					gtm_server_side_gtm_exclude_roles: {
+						gtmExcludeRoles: true
+					}
+				},
+				errorPlacement: function(error, element) {
+					if ( element.attr( 'name' ) === 'gtm_server_side_gtm_exclude_roles' ) {
+						jQuery( '.js-gtm-server-side-gtm-exclude-roles-message' ).html( error );
+					} else {
+						error.insertAfter( element );
+					}
 				}
 			}
 		);
@@ -61,6 +71,17 @@ jQuery( document ).ready(
 				return isPurchaseChecked || isProcessingChecked || isCompletedChecked || isRefundChecked;
 			},
 			'Select one or more webhooks'
+		);
+		jQuery.validator.addMethod(
+			'gtmExcludeRoles',
+			function( value, element ) {
+				if ( value !== 'yes' ) {
+					return true;
+				}
+
+				return jQuery( '.js-gtm_server_side_gtm_exclude_list_roles:checked' ).length > 0;
+			},
+			'Select one of the roles'
 		);
 
 		// Tab "General".

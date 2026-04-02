@@ -155,6 +155,7 @@ class GTM_Server_Side_Admin_Settings_General {
 					foreach ( $roles as $role_key => $role ) {
 						echo '<br><label><input
 							type="checkbox"
+							class="js-' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES ) . '"
 							name="' . esc_attr( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES ) . '[]"
 							' . checked( in_array( $role_key, $exclude_roles, true ), true, false ) . '
 							value="' . esc_attr( $role_key ) . '"
@@ -162,6 +163,7 @@ class GTM_Server_Side_Admin_Settings_General {
 					}
 					echo '</div>';
 				}
+				echo '<span class="js-gtm-server-side-gtm-exclude-roles-message"></span>';
 				echo '</div>';
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
