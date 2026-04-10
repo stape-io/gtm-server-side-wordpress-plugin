@@ -32,6 +32,9 @@ define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN', 'plugin' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_DISABLE', 'disable' );
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT', 'gtm_consent' );
 
+define( 'GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES', 'gtm_server_side_gtm_exclude_roles' );
+define( 'GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES', 'gtm_server_side_gtm_exclude_list_roles' );
+
 // Tab: Data Layer.
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_ECOMMERCE', 'gtm_server_side_data_layer_ecommerce' );
 define( 'GTM_SERVER_SIDE_FIELD_DATA_LAYER_USER_DATA', 'gtm_server_side_data_layer_user_data' );

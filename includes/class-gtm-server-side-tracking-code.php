@@ -41,6 +41,15 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	public function wp_head() {
+		if ( is_user_logged_in() && GTM_Server_Side_Helpers::is_enable_gtm_exclude_roles() ) {
+			$current_user  = wp_get_current_user();
+			$exclude_roles = GTM_Server_Side_Helpers::get_gtm_exclude_list_roles();
+
+			if ( array_intersect( $exclude_roles, $current_user->roles ) ) {
+				return;
+			}
+		}
+
 		if ( GTM_Server_Side_Helpers::is_enable_placement_gtm_consent() ) {
 			$this->print_gtm_consent_loader();
 		}

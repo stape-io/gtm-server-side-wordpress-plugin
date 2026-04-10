@@ -49,12 +49,19 @@ class GTM_Server_Side_Helpers {
 	private static $is_enable_cookie_keeper;
 
 	/**
+	 * Enable or disable GTM exclude roles.
+	 *
+	 * @var bool
+	 */
+	private static $is_enable_gtm_exclude_roles;
+
+	/**
 	 * Get attr option.
 	 *
 	 * @param string $option The option ID.
 	 * @param string $default Default value.
 	 *
-	 * @return string|bool
+	 * @return mixed
 	 */
 	public static function get_option( $option, $default = false ) {
 		return get_option( $option, $default );
@@ -118,6 +125,26 @@ class GTM_Server_Side_Helpers {
 		}
 
 		$cache = self::get_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API );
+
+		return $cache;
+	}
+
+	/**
+	 * Return gtm exclude list roles.
+	 *
+	 * @return array
+	 */
+	public static function get_gtm_exclude_list_roles() {
+		static $cache = null;
+
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$cache = self::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_LIST_ROLES, array() );
+		if ( ! is_array( $cache ) ) {
+			$cache = array();
+		}
 
 		return $cache;
 	}
@@ -226,7 +253,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable data layer ecommerce.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_data_layer_ecommerce() {
 		if ( null === static::$is_enable_data_layer_ecommerce ) {
@@ -239,7 +266,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable data layer user data.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_data_layer_user_data() {
 		if ( null === static::$is_enable_data_layer_user_data ) {
@@ -252,7 +279,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable data layer custom event name.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_data_layer_custom_event_name() {
 		if ( null === static::$is_enable_data_layer_custom_event_name ) {
@@ -265,7 +292,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable webhook request.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_webhook() {
 		if ( null === static::$is_enable_webhook ) {
@@ -278,7 +305,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable cookie keeper.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_cookie_keeper() {
 		if ( null === static::$is_enable_cookie_keeper ) {
@@ -286,6 +313,19 @@ class GTM_Server_Side_Helpers {
 		}
 
 		return static::$is_enable_cookie_keeper;
+	}
+
+	/**
+	 * Enable or disable GTM exclude roles.
+	 *
+	 * @return bool
+	 */
+	public static function is_enable_gtm_exclude_roles() {
+		if ( null === static::$is_enable_gtm_exclude_roles ) {
+			static::$is_enable_gtm_exclude_roles = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_GTM_EXCLUDE_ROLES );
+		}
+
+		return static::$is_enable_gtm_exclude_roles;
 	}
 
 	/**

@@ -21,6 +21,16 @@ jQuery( document ).ready(
 						url: true,
 						webhooksContainerUrl: true,
 					},
+					gtm_server_side_gtm_exclude_roles: {
+						gtmExcludeRoles: true
+					}
+				},
+				errorPlacement: function(error, element) {
+					if ( element.attr( 'name' ) === 'gtm_server_side_gtm_exclude_roles' ) {
+						jQuery( '.js-gtm-server-side-gtm-exclude-roles-message' ).empty().append( error );
+					} else {
+						error.insertAfter( element );
+					}
 				}
 			}
 		);
@@ -62,6 +72,17 @@ jQuery( document ).ready(
 			},
 			'Select one or more webhooks'
 		);
+		jQuery.validator.addMethod(
+			'gtmExcludeRoles',
+			function( value, element ) {
+				if ( value !== 'yes' ) {
+					return true;
+				}
+
+				return jQuery( '.js-gtm_server_side_gtm_exclude_list_roles:checked' ).length > 0;
+			},
+			'Select at least one role'
+		);
 
 		// Tab "General".
 		pluginGtmServerSide.changeContainerId();
@@ -79,6 +100,12 @@ jQuery( document ).ready(
 			function() {
 				pluginGtmServerSide.changeWebIdentifier();
 			}
+		);
+
+		pluginGtmServerSide.changeExcludeGtmUserRoles();
+		jQuery( '.js-gtm_server_side_gtm_exclude_roles' ).on(
+			'click',
+			pluginGtmServerSide.changeExcludeGtmUserRoles
 		);
 		// ----------
 
@@ -233,6 +260,17 @@ var pluginGtmServerSide = {
 			);
 		} else {
 			$elCI.rules( 'remove', 'required' );
+		}
+	},
+
+	changeExcludeGtmUserRoles: function() {
+		let $elRole = jQuery( '.js-gtm_server_side_gtm_exclude_roles' );
+		let $block  = jQuery( '.js-gtm-server-side-gtm-exclude-roles-block' );
+
+		if ( $elRole.is( ':checked' ) ) {
+			$block.show();
+		} else {
+			$block.hide();
 		}
 	},
 
