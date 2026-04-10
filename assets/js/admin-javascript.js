@@ -27,7 +27,7 @@ jQuery( document ).ready(
 				},
 				errorPlacement: function(error, element) {
 					if ( element.attr( 'name' ) === 'gtm_server_side_gtm_exclude_roles' ) {
-						jQuery( '.js-gtm-server-side-gtm-exclude-roles-message' ).html( error );
+						jQuery( '.js-gtm-server-side-gtm-exclude-roles-message' ).empty().append( error );
 					} else {
 						error.insertAfter( element );
 					}
@@ -81,7 +81,7 @@ jQuery( document ).ready(
 
 				return jQuery( '.js-gtm_server_side_gtm_exclude_list_roles:checked' ).length > 0;
 			},
-			'Select one of the roles'
+			'Select at least one role'
 		);
 
 		// Tab "General".

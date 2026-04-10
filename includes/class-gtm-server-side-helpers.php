@@ -253,7 +253,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable data layer ecommerce.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_data_layer_ecommerce() {
 		if ( null === static::$is_enable_data_layer_ecommerce ) {
@@ -266,7 +266,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable data layer user data.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_data_layer_user_data() {
 		if ( null === static::$is_enable_data_layer_user_data ) {
@@ -279,7 +279,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable data layer custom event name.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_data_layer_custom_event_name() {
 		if ( null === static::$is_enable_data_layer_custom_event_name ) {
@@ -292,7 +292,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable webhook request.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_webhook() {
 		if ( null === static::$is_enable_webhook ) {
@@ -305,7 +305,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable cookie keeper.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_cookie_keeper() {
 		if ( null === static::$is_enable_cookie_keeper ) {
@@ -318,7 +318,7 @@ class GTM_Server_Side_Helpers {
 	/**
 	 * Enable or disable GTM exclude roles.
 	 *
-	 * @return string
+	 * @return bool
 	 */
 	public static function is_enable_gtm_exclude_roles() {
 		if ( null === static::$is_enable_gtm_exclude_roles ) {

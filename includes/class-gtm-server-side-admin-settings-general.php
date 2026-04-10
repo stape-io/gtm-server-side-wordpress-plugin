@@ -129,7 +129,7 @@ class GTM_Server_Side_Admin_Settings_General {
 					if ( ! is_array( $value ) ) {
 						return array();
 					}
-					return array_map( 'sanitize_text_field', $value );
+					return array_map( 'sanitize_key', $value );
 				},
 			)
 		);
