@@ -100,7 +100,15 @@ class GTM_Server_Side_Helpers {
 	 * @return string
 	 */
 	public static function get_raw_gtm_container_identifier() {
-		return self::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
+		static $cache = null;
+
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$cache = self::get_option( GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
+
+		return $cache;
 	}
 
 	/**

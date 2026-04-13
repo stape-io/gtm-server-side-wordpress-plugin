@@ -32,6 +32,16 @@ class GTM_Server_Side_Plugin_Upgrade {
 
 		$this->upgrade_2_0_0();
 		$this->upgrade_2_1_32();
+		( new GTM_Server_Side_Plugin_Upgrade_V2146( $this ) )->upgrade();
+	}
+
+	/**
+	 * Get version.
+	 *
+	 * @return string
+	 */
+	public function get_version() {
+		return $this->version;
 	}
 
 	/**

@@ -6,7 +6,7 @@
 
 **Tested up to:** 6.9.0
 
-**Stable tag:** 2.1.45
+**Stable tag:** 2.1.46
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.1.46
+- Cleaning the container slxxxxzp of data.
 
 ## 2.1.45
 - Exclude GTM from loading for specific WordPress user roles.
