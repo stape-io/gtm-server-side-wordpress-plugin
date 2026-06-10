@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.0.0
 
-**Stable tag:** 2.1.46
+**Stable tag:** 2.1.47
 
 **License:** GPLv2 or later
 
@@ -84,6 +84,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.1.47
+- Fixed "gtm_server_side_order_id" cookie.
 
 ## 2.1.46
 - Tested up to WordPress 7.0.0
