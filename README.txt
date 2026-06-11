@@ -69,6 +69,7 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 
 = 2.1.47 =
 * Fixed "gtm_server_side_order_id" cookie.
+* Added EU endpoint for custom loader.
 
 = 2.1.46 =
 * Tested up to WordPress 7.0.0
