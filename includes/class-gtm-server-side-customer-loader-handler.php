@@ -70,7 +70,6 @@ class GTM_Server_Side_Customer_Loader_Handler {
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
-		$status_code = 404;
 
 		/**
 		 * Retry only on 404.
