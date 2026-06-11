@@ -15,8 +15,7 @@ defined( 'ABSPATH' ) || exit;
 class GTM_Server_Side_Customer_Loader_Cron {
 	use GTM_Server_Side_Singleton;
 
-	const HOOK         = 'gtm_server_side_customer_loader_cron';
-	const ORDERS_LIMIT = 50;
+	const HOOK = 'gtm_server_side_customer_loader_cron';
 
 	const INTERVAL_NAME = '3h';
 	const INTERVAL_TIME = HOUR_IN_SECONDS * 3;
