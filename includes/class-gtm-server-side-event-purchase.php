@@ -63,7 +63,12 @@ class GTM_Server_Side_Event_Purchase {
 		}
 		$this->is_order_created = true;
 
-		update_option( self::TRANSACTION_KEY, $order_id, false );
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			WC()->session->set(
+				self::TRANSACTION_KEY,
+				(int) $order_id
+			);
+		}
 	}
 
 	/**
@@ -78,11 +83,21 @@ class GTM_Server_Side_Event_Purchase {
 		}
 		*/
 
-		$order_id = get_option( self::TRANSACTION_KEY );
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+
+		$order_id = (int) WC()->session->get(
+			self::TRANSACTION_KEY
+		);
+
 		if ( empty( $order_id ) ) {
 			return;
 		}
-		delete_option( self::TRANSACTION_KEY );
+
+		WC()->session->__unset(
+			self::TRANSACTION_KEY
+		);
 
 		$order = wc_get_order( $order_id );
 		if ( ! ( $order instanceof WC_Order ) ) {
