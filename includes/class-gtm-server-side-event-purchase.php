@@ -20,7 +20,14 @@ class GTM_Server_Side_Event_Purchase {
 	 *
 	 * @var string
 	 */
-	const TRANSACTION_KEY = 'gtm_server_side_order_id';
+	const TRANSACTION_KEY = '_gtm_server_side_order_id';
+
+	/**
+	 * Order sent key.
+	 *
+	 * @var string
+	 */
+	const TRANSACTION_SENT_KEY = '_gtm_server_side_order_sent';
 
 	/**
 	 * Check order created or not.
@@ -56,7 +63,12 @@ class GTM_Server_Side_Event_Purchase {
 		}
 		$this->is_order_created = true;
 
-		GTM_Server_Side_Helpers::set_session( self::TRANSACTION_KEY, $order_id );
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			WC()->session->set(
+				self::TRANSACTION_KEY,
+				(int) $order_id
+			);
+		}
 	}
 
 	/**
@@ -71,13 +83,28 @@ class GTM_Server_Side_Event_Purchase {
 		}
 		*/
 
-		$order_id = GTM_Server_Side_Helpers::get_session( self::TRANSACTION_KEY );
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+
+		$order_id = (int) WC()->session->get(
+			self::TRANSACTION_KEY
+		);
+
 		if ( empty( $order_id ) ) {
 			return;
 		}
 
+		WC()->session->__unset(
+			self::TRANSACTION_KEY
+		);
+
 		$order = wc_get_order( $order_id );
 		if ( ! ( $order instanceof WC_Order ) ) {
+			return;
+		}
+
+		if ( $order->meta_exists( self::TRANSACTION_SENT_KEY ) ) {
 			return;
 		}
 
@@ -117,6 +144,8 @@ class GTM_Server_Side_Event_Purchase {
 			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
 		</script>
 		<?php
-		GTM_Server_Side_Helpers::javascript_delete_cookie( self::TRANSACTION_KEY );
+
+		$order->update_meta_data( self::TRANSACTION_SENT_KEY, wp_date( 'Y-m-d H:i:s' ) );
+		$order->save_meta_data();
 	}
 }

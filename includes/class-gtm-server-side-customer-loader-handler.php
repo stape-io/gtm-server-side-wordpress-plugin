@@ -36,12 +36,6 @@ class GTM_Server_Side_Customer_Loader_Handler {
 			return new WP_Error( 'missing_container_url', 'GTM Container URL is missing.' );
 		}
 
-		$url     = sprintf( 'https://api.app.stape.io/api/v2/container/%s/custom-loader', rawurlencode( $gtm_container_identifier ) );
-		$headers = array(
-			'accept'       => '*/*',
-			'content-type' => 'application/json',
-		);
-
 		$data = array(
 			'webGtmId'            => $gtm_container_id,
 			'domain'              => '',
@@ -50,9 +44,11 @@ class GTM_Server_Side_Customer_Loader_Handler {
 		);
 
 		$parsed_url = wp_parse_url( $gtm_container_url );
+
 		if ( ! empty( $parsed_url['host'] ) ) {
 			$data['domain'] = $parsed_url['host'];
 		}
+
 		if ( ! empty( $parsed_url['path'] ) ) {
 			$data['sameOriginPath'] = $parsed_url['path'];
 		}
@@ -62,21 +58,71 @@ class GTM_Server_Side_Customer_Loader_Handler {
 			$data['userIdentifierValue'] = GTM_SERVER_SIDE_COOKIE_KEEPER_NAME;
 		}
 
-		$response_raw = wp_remote_post(
+		$global_url = sprintf(
+			'https://api.app.stape.io/api/v2/container/%s/custom-loader',
+			rawurlencode( $gtm_container_identifier )
+		);
+
+		$response = $this->request_custom_loader( $global_url, $data );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+
+		/**
+		 * Retry only on 404.
+		 */
+		if ( 404 === $status_code ) {
+			$eu_url = sprintf(
+				'https://api.app.eu.stape.io/api/v2/container/%s/custom-loader',
+				rawurlencode( $gtm_container_identifier )
+			);
+
+			$response = $this->request_custom_loader( $eu_url, $data );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+		}
+
+		return $this->parse_response( $response, $data );
+	}
+
+	/**
+	 * Execute custom loader request.
+	 *
+	 * @param string $url  Endpoint URL.
+	 * @param array  $data Request data.
+	 *
+	 * @return array|WP_Error
+	 */
+	private function request_custom_loader( $url, $data ) {
+		return wp_remote_post(
 			$url,
 			array(
-				'headers' => $headers,
+				'headers' => array(
+					'accept'       => '*/*',
+					'content-type' => 'application/json',
+				),
 				'body'    => wp_json_encode( $data ),
 				'timeout' => 20,
 			)
 		);
+	}
 
-		if ( is_wp_error( $response_raw ) ) {
-			return $response_raw;
-		}
-
-		$status_code = (int) wp_remote_retrieve_response_code( $response_raw );
-		$raw_body    = (string) wp_remote_retrieve_body( $response_raw );
+	/**
+	 * Parse API response.
+	 *
+	 * @param array $response Response.
+	 * @param array $request  Original request.
+	 *
+	 * @return mixed
+	 */
+	private function parse_response( $response, $request ) {
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		$raw_body    = (string) wp_remote_retrieve_body( $response );
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			return new WP_Error(
@@ -85,8 +131,7 @@ class GTM_Server_Side_Customer_Loader_Handler {
 				array(
 					'status_code' => $status_code,
 					'body'        => $raw_body,
-					'endpoint'    => $url,
-					'request'     => $data,
+					'request'     => $request,
 				)
 			);
 		}
