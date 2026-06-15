@@ -7,7 +7,7 @@
 jQuery( document ).ready(
 	function () {
 		// Validate.
-		var formGtmServerSide = jQuery( '.js-form-gtm-server-side' ).validate(
+		const formGtmServerSide = jQuery( '.js-form-gtm-server-side' ).validate(
 			{
 				rules: {
 					gtm_server_side_web_container_id: {
@@ -63,10 +63,10 @@ jQuery( document ).ready(
 					return true;
 				}
 
-				var isPurchaseChecked   = jQuery( '#gtm_server_side_webhooks_purchase' ).is( ':checked' );
-				var isProcessingChecked = jQuery( '#gtm_server_side_webhooks_processing' ).is( ':checked' );
-				var isCompletedChecked  = jQuery( '#gtm_server_side_webhooks_completed' ).is( ':checked' );
-				var isRefundChecked     = jQuery( '#gtm_server_side_webhooks_refund' ).is( ':checked' );
+				const isPurchaseChecked   = jQuery( '#gtm_server_side_webhooks_purchase' ).is( ':checked' );
+				const isProcessingChecked = jQuery( '#gtm_server_side_webhooks_processing' ).is( ':checked' );
+				const isCompletedChecked  = jQuery( '#gtm_server_side_webhooks_completed' ).is( ':checked' );
+				const isRefundChecked     = jQuery( '#gtm_server_side_webhooks_refund' ).is( ':checked' );
 
 				return isPurchaseChecked || isProcessingChecked || isCompletedChecked || isRefundChecked;
 			},
@@ -116,6 +116,116 @@ jQuery( document ).ready(
 				pluginGtmServerSide.initTabDataLayer();
 			}
 		);
+
+		// Advanced parameters — activate native WP postbox toggle.
+		const $advParams = jQuery( '#gtm-adv-params' );
+		if ( $advParams.length ) {
+			if ( typeof postboxes !== 'undefined' ) {
+				postboxes.add_postbox_toggles( pagenow );
+				const $sortable = jQuery( '#normal-sortables' );
+				if ( $sortable.sortable( 'instance' ) ) {
+					$sortable.sortable(
+						'option',
+						'cancel',
+						$sortable.sortable( 'option', 'cancel' ) + ', #gtm-adv-params'
+					);
+				}
+			}
+
+			// Meta key reveal on type change.
+			$advParams.on( 'change', '.gtm-point-type-select', function () {
+				const $row = jQuery( this ).closest( '.gtm-data-point-row' );
+				$row.find( '.gtm-meta-key' ).toggleClass( 'is-visible', 'custom' === jQuery( this ).val() );
+				pluginGtmServerSide.updateAdvPreview( jQuery( this ).closest( '.gtm-adv-section' ) );
+			} );
+
+			// Add data point.
+			$advParams.on( 'click', '.gtm-add-data-point', function () {
+				const $section   = jQuery( this ).closest( '.gtm-adv-section' );
+				const $container = $section.find( '.gtm-data-points-container' );
+				const $rows      = $container.find( '.gtm-data-point-row' );
+				const limit      = $section.data( 'points-limit' );
+				const newIndex   = $rows.length;
+				const $addBtn    = $container.find( '.gtm-add-data-point' ).detach();
+				const $clone     = $rows.last().clone();
+
+				$clone.find( '[name]' ).each( function () {
+					jQuery( this ).attr( 'name', jQuery( this ).attr( 'name' ).replace(
+						/\[points\]\[\d+\]/,
+						'[points][' + newIndex + ']'
+					) );
+				} );
+				$clone.find( 'select' ).prop( 'selectedIndex', 0 );
+				$clone.find( 'input[type=text]' ).val( '' );
+				$clone.find( '.gtm-meta-key' ).removeClass( 'is-visible' );
+				$container.append( $clone ).append( $addBtn );
+
+				$section.find( '.gtm-add-data-point' ).prop( 'disabled', $container.find( '.gtm-data-point-row' ).length >= limit );
+				$container.find( '.gtm-remove-point' ).removeClass( 'is-hidden' );
+				$section.find( '.gtm-separator-row' ).removeClass( 'is-hidden' );
+				pluginGtmServerSide.updateAdvPreview( $section );
+			} );
+
+			// Remove data point.
+			$advParams.on( 'click', '.gtm-remove-point', function () {
+				const $section   = jQuery( this ).closest( '.gtm-adv-section' );
+				const $container = $section.find( '.gtm-data-points-container' );
+				if ( $container.find( '.gtm-data-point-row' ).length <= 1 ) {
+					return;
+				}
+				jQuery( this ).closest( '.gtm-data-point-row' ).remove();
+				$container.find( '.gtm-data-point-row' ).each( function ( i ) {
+					jQuery( this ).find( '[name]' ).each( function () {
+						jQuery( this ).attr( 'name', jQuery( this ).attr( 'name' ).replace(
+							/\[points\]\[\d+\]/,
+							'[points][' + i + ']'
+						) );
+					} );
+				} );
+				$section.find( '.gtm-add-data-point' ).prop( 'disabled', false );
+				if ( $container.find( '.gtm-data-point-row' ).length === 1 ) {
+					$container.find( '.gtm-remove-point' ).addClass( 'is-hidden' );
+					$section.find( '.gtm-separator-row' ).addClass( 'is-hidden' );
+				}
+				pluginGtmServerSide.updateAdvPreview( $section );
+			} );
+
+			// Live preview on prefix / separator change.
+			$advParams.on( 'input', '.gtm-prefix-input, .gtm-separator-input', function () {
+				pluginGtmServerSide.updateAdvPreview( jQuery( this ).closest( '.gtm-adv-section' ) );
+			} );
+
+			// Reset to defaults.
+			$advParams.on( 'click', '.gtm-reset-to-defaults', function () {
+				$advParams.find( '.gtm-adv-section' ).each( function () {
+					const $section    = jQuery( this );
+					const $container  = $section.find( '.gtm-data-points-container' );
+					const defaultType = $section.data( 'default-point' );
+
+					$container.find( '.gtm-data-point-row' ).not( ':first' ).remove();
+					const $firstRow = $container.find( '.gtm-data-point-row' );
+					$firstRow.find( '.gtm-point-type-select' ).val( defaultType );
+					$firstRow.find( '.gtm-meta-key' ).val( '' ).removeClass( 'is-visible' );
+					$firstRow.find( '.gtm-remove-point' ).addClass( 'is-hidden' );
+
+					$section.find( '.gtm-prefix-input' ).val( '' );
+					$section.find( '.gtm-separator-input' ).val( '' );
+					$section.find( '.gtm-separator-row' ).addClass( 'is-hidden' );
+					$section.find( '.gtm-add-data-point' ).prop( 'disabled', false );
+
+					pluginGtmServerSide.updateAdvPreview( $section );
+				} );
+			} );
+
+			// Initial state.
+			$advParams.find( '.gtm-adv-section' ).each( function () {
+				const $section   = jQuery( this );
+				const $container = $section.find( '.gtm-data-points-container' );
+				const limit      = $section.data( 'points-limit' );
+				$section.find( '.gtm-add-data-point' ).prop( 'disabled', $container.find( '.gtm-data-point-row' ).length >= limit );
+				pluginGtmServerSide.updateAdvPreview( $section );
+			} );
+		}
 		// ----------
 
 		// Tab "Webhooks".
@@ -132,7 +242,7 @@ jQuery( document ).ready(
 				e.preventDefault();
 
 				formGtmServerSide.element( "#gtm_server_side_webhooks_container_url" );
-				var $elMessage = jQuery( '.js-ajax-message' );
+				const $elMessage = jQuery( '.js-ajax-message' );
 				$elMessage.html( '<i>' + $elMessage.data( 'message-loading' ) + '</i>' );
 
 				jQuery.post(
@@ -160,8 +270,8 @@ jQuery( document ).ready(
 			pluginGtmServerSide.initTabCustomerMatch
 		);
 
-		let $backfill         = jQuery( '#gtm_server_side_field_cust_match_backfill' );
-		let isBackfillChecked = $backfill.is( ':checked' );
+		const $backfill         = jQuery( '#gtm_server_side_field_cust_match_backfill' );
+		const isBackfillChecked = $backfill.is( ':checked' );
 		$backfill.on(
 			'click',
 			function() {
@@ -180,7 +290,7 @@ jQuery( document ).ready(
 			}
 		);
 
-		let idsForSubmitEnabled = [
+		const idsForSubmitEnabled = [
 			'#gtm_server_side_field_cust_match_container_api_key',
 			'#gtm_server_side_field_cust_match_gads_oper_cust_id',
 			'#gtm_server_side_field_cust_match_gads_login_cust_id',
@@ -200,9 +310,9 @@ jQuery( document ).ready(
 	}
 );
 
-var pluginGtmServerSide = {
+const pluginGtmServerSide = {
 	initTabDataLayer: function() {
-		var $elUserData = jQuery( '#gtm_server_side_data_layer_user_data' );
+		const $elUserData = jQuery( '#gtm_server_side_data_layer_user_data' );
 		if ( false === jQuery( '#gtm_server_side_data_layer_ecommerce' ).is( ':checked' ) ) {
 			$elUserData
 				.prop( 'checked', false )
@@ -213,10 +323,10 @@ var pluginGtmServerSide = {
 	},
 
 	initTabWebhooks: function() {
-		var $elContainerUrl = jQuery( '#gtm_server_side_webhooks_container_url' );
-		var $elPurchase     = jQuery( '#gtm_server_side_webhooks_purchase' );
-		var $elRefund       = jQuery( '#gtm_server_side_webhooks_refund' );
-		var $btnTest        = jQuery( '.js-send-test-webhooks' );
+		const $elContainerUrl = jQuery( '#gtm_server_side_webhooks_container_url' );
+		const $elPurchase     = jQuery( '#gtm_server_side_webhooks_purchase' );
+		const $elRefund       = jQuery( '#gtm_server_side_webhooks_refund' );
+		const $btnTest        = jQuery( '.js-send-test-webhooks' );
 
 		if ( false === jQuery( '#gtm_server_side_webhooks_enable' ).is( ':checked' ) ) {
 			$elContainerUrl.prop( 'disabled', true );
@@ -234,9 +344,9 @@ var pluginGtmServerSide = {
 	},
 
 	initTabCustomerMatch: function() {
-		let isShareEmailChecked = jQuery( '#gtm_server_side_field_cust_match_user_share_email' ).is( ':checked' );
-		let isSharePhoneChecked = jQuery( '#gtm_server_side_field_cust_match_user_share_phone' ).is( ':checked' );
-		let $shareAddress       = jQuery( '#gtm_server_side_field_cust_match_user_share_address' );
+		const isShareEmailChecked = jQuery( '#gtm_server_side_field_cust_match_user_share_email' ).is( ':checked' );
+		const isSharePhoneChecked = jQuery( '#gtm_server_side_field_cust_match_user_share_phone' ).is( ':checked' );
+		const $shareAddress       = jQuery( '#gtm_server_side_field_cust_match_user_share_address' );
 
 		if ( isShareEmailChecked && isSharePhoneChecked ) {
 			$shareAddress.prop( 'disabled', false );
@@ -248,8 +358,8 @@ var pluginGtmServerSide = {
 	},
 
 	changeContainerId: function() {
-		var val   = jQuery( '.js-gtm_server_side_placement:checked' ).val();
-		var $elCI = jQuery( '#gtm_server_side_web_container_id' );
+		const val   = jQuery( '.js-gtm_server_side_placement:checked' ).val();
+		const $elCI = jQuery( '#gtm_server_side_web_container_id' );
 
 		if ( [ 'code', 'plugin' ].includes( val ) ) {
 			$elCI.rules(
@@ -264,8 +374,8 @@ var pluginGtmServerSide = {
 	},
 
 	changeExcludeGtmUserRoles: function() {
-		let $elRole = jQuery( '.js-gtm_server_side_gtm_exclude_roles' );
-		let $block  = jQuery( '.js-gtm-server-side-gtm-exclude-roles-block' );
+		const $elRole = jQuery( '.js-gtm_server_side_gtm_exclude_roles' );
+		const $block  = jQuery( '.js-gtm-server-side-gtm-exclude-roles-block' );
 
 		if ( $elRole.is( ':checked' ) ) {
 			$block.show();
@@ -275,7 +385,7 @@ var pluginGtmServerSide = {
 	},
 
 	changeWebIdentifier: function() {
-		var $elWebIdentifier = jQuery( '#gtm_server_side_web_identifier' );
+		const $elWebIdentifier = jQuery( '#gtm_server_side_web_identifier' );
 		if ( 0 === $elWebIdentifier.length ) {
 			return;
 		}
@@ -294,12 +404,12 @@ var pluginGtmServerSide = {
 	},
 
 	changeFieldPlacement: function() {
-		var $placementPlugin = jQuery( 'input[type=hidden]#gtm_server_side_placement-plugin' );
+		const $placementPlugin = jQuery( 'input[type=hidden]#gtm_server_side_placement-plugin' );
 		if ( ! $placementPlugin.length ) {
 			return;
 		}
 
-		var name = 'gtm_server_side_placement';
+		const name = 'gtm_server_side_placement';
 		$placementPlugin.attr( 'name', name + '-tmp' );
 
 		jQuery( '.js-gtm_server_side_placement' ).each(
@@ -310,7 +420,7 @@ var pluginGtmServerSide = {
 	},
 
 	validateContainerIdByPlacementPlugin: function() {
-		var $placementPlugin = jQuery( 'input[type=hidden]#gtm_server_side_placement-plugin' );
+		const $placementPlugin = jQuery( 'input[type=hidden]#gtm_server_side_placement-plugin' );
 		if ( ! $placementPlugin.length ) {
 			return;
 		}
@@ -323,5 +433,39 @@ var pluginGtmServerSide = {
 				}
 			);
 		}
+	},
+
+	/**
+	 * Recompute and display the Result preview for a builder or source section.
+	 *
+	 * @param {jQuery} $section The .gtm-adv-section element.
+	 */
+	updateAdvPreview: function( $section ) {
+		const $preview = $section.find( '.gtm-result-preview' );
+		if ( ! $preview.length ) {
+			return;
+		}
+
+		const exampleValues = {
+			product_id:   '1530',
+			variation_id: '1602',
+			sku:          'C33S020636',
+			gtin:         '12345678',
+			custom:       'customValue',
+		};
+
+		const prefix    = $section.find( '.gtm-prefix-input' ).val() || '';
+		const separator = $section.find( '.gtm-separator-input' ).val() || '';
+		const parts     = [];
+
+		$section.find( '.gtm-point-type-select' ).each( function() {
+			const type  = jQuery( this ).val();
+			const value = exampleValues[ type ] || '';
+			if ( value !== '' ) {
+				parts.push( value );
+			}
+		} );
+
+		$preview.text( prefix + parts.join( separator ) || '\u2014' );
 	},
 };

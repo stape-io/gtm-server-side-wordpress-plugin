@@ -19,6 +19,7 @@ define( 'GTM_SERVER_SIDE_COOKIE_KEEPER_NAME', '_sbp' );
 define( 'GTM_SERVER_SIDE_DATA_LAYER_CUSTOM_EVENT_NAME', '_stape' );
 
 define( 'GTM_SERVER_SIDE_FIELD_VERSION', 'gtm_server_side_version' );
+define( 'GTM_SERVER_SIDE_TRANSLATION_DOMAIN', 'gtm-server-side' );
 
 // Tab: General.
 define( 'GTM_SERVER_SIDE_FIELD_PLACEMENT', 'gtm_server_side_placement' );
@@ -78,6 +79,9 @@ define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_FINISHED', 'gtm_server_side_cust_ma
 
 // d20260118.
 define( 'GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API', 'gtm_server_side_gtm_custom_loader_from_api' );
+
+// Tab: Data Layer — Advanced parameters.
+define( 'GTM_SERVER_SIDE_FIELD_ADV', 'gtm_server_side_adv' );
 
 
 // Autoload plugin classes.

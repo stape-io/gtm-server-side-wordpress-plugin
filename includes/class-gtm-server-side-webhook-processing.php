@@ -52,7 +52,7 @@ class GTM_Server_Side_Webhook_Processing {
 			'event'     => 'order_paid',
 			'cart_hash' => $order->get_cart_hash(),
 			'ecommerce' => array(
-				'transaction_id'  => esc_attr( $order->get_order_number() ),
+				'transaction_id'  => esc_attr( GTM_Server_Side_Advanced_Params::instance()->resolve_transaction_id( $order ) ),
 				'affiliation'     => '',
 				'value'           => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total() ),
 				'tax'             => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $order->get_total_tax() ),
