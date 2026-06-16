@@ -22,7 +22,7 @@ class GTM_Server_Side_Advanced_Params {
 
 	private const POINT_TYPE_NONE         = 'none';
 	private const POINT_TYPE_PRODUCT_ID   = 'product_id';
-	private const POINT_TYPE_VARIATION_ID = 'variation_id';
+	private const POINT_TYPE_PARENT_ID    = 'parent_id';
 	private const POINT_TYPE_SKU          = 'sku';
 	private const POINT_TYPE_GTIN         = 'gtin';
 	private const POINT_TYPE_ORDER_NUMBER = 'order_number';
@@ -143,12 +143,11 @@ class GTM_Server_Side_Advanced_Params {
 
 	/**
 	 * Resolve item_brand for a product using the advanced settings.
-	 * The filter takes priority over the UI setting.
 	 *
-	 * @param  int $product_id Product id.
+	 * @param  WC_Product $product Product.
 	 * @return string
 	 */
-	public function resolve_item_brand( $product_id ) {
+	public function resolve_item_brand( $product ) {
 		$config = $this->get_config_value( self::ITEM_BRAND );
 		$points = isset( $config['points'] ) ? $config['points'] : [];
 		$point  = isset( $points[0] ) ? $points[0] : [ 'type' => self::POINT_TYPE_NONE ];
@@ -158,12 +157,14 @@ class GTM_Server_Side_Advanced_Params {
 			return '';
 		}
 
+		$lookup_id = 'variation' === $product->get_type() ? $product->get_parent_id() : $product->get_id();
+
 		if ( self::POINT_TYPE_CUSTOM === $type ) {
 			$meta_key = isset( $point['meta_key'] ) ? $point['meta_key'] : '';
-			return '' !== $meta_key ? (string) get_post_meta( $product_id, $meta_key, true ) : '';
+			return '' !== $meta_key ? (string) get_post_meta( $lookup_id, $meta_key, true ) : '';
 		}
 
-		return $this->get_brand_from_taxonomy( $product_id, $type );
+		return $this->get_brand_from_taxonomy( $lookup_id, $type );
 	}
 
 	/**
@@ -184,7 +185,7 @@ class GTM_Server_Side_Advanced_Params {
 
 		if ( self::POINT_TYPE_CUSTOM === $type ) {
 			$meta_key = isset( $point['meta_key'] ) ? $point['meta_key'] : '';
-			return '' !== $meta_key ? (string) get_post_meta( $order->get_id(), $meta_key, true ) : '';
+			return '' !== $meta_key ? (string) $order->get_meta( $meta_key, true ) : '';
 		}
 
 		return $order->get_order_number();
@@ -202,14 +203,10 @@ class GTM_Server_Side_Advanced_Params {
 
 		switch ( $type ) {
 			case self::POINT_TYPE_PRODUCT_ID:
-				if ( 'variation' === $product->get_type() ) {
-					return $product->get_parent_id() > 0 ? (string) $product->get_parent_id() : '';
-				}
-
 				return (string) $product->get_id();
 
-			case self::POINT_TYPE_VARIATION_ID:
-				return 'variation' === $product->get_type() ? (string) $product->get_id() : '';
+			case self::POINT_TYPE_PARENT_ID:
+				return 'variation' === $product->get_type() ? (string) $product->get_parent_id() : '';
 
 			case self::POINT_TYPE_SKU:
 				return (string) $product->get_sku();
@@ -235,7 +232,9 @@ class GTM_Server_Side_Advanced_Params {
 		$fields_config = $this->get_fields_config();
 		?>
 		<p class="description gtm-adv-note">
-			<?php esc_html_e( 'Choose what feeds each parameter. Default match current behavior.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>
+			<?php esc_html_e( 'Choose what value goes into each field so it matches the key your ad catalog uses.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>
+			<br>
+			<?php esc_html_e( 'Defaults match the current behaviour, nothing changes unless you edit a field.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>
 		</p>
 		<div class="gtm-adv-grid">
 		<?php
@@ -335,8 +334,7 @@ class GTM_Server_Side_Advanced_Params {
 		$gtin_available = method_exists( 'WC_Product', 'get_global_unique_id' );
 		$id_sku_points  = array_values( array_filter( [
 			self::POINT_TYPE_PRODUCT_ID,
-			self::POINT_TYPE_VARIATION_ID,
-			// self::POINT_TYPE_PARENT_ID,
+			self::POINT_TYPE_PARENT_ID,
 			self::POINT_TYPE_SKU,
 			$gtin_available ? self::POINT_TYPE_GTIN : null,
 			self::POINT_TYPE_CUSTOM,
@@ -384,13 +382,12 @@ class GTM_Server_Side_Advanced_Params {
 			[
 				self::POINT_TYPE_NONE           => 'None',
 				self::POINT_TYPE_PRODUCT_ID     => 'Product ID',
-				self::POINT_TYPE_VARIATION_ID   => 'Variation ID',
-				// self::POINT_TYPE_PARENT_ID      => 'Parent ID',
+				self::POINT_TYPE_PARENT_ID      => 'Parent ID',
 				self::POINT_TYPE_SKU            => 'SKU',
 				self::POINT_TYPE_GTIN           => 'GTIN',
 				self::POINT_TYPE_ORDER_NUMBER   => 'Order Number',
 				self::POINT_TYPE_ORDER_ID       => 'Order ID',
-				self::POINT_TYPE_CUSTOM         => 'Custom field (meta)',
+				self::POINT_TYPE_CUSTOM         => 'Custom field',
 			],
 			$this->get_brand_taxonomies()
 		);
@@ -462,7 +459,7 @@ class GTM_Server_Side_Advanced_Params {
 								<input type="text"
 									name="<?php echo esc_attr( $input_prefix ); ?>[points][<?php echo (int) $index; ?>][meta_key]"
 									value="<?php echo esc_attr( $meta_key_val ); ?>"
-									placeholder="<?php esc_attr_e( 'Meta key', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>"
+									placeholder="<?php esc_attr_e( 'Custom field key', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>"
 									class="gtm-meta-key<?php echo self::POINT_TYPE_CUSTOM === $type ? ' is-visible' : ''; ?>">
 								<?php if ( $is_multi ) : ?>
 									<button type="button" class="gtm-remove-point button-link<?php echo ! $has_multi ? ' is-hidden' : ''; ?>" aria-label="<?php esc_attr_e( 'Remove', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>">&times;</button>
@@ -514,6 +511,6 @@ class GTM_Server_Side_Advanced_Params {
 			return '';
 		}
 
-		return $terms[0]->slug;
+		return $terms[0]->name;
 	}
 }

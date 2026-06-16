@@ -52,6 +52,7 @@ class GTM_Server_Side_State_Helpers {
 
 		$result = array();
 		$cart   = WC()->cart->get_cart();
+		$adv    = GTM_Server_Side_Advanced_Params::instance();
 		foreach ( $cart as $product_loop ) {
 			$product = $product_loop['data'];
 
@@ -61,8 +62,8 @@ class GTM_Server_Side_State_Helpers {
 
 			$product_data = array(
 				'item_variant'     => isset( $product_loop['variation_id'] ) && $product_loop['variation_id'] ? esc_attr( $product_loop['variation_id'] ) : '',
-				'item_id'          => esc_attr( $product->get_id() ),
-				'item_sku'         => esc_attr( $product->get_sku() ),
+				'item_id'          => esc_attr( $adv->resolve_item_id( $product ) ),
+				'item_sku'         => esc_attr( $adv->resolve_item_sku( $product ) ),
 				'item_name'        => esc_attr( $product->get_name() ),
 				'quantity'         => (int) $product_loop['quantity'],
 				'line_total_price' => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $product_loop['line_total'] ),
@@ -109,6 +110,7 @@ class GTM_Server_Side_State_Helpers {
 		}
 
 		$result = array();
+		$adv    = GTM_Server_Side_Advanced_Params::instance();
 		foreach ( $order->get_items() as $item ) {
 			if ( ! ( $item instanceof WC_Order_Item_Product ) ) {
 				continue;
@@ -123,8 +125,8 @@ class GTM_Server_Side_State_Helpers {
 
 			$product_data = array(
 				'item_variant'     => $variation_id ? esc_attr( $variation_id ) : '',
-				'item_id'          => esc_attr( $product->get_id() ),
-				'item_sku'         => esc_attr( $product->get_sku() ),
+				'item_id'          => esc_attr( $adv->resolve_item_id( $product ) ),
+				'item_sku'         => esc_attr( $adv->resolve_item_sku( $product ) ),
 				'item_name'        => esc_attr( $product->get_name() ),
 				'quantity'         => (int) $item->get_quantity(),
 				'line_total_price' => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $item->get_total() ),
