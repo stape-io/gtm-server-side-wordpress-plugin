@@ -447,8 +447,8 @@ const pluginGtmServerSide = {
 		}
 
 		const exampleValues = {
-			product_id:   '1530',
-			variation_id: '1602',
+			parent_id:    '1530',
+			product_id:   '1602',
 			sku:          'C33S020636',
 			gtin:         '12345678',
 			custom:       'customValue',
