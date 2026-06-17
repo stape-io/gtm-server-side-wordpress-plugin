@@ -100,8 +100,9 @@ class GTM_Server_Side_Advanced_Params {
 			return (string) $product->get_id();
 		}
 
-		$parts = [];
-		foreach ( $config['points'] as $point ) {
+		$parts  = [];
+		$points = isset( $config['points'] ) && is_array( $config['points'] ) ? $config['points'] : [];
+		foreach ( $points as $point ) {
 			$value = $this->resolve_product_point( $product, $point );
 			if ( '' !== $value ) {
 				$parts[] = $value;
@@ -127,8 +128,9 @@ class GTM_Server_Side_Advanced_Params {
 			return (string) $product->get_sku();
 		}
 
-		$parts = [];
-		foreach ( $config['points'] as $point ) {
+		$parts  = [];
+		$points = isset( $config['points'] ) && is_array( $config['points'] ) ? $config['points'] : [];
+		foreach ( $points as $point ) {
 			$value = $this->resolve_product_point( $product, $point );
 			if ( '' !== $value ) {
 				$parts[] = $value;
