@@ -108,7 +108,7 @@ class GTM_Server_Side_Admin_Settings_Data_Layer {
 		wp_enqueue_script( 'postbox' );
 		add_meta_box(
 			'gtm-adv-params',
-			__( 'Advanced parameters', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
+			__( 'Field mapping', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ),
 			[ GTM_Server_Side_Advanced_Params::instance(), 'render_metabox' ],
 			'settings_page_' . GTM_SERVER_SIDE_ADMIN_SLUG,
 			'normal',
