@@ -75,6 +75,14 @@ $tab = GTM_Server_Side_Admin_Settings::get_settings_tab(); // phpcs:ignore WordP
 		<?php settings_fields( GTM_SERVER_SIDE_ADMIN_GROUP ); ?>
 		<?php do_settings_sections( GTM_SERVER_SIDE_ADMIN_SLUG ); ?>
 
+		<?php if ( 'data-layer' === $tab ) : ?>
+			<?php wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce' ); ?>
+			<?php wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce' ); ?>
+			<div class="metabox-holder">
+				<?php do_meta_boxes( 'settings_page_' . GTM_SERVER_SIDE_ADMIN_SLUG, 'normal', null ); ?>
+			</div>
+		<?php endif; ?>
+
 		<?php if ( GTM_Server_Side_Admin_Settings_Webhooks::TAB === $tab ) : ?>
 			<table class="form-table" role="presentation">
 				<tbody>

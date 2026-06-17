@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.0.0
 
-**Stable tag:** 2.1.48
+**Stable tag:** 2.2.0
 
 **License:** GPLv2 or later
 
@@ -27,6 +27,7 @@ The **GTM Server Side** plugin by [stape.io](https://stape.io) is the easiest wa
 - Adds e-commerce Data Layer events.
 - Adds user data to Data Layer events.
 - Sends webhooks.
+- Provides the possibility to manage dynamic generation of data layer fields.
 
 ### Benefits
 
@@ -84,6 +85,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.2.0
+- Introduction of Dynamic Data Layer configuration.
 
 ## 2.1.48
 - Fixed purchase event.

@@ -56,11 +56,12 @@ class GTM_Server_Side_WC_Helpers {
 			)
 		);
 
+		$advanced_parameters = GTM_Server_Side_Advanced_Params::instance();
 		$result = array(
 			'item_name'  => esc_attr( $product->get_name() ),
-			'item_brand' => esc_attr( $this->get_product_brand( $product->get_id() ) ),
-			'item_id'    => esc_attr( $product->get_id() ),
-			'item_sku'   => esc_attr( $product->get_sku() ),
+			'item_brand' => $advanced_parameters->resolve_item_brand( $product ),
+			'item_id'    => esc_attr( $advanced_parameters->resolve_item_id( $product ) ),
+			'item_sku'   => esc_attr( $advanced_parameters->resolve_item_sku( $product ) ),
 			'price'      => $this->formatted_price( $product->get_price() ),
 			'imageUrl'   => $this->get_product_image_url( $product ),
 		);
