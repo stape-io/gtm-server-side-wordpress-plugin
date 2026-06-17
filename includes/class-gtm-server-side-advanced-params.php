@@ -232,9 +232,7 @@ class GTM_Server_Side_Advanced_Params {
 		$fields_config = $this->get_fields_config();
 		?>
 		<p class="description gtm-adv-note">
-			<?php esc_html_e( 'Choose what value goes into each field so it matches the key your ad catalog uses.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>
-			<br>
-			<?php esc_html_e( 'Defaults match the current behaviour, nothing changes unless you edit a field.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>
+			<?php esc_html_e( 'Choose what value goes into each field so it matches the key your ad catalog uses. Defaults match the current behaviour, nothing changes unless you edit a field. These settings apply to both your data layer and webhooks.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN ); ?>
 		</p>
 		<div class="gtm-adv-grid">
 		<?php

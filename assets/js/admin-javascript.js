@@ -130,6 +130,18 @@ jQuery( document ).ready(
 						$sortable.sortable( 'option', 'cancel' ) + ', #gtm-adv-params'
 					);
 				}
+
+				// Collapse by default once, then keep user-driven state.
+				if ( typeof getUserSetting === 'function' && typeof setUserSetting === 'function' ) {
+					const wasDefaultApplied = getUserSetting( 'gtm_adv_params_default_closed' );
+					if ( ! wasDefaultApplied ) {
+						$advParams.addClass( 'closed' );
+						postboxes.save_state( pagenow );
+						setUserSetting( 'gtm_adv_params_default_closed', '1' );
+					}
+				} else {
+					$advParams.addClass( 'closed' );
+				}
 			}
 
 			// Meta key reveal on type change.

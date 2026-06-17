@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.0.0
-Stable tag: 2.1.48
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,7 @@ GTM Server Side plugin by stape.io features:
 * Adds e-commerce Data Layer events.
 * Adds user data to Data Layer events.
 * Sends webhooks.
+* Provides the possibility to manage dynamic generation of data layer fields.
 
 Benefits of GTM Server Side plugin by stape.io:
 
@@ -66,6 +67,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.2.0 =
+* Introduction of Dynamic Data Layer configuration.
 
 = 2.1.48 =
 * Fixed purchase event.
