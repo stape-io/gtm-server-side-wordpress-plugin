@@ -32,6 +32,7 @@ register_deactivation_hook( __FILE__, array( GTM_Server_Side_Plugin_Deactivate::
 add_action( 'init', array( GTM_Server_Side_Plugin_Upgrade::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_I18n::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_WC_Order::class, 'instance' ) );
+add_action( 'gtm_server_side', array( GTM_Server_Side_Same_Origin_Proxy::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Customer_Loader_Cron::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Data_Manager_Ingest_Cron::class, 'instance' ) );
 add_action( 'gtm_server_side', array( GTM_Server_Side_Webhook_Purchase::class, 'instance' ) );

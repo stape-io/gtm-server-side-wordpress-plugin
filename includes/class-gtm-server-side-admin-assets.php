@@ -39,8 +39,12 @@ class GTM_Server_Side_Admin_Assets {
 			'gtm-server-side-admin',
 			'varGtmServerSide',
 			array(
-				'ajax'     => admin_url( 'admin-ajax.php' ),
-				'security' => wp_create_nonce( GTM_SERVER_SIDE_AJAX_SECURITY ),
+				'ajax'             => admin_url( 'admin-ajax.php' ),
+				'security'         => wp_create_nonce( GTM_SERVER_SIDE_AJAX_SECURITY ),
+				'same_origin_path' => GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ),
+				'same_origin_url'  => GTM_Server_Side_Helpers::get_raw_same_origin_path()
+					? home_url( GTM_Server_Side_Helpers::get_raw_same_origin_path() )
+					: '',
 			)
 		);
 	}

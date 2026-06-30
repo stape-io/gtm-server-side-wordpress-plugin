@@ -130,6 +130,83 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Return the raw same-origin proxy path (e.g. '/gtm/').
+	 *
+	 * @return string
+	 */
+	public static function get_raw_same_origin_path() {
+		return (string) self::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH );
+	}
+
+	/**
+	 * Return the Stape same-origin API key.
+	 *
+	 * @return string
+	 */
+	public static function get_same_origin_api_key() {
+		return (string) self::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY );
+	}
+
+	/**
+	 * Whether the same-origin proxy is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_enable_same_origin() {
+		return GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE );
+	}
+
+	/**
+	 * Whether all three same-origin settings are configured.
+	 *
+	 * @return bool
+	 */
+	public static function has_same_origin_settings() {
+		return self::is_enable_same_origin()
+			&& '' !== self::get_raw_same_origin_path()
+			&& '' !== self::get_same_origin_api_key();
+	}
+
+	/**
+	 * Derive the upstream sGTM endpoint URL from the API key.
+	 *
+	 * The API key is colon-separated: a0:a1:a2:a3 where the optional a3 is
+	 * the TLD (defaults to 'io'). The endpoint is: https://a1.a0.stape.{tld}
+	 *
+	 * @return string  Empty string when the key is malformed.
+	 */
+	public static function get_same_origin_endpoint() {
+		$key   = self::get_same_origin_api_key();
+		$parts = explode( ':', $key );
+
+		if ( count( $parts ) < 2 || '' === $parts[0] || '' === $parts[1] ) {
+			return '';
+		}
+
+		$tld = isset( $parts[3] ) && '' !== $parts[3] ? $parts[3] : 'io';
+
+		return 'https://' . $parts[1] . '.' . $parts[0] . '.stape.' . $tld;
+	}
+
+	/**
+	 * Sanitize a same-origin path value: ensure it starts with '/'.
+	 * The trailing slash is preserved if the user included it.
+	 *
+	 * @param  mixed $value Raw input value.
+	 * @return string
+	 */
+	public static function sanitize_same_origin_path( $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value ) {
+			return $value;
+		}
+		if ( '/' !== substr( $value, 0, 1 ) ) {
+			$value = '/' . $value;
+		}
+		return $value;
+	}
+
+	/**
 	 * Return gtm exclude list roles.
 	 *
 	 * @return array
@@ -217,6 +294,11 @@ class GTM_Server_Side_Helpers {
 	 * @return string
 	 */
 	public static function get_gtm_container_url() {
+		if ( self::has_same_origin_settings() ) {
+			// Strip trailing slash — tracking code appends '/{identifier}.js' itself.
+			return rtrim( home_url( self::get_raw_same_origin_path() ), '/' );
+		}
+
 		$url = self::get_raw_gtm_container_url();
 
 		if ( empty( $url ) ) {
@@ -232,6 +314,15 @@ class GTM_Server_Side_Helpers {
 	 * @return string
 	 */
 	public static function get_gtm_container_identifier() {
+		if ( self::has_same_origin_settings() ) {
+			$api_key_parts = explode( ':', trim( self::get_same_origin_api_key() ) );
+			if ( isset( $api_key_parts[1] ) && '' !== $api_key_parts[1] ) {
+				return $api_key_parts[1];
+			}
+
+			return 'gtm';
+		}
+
 		if ( ! self::has_gtm_container_identifier() ) {
 			return 'gtm';
 		}

@@ -27,6 +27,9 @@ class GTM_Server_Side_Admin_Settings {
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER, array( $this, 'clear_cache_field' ), 10, 2 );
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID, array( $this, 'clear_cache_field' ), 10, 2 );
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_CUST_MATCH_BACKFILL, array( $this, 'change_option_backfill' ), 10, 2 );
+		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE, array( $this, 'clear_cache_field' ), 10, 2 );
+		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH, array( $this, 'clear_cache_field' ), 10, 2 );
+		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY, array( $this, 'clear_cache_field' ), 10, 2 );
 	}
 
 	/**

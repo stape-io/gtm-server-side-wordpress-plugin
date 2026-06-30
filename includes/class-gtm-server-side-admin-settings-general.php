@@ -205,6 +205,30 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
 
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE,
+			__( 'I want to setup same-origin via my WordPress', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="checkbox"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE ) . '"
+					' . checked( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE ), GTM_SERVER_SIDE_FIELD_VALUE_YES, false ) . '
+					value="yes">';
+				echo '<br>';
+				esc_html_e( 'When enabled, requests to the path below are transparently proxied to your Stape sGTM container. Configure the path and API key instead of the container URL and identifier.', 'gtm-server-side' );
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+		);
+
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL,
@@ -225,7 +249,8 @@ class GTM_Server_Side_Admin_Settings_General {
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'js-gtm-server-side-alternative-scenario' )
 		);
 
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
@@ -250,7 +275,53 @@ class GTM_Server_Side_Admin_Settings_General {
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'js-gtm-server-side-alternative-scenario' )
+		);
+
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_same_origin_path',
+			)
+		);
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
+			__( 'Same-origin proxy path', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="text"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ) . '"
+					pattern="/.+"
+					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ) ) . '">';
+				echo ' <button type="button" class="button js-gtm-server-side-test-same-origin" disabled>' . esc_html__( 'Test connection', 'gtm-server-side' ) . '</button>';
+				echo ' <span class="js-gtm-server-side-same-origin-message"></span>';
+				echo '<br>';
+				esc_html_e( 'Enter a path starting with / (e.g. /gtm/). Save settings before testing the connection.', 'gtm-server-side' );
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'gtm-server-side-same-origin-field' )
+		);
+
+		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY );
+		add_settings_field(
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY,
+			__( 'Stape same-origin API key', 'gtm-server-side' ),
+			function() {
+				echo '<input
+					type="text"
+					id="' . esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY ) . '"
+					name="' . esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY ) . '"
+					value="' . esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY ) ) . '">';
+				echo '<br>';
+				esc_html_e( 'Your Stape same-origin API key. Used to derive the upstream sGTM endpoint and to configure the custom loader.', 'gtm-server-side' );
+			},
+			GTM_SERVER_SIDE_ADMIN_SLUG,
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'gtm-server-side-same-origin-field' )
 		);
 
 		register_setting(
@@ -279,7 +350,8 @@ class GTM_Server_Side_Admin_Settings_General {
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'js-gtm-server-side-alternative-scenario' )
 		);
 	}
 }
