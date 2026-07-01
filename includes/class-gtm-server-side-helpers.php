@@ -400,7 +400,7 @@ class GTM_Server_Side_Helpers {
 	 */
 	public static function is_enable_cookie_keeper() {
 		if ( null === static::$is_enable_cookie_keeper ) {
-			static::$is_enable_cookie_keeper = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER );
+			static::$is_enable_cookie_keeper = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ) && ! self::has_same_origin_settings();
 		}
 
 		return static::$is_enable_cookie_keeper;
