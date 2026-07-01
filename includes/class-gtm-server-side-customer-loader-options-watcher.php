@@ -39,6 +39,9 @@ class GTM_Server_Side_Customer_Loader_Options_Watcher {
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID, array( $this, 'update_option' ), 10, 2 );
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL, array( $this, 'update_option' ), 10, 2 );
 		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER, array( $this, 'update_option' ), 10, 2 );
+		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE, array( $this, 'update_option' ), 10, 2 );
+		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH, array( $this, 'update_option' ), 10, 2 );
+		add_action( 'update_option_' . GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY, array( $this, 'update_option' ), 10, 2 );
 	}
 
 	/**
@@ -61,7 +64,13 @@ class GTM_Server_Side_Customer_Loader_Options_Watcher {
 			! empty( $result['body'] ) &&
 			! empty( $result['body']['jsCode'] )
 		) {
-			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, $result['body']['jsCode'] );
+			$js_code = (string) $result['body']['jsCode'];
+
+			if ( GTM_Server_Side_Helpers::has_same_origin_settings() ) {
+				$js_code = preg_replace( '/\.js(?=(\?|"|\'))/i', '.load', $js_code );
+			}
+
+			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, $js_code );
 			return;
 		}
 

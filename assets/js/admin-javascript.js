@@ -102,6 +102,31 @@ jQuery( document ).ready(
 			}
 		);
 
+		if ( jQuery( '#gtm_server_side_same_origin_enable' ).length ) {
+			pluginGtmServerSide.initSameOrigin();
+			jQuery( '#gtm_server_side_same_origin_enable' ).on(
+				'click',
+				function() {
+					pluginGtmServerSide.initSameOrigin();
+					pluginGtmServerSide.changeWebIdentifier();
+				}
+			);
+			jQuery( '#gtm_server_side_same_origin_path' ).on(
+				'input',
+				function() {
+					pluginGtmServerSide.updateSameOriginTestState();
+				}
+			);
+			jQuery( document ).on(
+				'click',
+				'.js-gtm-server-side-test-same-origin',
+				function( e ) {
+					e.preventDefault();
+					pluginGtmServerSide.testSameOrigin();
+				}
+			);
+		}
+
 		pluginGtmServerSide.changeExcludeGtmUserRoles();
 		jQuery( '.js-gtm_server_side_gtm_exclude_roles' ).on(
 			'click',
@@ -386,10 +411,10 @@ const pluginGtmServerSide = {
 	},
 
 	changeExcludeGtmUserRoles: function() {
-		const $elRole = jQuery( '.js-gtm_server_side_gtm_exclude_roles' );
-		const $block  = jQuery( '.js-gtm-server-side-gtm-exclude-roles-block' );
+		const excludeRolesValue = jQuery( '.js-gtm_server_side_gtm_exclude_roles:checked' ).val();
+		const $block            = jQuery( '.js-gtm-server-side-gtm-exclude-roles-block' );
 
-		if ( $elRole.is( ':checked' ) ) {
+		if ( 'yes' === excludeRolesValue ) {
 			$block.show();
 		} else {
 			$block.hide();
@@ -402,7 +427,11 @@ const pluginGtmServerSide = {
 			return;
 		}
 
-		this.changeWebIdentifierCheckboxState( $elWebIdentifier, jQuery( '#gtm_server_side_cookie_keeper' ) );
+		const isSameOrigin = jQuery( '#gtm_server_side_same_origin_enable' ).is( ':checked' );
+		const $elApiKey    = jQuery( '#gtm_server_side_same_origin_api_key' );
+		const $source      = ( isSameOrigin && $elApiKey.length ) ? $elApiKey : $elWebIdentifier;
+
+		this.changeWebIdentifierCheckboxState( $source, jQuery( '#gtm_server_side_cookie_keeper' ) );
 	},
 
 	changeWebIdentifierCheckboxState: function( $elWebIdentifier, $el ) {
@@ -479,5 +508,65 @@ const pluginGtmServerSide = {
 		} );
 
 		$preview.text( prefix + parts.join( separator ) || '\u2014' );
+	},
+
+	/**
+	 * Show/hide same-origin fields based on the enable checkbox state.
+	 *
+	 * @return {void}
+	 */
+	initSameOrigin: function() {
+		const isSameOrigin = jQuery( '#gtm_server_side_same_origin_enable' ).is( ':checked' );
+		jQuery( '.gtm-server-side-same-origin-field' ).toggle( isSameOrigin );
+		jQuery( '.js-gtm-server-side-alternative-scenario' ).toggle( ! isSameOrigin );
+		this.updateSameOriginTestState();
+	},
+
+	/**
+	 * Enable the "Test connection" button only when the saved path matches
+	 * the current input value (i.e. settings have been saved).
+	 *
+	 * @return {void}
+	 */
+	updateSameOriginTestState: function() {
+		if ( 'undefined' === typeof varGtmServerSide ) {
+			return;
+		}
+		const savedPath = varGtmServerSide.same_origin_path || '';
+		const currPath  = jQuery( '#gtm_server_side_same_origin_path' ).val() || '';
+		const $testBtn  = jQuery( '.js-gtm-server-side-test-same-origin' );
+		$testBtn.prop( 'disabled', savedPath !== currPath || '' === savedPath );
+	},
+
+	/**
+	 * Test the same-origin proxy connection by sending a browser-side GET
+	 * request with a random uid and verifying the plain-text echo response.
+	 *
+	 * @return {void}
+	 */
+	testSameOrigin: function() {
+		if ( 'undefined' === typeof varGtmServerSide || ! varGtmServerSide.same_origin_url ) {
+			return;
+		}
+
+		const uid      = Date.now().toString( 36 );
+		const $message = jQuery( '.js-gtm-server-side-same-origin-message' );
+		$message.html( '<i>Testing&hellip;</i>' );
+
+		jQuery.ajax( {
+			url:     varGtmServerSide.same_origin_url,
+			method:  'GET',
+			data:    { 'test-uid': uid },
+			success: function( response ) {
+				if ( String( response ).trim() === uid ) {
+					$message.html( '<span class="success">Connection successful!</span>' );
+				} else {
+					$message.html( '<span class="error">Connection failed: unexpected response.</span>' );
+				}
+			},
+			error: function() {
+				$message.html( '<span class="error">Connection failed.</span>' );
+			}
+		} );
 	},
 };
