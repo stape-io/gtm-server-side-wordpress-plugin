@@ -130,6 +130,154 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Return the raw same-origin proxy path (e.g. '/gtm/').
+	 *
+	 * @return string
+	 */
+	public static function get_raw_same_origin_path() {
+		return (string) self::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH );
+	}
+
+	/**
+	 * Return the Stape same-origin API key.
+	 *
+	 * @return string
+	 */
+	public static function get_same_origin_api_key() {
+		return (string) self::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY );
+	}
+
+	/**
+	 * Whether the same-origin proxy is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function is_enable_same_origin() {
+		return GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE );
+	}
+
+	/**
+	 * Whether all three same-origin settings are configured.
+	 *
+	 * @return bool
+	 */
+	public static function has_same_origin_settings() {
+		return self::is_enable_same_origin()
+			&& '' !== self::get_raw_same_origin_path()
+			&& '' !== self::get_same_origin_api_key();
+	}
+
+	/**
+	 * Parse a Stape API key into its component segments.
+	 *
+	 * Format: a0:a1:a2[:a3] where a3 is the TLD (defaults to 'io').
+	 * Returns null when any of the first three segments are missing or empty.
+	 *
+	 * @param  string $key Raw API key.
+	 * @return array|null  Indexed array [0..3] or null on parse failure.
+	 */
+	public static function parse_stape_api_key( $key ) {
+		$parts = explode( ':', trim( (string) $key ) );
+		if (
+			count( $parts ) < 3 ||
+			'' === $parts[0] ||
+			'' === $parts[1] ||
+			'' === $parts[2]
+		) {
+			return null;
+		}
+
+		return array(
+			0 => $parts[0],
+			1 => $parts[1],
+			2 => $parts[2],
+			3 => ( isset( $parts[3] ) && '' !== $parts[3] ) ? $parts[3] : 'io',
+		);
+	}
+
+	/**
+	 * Derive the upstream sGTM endpoint URL from the API key.
+	 *
+	 * The API key is colon-separated: a0:a1:a2:a3 where the optional a3 is
+	 * the TLD (defaults to 'io'). The endpoint is: https://a1.a0.stape.{tld}
+	 *
+	 * @return string  Empty string when the key is malformed.
+	 */
+	public static function get_same_origin_endpoint() {
+		$parsed = self::parse_stape_api_key( self::get_same_origin_api_key() );
+		if ( null === $parsed ) {
+			return '';
+		}
+
+		return 'https://' . $parsed[1] . '.' . $parsed[0] . '.stape.' . $parsed[3];
+	}
+
+	/**
+	 * Return the same-origin proxy path with a guaranteed leading slash.
+	 *
+	 * Use this wherever the path is assembled into a URL. The raw stored
+	 * value is left untouched so the admin always sees what they typed.
+	 *
+	 * @return string
+	 */
+	public static function get_same_origin_path() {
+		$path = self::get_raw_same_origin_path();
+		if ( '' !== $path && '/' !== $path[0] ) {
+			$path = '/' . $path;
+		}
+		return $path;
+	}
+
+	/**
+	 * Absolute URL to the same-origin proxy path on this site.
+	 *
+	 * Built from home_url() so it reflects WordPress's canonical host, scheme
+	 * and (sub-directory) path. Used directly as the connection-test target in
+	 * the admin, and decomposed into host + path when registering the custom
+	 * loader with Stape.
+	 *
+	 * @return string  Empty string when no path is configured.
+	 */
+	public static function get_same_origin_url() {
+		if ( '' === self::get_raw_same_origin_path() ) {
+			return '';
+		}
+		return home_url( self::get_same_origin_path() );
+	}
+
+	/**
+	 * Sanitize a same-origin path value.
+	 * Trims whitespace; the trailing slash is preserved if the user included it.
+	 * Rejects values that don't start with '/' and keeps the previously saved
+	 * value instead, surfacing a settings error to the admin.
+	 *
+	 * @param  mixed $value Raw input value.
+	 * @return string
+	 */
+	public static function sanitize_same_origin_path( $value ) {
+		$value = trim( (string) $value );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( '/' !== $value[0] ) {
+			add_settings_error(
+				GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
+				'gtm_server_side_same_origin_path_invalid',
+				__( 'Same-origin proxy path must start with "/" (e.g. /gtm/). The previous value was kept.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN )
+			);
+			return self::get_raw_same_origin_path();
+		}
+
+		// Drop any query/fragment if the user pasted it, and normalize duplicate slashes.
+		$value = preg_replace( '/[?#].*$/', '', $value );
+		$value = preg_replace( '#/+#', '/', $value );
+
+		return $value;
+	}
+
+	/**
 	 * Return gtm exclude list roles.
 	 *
 	 * @return array
@@ -217,12 +365,16 @@ class GTM_Server_Side_Helpers {
 	 * @return string
 	 */
 	public static function get_gtm_container_url() {
+		if ( self::has_same_origin_settings() && self::has_gtm_custom_loader_from_api()) {
+			return rtrim( home_url( self::get_same_origin_path() ), '/' );
+		}
+
 		$url = self::get_raw_gtm_container_url();
 
 		if ( empty( $url ) ) {
 			return 'https://www.googletagmanager.com';
 		}
-
+		
 		return $url;
 	}
 
@@ -232,6 +384,11 @@ class GTM_Server_Side_Helpers {
 	 * @return string
 	 */
 	public static function get_gtm_container_identifier() {
+		if ( self::has_same_origin_settings() ) {
+			$parsed = self::parse_stape_api_key( self::get_same_origin_api_key() );
+			return ( null !== $parsed ) ? $parsed[1] : 'gtm';
+		}
+
 		if ( ! self::has_gtm_container_identifier() ) {
 			return 'gtm';
 		}
@@ -309,7 +466,7 @@ class GTM_Server_Side_Helpers {
 	 */
 	public static function is_enable_cookie_keeper() {
 		if ( null === static::$is_enable_cookie_keeper ) {
-			static::$is_enable_cookie_keeper = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER );
+			static::$is_enable_cookie_keeper = GTM_SERVER_SIDE_FIELD_VALUE_YES === self::get_option( GTM_SERVER_SIDE_FIELD_COOKIE_KEEPER ) && ! self::has_same_origin_settings();
 		}
 
 		return static::$is_enable_cookie_keeper;

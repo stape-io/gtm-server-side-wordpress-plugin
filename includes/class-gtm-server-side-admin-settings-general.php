@@ -32,6 +32,8 @@ class GTM_Server_Side_Admin_Settings_General {
 						name="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT ) . '"
 						value="' . esc_attr( GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN ) . '">';
 				}
+
+				self::render_same_origin_card();
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG
 		);
@@ -205,6 +207,14 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
 
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_bool',
+			)
+		);
+
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL );
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_URL,
@@ -225,7 +235,8 @@ class GTM_Server_Side_Admin_Settings_General {
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'js-gtm-server-side-alternative-scenario' )
 		);
 
 		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_IDENTIFIER );
@@ -250,7 +261,24 @@ class GTM_Server_Side_Admin_Settings_General {
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'js-gtm-server-side-alternative-scenario' )
+		);
+
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
+			array(
+				'sanitize_callback' => 'GTM_Server_Side_Helpers::sanitize_same_origin_path',
+			)
+		);
+
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY,
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
 		);
 
 		register_setting(
@@ -279,7 +307,91 @@ class GTM_Server_Side_Admin_Settings_General {
 				);
 			},
 			GTM_SERVER_SIDE_ADMIN_SLUG,
-			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
+			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL,
+			array( 'class' => 'js-gtm-server-side-alternative-scenario' )
 		);
+	}
+
+	/**
+	 * Render the same-origin proxy card shown at the top of the General tab.
+	 *
+	 * @return void
+	 */
+	public static function render_same_origin_card() {
+		$toggle_id = GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE;
+		?>
+		<div class="gtm-so-card">
+			<table class="form-table gtm-so-card-table" role="presentation">
+				<tbody>
+					<tr class="gtm-so-toggle-row">
+						<th scope="row">
+							<?php esc_html_e( 'Same-origin proxy', 'gtm-server-side' ); ?>
+							<span class="gtm-so-beta"><?php esc_html_e( 'Beta', 'gtm-server-side' ); ?></span>
+						</th>
+						<td>
+							<span class="gtm-so-toggle-wrap">
+								<input
+									type="checkbox"
+									class="gtm-so-input"
+									id="<?php echo esc_attr( $toggle_id ); ?>"
+									name="<?php echo esc_attr( $toggle_id ); ?>"
+									<?php checked( GTM_Server_Side_Helpers::get_option( $toggle_id ), GTM_SERVER_SIDE_FIELD_VALUE_YES ); ?>
+									value="yes">
+								<label class="gtm-so-switch" for="<?php echo esc_attr( $toggle_id ); ?>"><span class="gtm-so-slider"></span></label>
+								<span class="gtm-so-state"></span>
+							</span>
+							<p class="gtm-so-desc">
+								<?php
+								echo wp_kses(
+									__( 'The GTM loader is served from Stape through <strong>your own WordPress server</strong>, so it loads first-party. The proxying runs on infrastructure you control, and its load scales with your traffic.', 'gtm-server-side' ),
+									array( 'strong' => array() )
+								);
+								?>
+							</p>
+						</td>
+					</tr>
+					<tr class="gtm-so-webid-anchor" style="display:none"><td></td></tr>
+					<tr class="gtm-server-side-same-origin-field">
+						<th scope="row"><?php esc_html_e( 'Proxy path', 'gtm-server-side' ); ?></th>
+						<td>
+							<input
+								type="text"
+								id="<?php echo esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ); ?>"
+								name="<?php echo esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ); ?>"
+								pattern="/.+"
+								value="<?php echo esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH ) ); ?>">
+							<button type="button" class="button js-gtm-server-side-test-same-origin" disabled><?php esc_html_e( 'Test connection', 'gtm-server-side' ); ?></button>
+							<span class="js-gtm-server-side-same-origin-message"></span>
+							<br>
+							<?php esc_html_e( 'The path on this domain that requests are proxied through. Must start with a slash. Save settings before testing.', 'gtm-server-side' ); ?>
+						</td>
+					</tr>
+					<tr class="gtm-server-side-same-origin-field">
+						<th scope="row"><?php esc_html_e( 'Container API key', 'gtm-server-side' ); ?></th>
+						<td>
+							<input
+								type="text"
+								id="<?php echo esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY ); ?>"
+								name="<?php echo esc_attr( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY ); ?>"
+								value="<?php echo esc_attr( GTM_Server_Side_Helpers::get_option( GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY ) ); ?>">
+							<br>
+							<?php
+							echo wp_kses(
+								__( 'Paste your container API key, found under <a href="https://app.stape.io" target="_blank">Stape container settings</a> — <strong>not the container identifier</strong>.', 'gtm-server-side' ),
+								array(
+									'a'      => array(
+										'href'   => array(),
+										'target' => array(),
+									),
+									'strong' => array(),
+								)
+							);
+							?>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<?php
 	}
 }

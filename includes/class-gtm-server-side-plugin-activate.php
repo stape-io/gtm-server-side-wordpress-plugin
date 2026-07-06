@@ -40,5 +40,7 @@ class GTM_Server_Side_Plugin_Activate {
 		if ( empty( get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) ) ) {
 			update_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
 		}
+
+		GTM_Server_Side_Same_Origin_Proxy::flush_rules();
 	}
 }

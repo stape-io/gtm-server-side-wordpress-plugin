@@ -292,11 +292,12 @@ class GTM_Server_Side_Handler_Data_Manager_Ingest {
 		$endpoint = '';
 		$api_key  = GTM_Server_Side_Helpers::get_stape_container_api_key();
 		if ( $api_key ) {
-			$a          = explode( ':', $api_key );
-			$domain_end = isset( $a[3] ) ? $a[3] : 'io';
-			$url        = 'https://' . $a[1] . '.' . $a[0] . '.stape.' . $domain_end;
-			$path       = '/stape-api/' . $a[2] . '/v2/data-manager/ingest';
-			$endpoint   = $url . $path;
+			$parsed = GTM_Server_Side_Helpers::parse_stape_api_key( $api_key );
+			if ( null !== $parsed ) {
+				$url      = 'https://' . $parsed[1] . '.' . $parsed[0] . '.stape.' . $parsed[3];
+				$path     = '/stape-api/' . $parsed[2] . '/v2/data-manager/ingest';
+				$endpoint = $url . $path;
+			}
 		}
 
 		/**
