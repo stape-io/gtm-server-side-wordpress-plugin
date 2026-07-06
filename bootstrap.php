@@ -80,6 +80,11 @@ define( 'GTM_SERVER_SIDE_CUST_MATCH_BACKFILL_FINISHED', 'gtm_server_side_cust_ma
 // d20260118.
 define( 'GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API', 'gtm_server_side_gtm_custom_loader_from_api' );
 
+// Tab: General — Same-Origin Proxy.
+define( 'GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_ENABLE', 'gtm_server_side_same_origin_enable' );
+define( 'GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH', 'gtm_server_side_same_origin_path' );
+define( 'GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_API_KEY', 'gtm_server_side_same_origin_api_key' );
+
 // Tab: Data Layer — Advanced parameters.
 define( 'GTM_SERVER_SIDE_FIELD_ADV', 'gtm_server_side_adv' );
 

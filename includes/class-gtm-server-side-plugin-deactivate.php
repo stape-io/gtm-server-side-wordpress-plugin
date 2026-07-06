@@ -23,5 +23,6 @@ class GTM_Server_Side_Plugin_Deactivate {
 	public function init() {
 		GTM_Server_Side_Customer_Loader_Cron::instance()->deactivation();
 		GTM_Server_Side_Data_Manager_Ingest_Cron::instance()->deactivation();
+		GTM_Server_Side_Same_Origin_Proxy::instance()->deactivation();
 	}
 }

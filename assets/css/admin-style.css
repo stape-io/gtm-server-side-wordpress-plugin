@@ -54,6 +54,125 @@
 	pointer-events: none;
 }
 
+/* ── Same-origin proxy card ────────────────────────────────────────────── */
+.gtm-so-card {
+	margin: 16px 0 24px;
+	padding: 4px 20px 12px;
+	background: #f0f6fc;
+	border: 1px solid #c5d9ed;
+	border-radius: 6px;
+}
+
+.gtm-so-card .form-table {
+	margin-top: 0;
+}
+
+.gtm-so-card .gtm-so-toggle-row th,
+.gtm-so-card .gtm-so-toggle-row td {
+	padding-top: 20px;
+}
+
+.gtm-so-beta {
+	display: inline-block;
+	margin-left: 8px;
+	padding: 2px 6px;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: .04em;
+	text-transform: uppercase;
+	color: #fff;
+	background: #d97706;
+	border-radius: 3px;
+	vertical-align: middle;
+}
+
+.gtm-so-toggle-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.gtm-so-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	opacity: 0;
+}
+
+.gtm-so-switch {
+	position: relative;
+	display: inline-block;
+	width: 40px;
+	height: 22px;
+	cursor: pointer;
+}
+
+.gtm-so-slider {
+	position: absolute;
+	inset: 0;
+	background: #8c8f94;
+	border-radius: 22px;
+	transition: background .2s ease;
+}
+
+.gtm-so-slider::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+	background: #fff;
+	border-radius: 50%;
+	transition: transform .2s ease;
+}
+
+.gtm-so-input:checked ~ .gtm-so-switch .gtm-so-slider {
+	background: #2271b1;
+}
+
+.gtm-so-input:checked ~ .gtm-so-switch .gtm-so-slider::before {
+	transform: translateX(18px);
+}
+
+.gtm-so-input:focus-visible ~ .gtm-so-switch .gtm-so-slider {
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2271b1;
+}
+
+.gtm-so-state {
+	font-weight: 600;
+}
+
+.gtm-so-state::after {
+	content: 'Off';
+}
+
+.gtm-so-input:checked ~ .gtm-so-state::after {
+	content: 'On';
+}
+
+.gtm-so-desc {
+	margin: 10px 0 2px;
+	max-width: 660px;
+	color: #50575e;
+}
+
+/* Proxy fields live in the card but only show when the proxy is enabled. */
+.gtm-server-side-same-origin-field {
+	display: none;
+}
+
+#gtm-server-side-admin-settings:has( #gtm_server_side_same_origin_enable:checked ) .gtm-server-side-same-origin-field {
+	display: table-row;
+}
+
+/* Container URL / identifier / Cookie Keeper are hidden while the proxy is on. */
+#gtm-server-side-admin-settings:has( #gtm_server_side_same_origin_enable:checked ) .js-gtm-server-side-alternative-scenario {
+	display: none;
+}
+
 /* ── Advanced parameters postbox ───────────────────────────────────────── */
 
 #gtm-adv-params {
