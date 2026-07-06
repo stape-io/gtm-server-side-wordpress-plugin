@@ -28,7 +28,7 @@ The **GTM Server Side** plugin by [stape.io](https://stape.io) is the easiest wa
 - Adds user data to Data Layer events.
 - Sends webhooks.
 - Provides the possibility to manage dynamic generation of data layer fields.
-– Native Same Origin proxy.
+- Native Same Origin proxy.
 
 ### Benefits
 

@@ -257,7 +257,11 @@ class GTM_Server_Side_Helpers {
 	public static function sanitize_same_origin_path( $value ) {
 		$value = trim( (string) $value );
 
-		if ( '' !== $value && '/' !== $value[0] ) {
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( '/' !== $value[0] ) {
 			add_settings_error(
 				GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
 				'gtm_server_side_same_origin_path_invalid',
@@ -265,6 +269,10 @@ class GTM_Server_Side_Helpers {
 			);
 			return self::get_raw_same_origin_path();
 		}
+
+		// Drop any query/fragment if the user pasted it, and normalize duplicate slashes.
+		$value = preg_replace( '/[?#].*$/', '', $value );
+		$value = preg_replace( '#/+#', '/', $value );
 
 		return $value;
 	}

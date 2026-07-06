@@ -9,7 +9,7 @@
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
- * @since      2.2.0
+ * @since      2.3.0
  */
 
 defined( 'ABSPATH' ) || exit;
