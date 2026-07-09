@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.0.0
 
-**Stable tag:** 2.3.0
+**Stable tag:** 2.3.1
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.1
+- Fixed HTML entity serialization in product item_name and item_category fields for Data Layer ecommerce events and webhook item payloads.
 
 ## 2.3.0
 - Introduction of Same Origin functionality.
