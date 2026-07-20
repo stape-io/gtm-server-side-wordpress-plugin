@@ -37,7 +37,24 @@ class GTM_Server_Side_WC_Helpers {
 		}
 		*/
 
-		return rtrim( $crumbs, '/' );
+		return wp_specialchars_decode( rtrim( $crumbs, '/' ), ENT_QUOTES );
+	}
+
+	/**
+	 * Normalize text for data layer/webhook payloads.
+	 *
+	 * Keeps regular characters (quotes, ampersands, punctuation),
+	 * but strips tags and line breaks before JSON embedding.
+	 *
+	 * @param string $value Raw text value.
+	 * @return string
+	 */
+	public function sanitize_payload_text( $value ) {
+		$value = wp_specialchars_decode( (string) $value, ENT_QUOTES );
+		$value = wp_strip_all_tags( $value, true );
+		$value = preg_replace( '/[\r\n\t]+/', ' ', $value );
+
+		return trim( (string) $value );
 	}
 
 	/**
@@ -58,7 +75,7 @@ class GTM_Server_Side_WC_Helpers {
 
 		$advanced_parameters = GTM_Server_Side_Advanced_Params::instance();
 		$result = array(
-			'item_name'  => esc_attr( $product->get_name() ),
+			'item_name'  => $this->sanitize_payload_text( $product->get_name() ),
 			'item_brand' => $advanced_parameters->resolve_item_brand( $product ),
 			'item_id'    => esc_attr( $advanced_parameters->resolve_item_id( $product ) ),
 			'item_sku'   => esc_attr( $advanced_parameters->resolve_item_sku( $product ) ),
@@ -322,7 +339,7 @@ class GTM_Server_Side_WC_Helpers {
 		$category_index = 1;
 		foreach ( $categories as $category_name ) {
 			$index            = $category_index > 1 ? 'item_category' . $category_index : 'item_category';
-			$result[ $index ] = esc_attr( $category_name );
+			$result[ $index ] = $this->sanitize_payload_text( $category_name );
 
 			if ( $category_index >= 5 ) {
 				return $result;
