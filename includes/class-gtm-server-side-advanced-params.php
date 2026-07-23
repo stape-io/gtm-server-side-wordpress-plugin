@@ -4,7 +4,7 @@
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
- * @since      2.1.47
+ * @since      2.2.0
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -313,12 +313,8 @@ class GTM_Server_Side_Advanced_Params {
 		}
 
 		$this->brand_taxonomies = [];
-		if ( function_exists( 'get_object_taxonomies' ) ) {
-			foreach ( get_object_taxonomies( 'product', 'objects' ) as $slug => $tax ) {
-				if ( false !== strpos( $slug, 'brand' ) ) {
-					$this->brand_taxonomies[ $slug ] = sprintf( '%s (%s)', $tax->label, $slug );
-				}
-			}
+		foreach ( get_object_taxonomies( 'product', 'objects' ) as $slug => $tax ) {
+			$this->brand_taxonomies[ $slug ] = sprintf( '%s (%s)', $tax->label, $slug );
 		}
 
 		return $this->brand_taxonomies;
