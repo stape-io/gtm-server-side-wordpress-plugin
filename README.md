@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.0.0
 
-**Stable tag:** 2.3.2
+**Stable tag:** 2.3.3
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,10 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.3
+- Added a proxy status check that confirms the `server_container_url` to use in web GTM once the same-origin proxy path is verified.
+- Same-origin settings are now validated before saving: the proxy path must start with `/` and the container API key must match the expected format.
 
 ## 2.3.2
 - Extended item_brand sources in Advanced parameters: all product taxonomies are now selectable.

@@ -168,6 +168,146 @@
 	display: table-row;
 }
 
+/* Validation messages sit on their own line, between control and description. */
+.gtm-so-card label.error {
+	display: block;
+	margin-top: 4px;
+	padding-left: 0;
+}
+
+/* Confirmation notice shown once the proxy path is verified as reachable. */
+.gtm-so-status {
+	margin: 12px 0 4px;
+}
+
+.gtm-so-checking {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin: 0;
+	color: #50575e;
+}
+
+.gtm-so-checking .spinner {
+	float: none;
+	margin: 0;
+}
+
+.gtm-so-notice {
+	max-width: 860px;
+	margin: 0;
+	padding: 14px 18px;
+	border: 1px solid #c5d9ef;
+	border-radius: 8px;
+	background: #f6faff;
+	color: #1d2327;
+	line-height: 1.7;
+}
+
+.gtm-so-notice code {
+	padding: 0;
+	background: none;
+	color: #2271b1;
+	font-weight: 600;
+}
+
+/*
+ * Reusable inline copy-to-clipboard control.
+ *
+ * Wrap any element in `.gtm-copy` and add a `.copy-button` beside it. Pairs
+ * with core's bundled `clipboard` script, which the admin JS wires up.
+ */
+.gtm-copy {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.gtm-copy .copy-button {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 3px;
+	background: none;
+	color: #787c82;
+	text-decoration: none;
+	cursor: pointer;
+	transition: color 200ms ease, background-color 200ms ease;
+}
+
+.gtm-copy .copy-button:hover {
+	background: #f0f0f1;
+	color: #2271b1;
+}
+
+/* Keyboard users still get a ring; clicking the button does not leave one. */
+.gtm-copy .copy-button:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.gtm-copy .copy-button:focus-visible {
+	color: #2271b1;
+	outline: 2px solid transparent;
+	box-shadow: 0 0 0 2px #2271b1;
+}
+
+.gtm-copy .copy-button .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+/* Confirmation swaps the glyph in place, so nothing around it reflows. */
+.gtm-copy .copy-button.is-copied {
+	color: #007017;
+}
+
+.gtm-copy .copy-button.is-copied .dashicons::before {
+	content: "\f147";
+}
+
+.gtm-copy .copy-tooltip {
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	z-index: 1;
+	margin-bottom: 6px;
+	padding: 3px 7px;
+	border-radius: 3px;
+	background: #1d2327;
+	color: #fff;
+	font-size: 11px;
+	line-height: 1.5;
+	white-space: nowrap;
+	transform: translateX( -50% );
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 200ms ease, visibility 200ms ease;
+}
+
+.gtm-copy .copy-tooltip::after {
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin-left: -4px;
+	border: 4px solid transparent;
+	border-top-color: #1d2327;
+	content: "";
+}
+
+.gtm-copy .copy-button.is-copied .copy-tooltip {
+	opacity: 1;
+	visibility: visible;
+}
+
 /* Container URL / identifier / Cookie Keeper are hidden while the proxy is on. */
 #gtm-server-side-admin-settings:has( #gtm_server_side_same_origin_enable:checked ) .js-gtm-server-side-alternative-scenario {
 	display: none;

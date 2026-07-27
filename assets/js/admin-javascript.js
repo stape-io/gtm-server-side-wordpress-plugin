@@ -23,11 +23,22 @@ jQuery( document ).ready(
 					},
 					gtm_server_side_gtm_exclude_roles: {
 						gtmExcludeRoles: true
+					},
+					gtm_server_side_same_origin_path: {
+						sameOriginPath: true
+					},
+					gtm_server_side_same_origin_api_key: {
+						sameOriginApiKey: true
 					}
 				},
 				errorPlacement: function(error, element) {
+					const sameOriginFields = [ 'gtm_server_side_same_origin_path', 'gtm_server_side_same_origin_api_key' ];
+
 					if ( element.attr( 'name' ) === 'gtm_server_side_gtm_exclude_roles' ) {
 						jQuery( '.js-gtm-server-side-gtm-exclude-roles-message' ).empty().append( error );
+					} else if ( sameOriginFields.indexOf( element.attr( 'name' ) ) !== -1 ) {
+						// Own line under the control, above the field description.
+						error.insertAfter( element.closest( 'td' ).children( 'br' ).first() );
 					} else {
 						error.insertAfter( element );
 					}
@@ -83,6 +94,28 @@ jQuery( document ).ready(
 			},
 			'Select at least one role'
 		);
+		jQuery.validator.addMethod(
+			'sameOriginPath',
+			function( value, element ) {
+				if ( ! jQuery( '#gtm_server_side_same_origin_enable' ).is( ':checked' ) ) {
+					return true;
+				}
+
+				return /^\/+[^\/\s]\S*$/.test( value.trim() );
+			},
+			'Enter the path requests are proxied through, starting with "/" (e.g. /gtm)'
+		);
+		jQuery.validator.addMethod(
+			'sameOriginApiKey',
+			function( value, element ) {
+				if ( ! jQuery( '#gtm_server_side_same_origin_enable' ).is( ':checked' ) ) {
+					return true;
+				}
+
+				return /^[A-Za-z0-9.-]+:[A-Za-z0-9.-]+:[^:\s]+(:[A-Za-z0-9.-]+)?$/.test( value.trim() );
+			},
+			'Container API key must be colon-separated, as copied from Stape container settings'
+		);
 
 		// Tab "General".
 		pluginGtmServerSide.changeContainerId();
@@ -104,6 +137,7 @@ jQuery( document ).ready(
 
 		if ( jQuery( '#gtm_server_side_same_origin_enable' ).length ) {
 			pluginGtmServerSide.initSameOrigin();
+			pluginGtmServerSide.testSameOrigin( true );
 			jQuery( '#gtm_server_side_same_origin_enable' ).on(
 				'click',
 				function() {
@@ -122,10 +156,12 @@ jQuery( document ).ready(
 				'.js-gtm-server-side-test-same-origin',
 				function( e ) {
 					e.preventDefault();
-					pluginGtmServerSide.testSameOrigin();
+					pluginGtmServerSide.testSameOrigin( false );
 				}
 			);
 		}
+
+		pluginGtmServerSide.initCopyToClipboard();
 
 		pluginGtmServerSide.changeExcludeGtmUserRoles();
 		jQuery( '.js-gtm_server_side_gtm_exclude_roles' ).on(
@@ -550,31 +586,106 @@ const pluginGtmServerSide = {
 	 * Test the same-origin proxy connection by sending a browser-side GET
 	 * request with a random uid and verifying the plain-text echo response.
 	 *
+	 * The result resolves the proxy status block (spinner -> confirmation
+	 * notice, or removed on failure). When triggered by the "Test connection"
+	 * button it additionally reports next to that button.
+	 *
+	 * @param {boolean} isAuto Run as the automatic status check on page load.
 	 * @return {void}
 	 */
-	testSameOrigin: function() {
-		if ( 'undefined' === typeof varGtmServerSide || ! varGtmServerSide.same_origin_url ) {
+	testSameOrigin: function( isAuto ) {
+		const $status  = jQuery( '.js-gtm-so-status' );
+		const $message = jQuery( '.js-gtm-server-side-same-origin-message' );
+
+		if ( isAuto && ! $status.length ) {
 			return;
 		}
 
-		const uid      = Date.now().toString( 36 );
-		const $message = jQuery( '.js-gtm-server-side-same-origin-message' );
-		$message.html( '<i>Testing&hellip;</i>' );
+		if ( 'undefined' === typeof varGtmServerSide || ! varGtmServerSide.same_origin_url ) {
+			$status.remove();
+			return;
+		}
+
+		const uid = Date.now().toString( 36 );
+
+		const done = function( isOk, message ) {
+			if ( isOk ) {
+				$status.find( '.js-gtm-so-checking' ).remove();
+				$status.find( '.js-gtm-so-notice' ).prop( 'hidden', false );
+			} else {
+				$status.remove();
+			}
+
+			if ( ! isAuto ) {
+				$message.html( message );
+			}
+		};
+
+		if ( ! isAuto ) {
+			$message.html( '<i>Testing&hellip;</i>' );
+		}
 
 		jQuery.ajax( {
 			url:     varGtmServerSide.same_origin_url,
 			method:  'GET',
 			data:    { 'test-uid': uid },
 			success: function( response ) {
-				if ( String( response ).trim() === uid ) {
-					$message.html( '<span class="success">Connection successful!</span>' );
-				} else {
-					$message.html( '<span class="error">Connection failed: unexpected response.</span>' );
-				}
+				const isOk = String( response ).trim() === uid;
+				done(
+					isOk,
+					isOk
+						? '<span class="success">Connection successful!</span>'
+						: '<span class="error">Connection failed: unexpected response.</span>'
+				);
 			},
 			error: function() {
-				$message.html( '<span class="error">Connection failed.</span>' );
+				done( false, '<span class="error">Connection failed.</span>' );
 			}
 		} );
+	},
+
+	/**
+	 * Wire every `.gtm-copy` control on the page, using the clipboard.js
+	 * library bundled with WordPress.
+	 *
+	 * The selector form of ClipboardJS delegates from the document, so controls
+	 * revealed later — such as the proxy URL, which appears once the status
+	 * check resolves — keep working without re-initialising.
+	 *
+	 * @return {void}
+	 */
+	initCopyToClipboard: function() {
+		if ( 'undefined' === typeof ClipboardJS ) {
+			return;
+		}
+
+		const clipboard = new ClipboardJS(
+			'.js-gtm-copy',
+			{
+				text: function( trigger ) {
+					return jQuery( trigger ).closest( '.gtm-copy' ).find( 'code' ).first().text();
+				}
+			}
+		);
+
+		clipboard.on(
+			'success',
+			function( event ) {
+				const $button = jQuery( event.trigger );
+				$button.addClass( 'is-copied' );
+				setTimeout(
+					function() {
+						$button.removeClass( 'is-copied' );
+					},
+					2000
+				);
+
+				if ( window.wp && window.wp.a11y ) {
+					window.wp.a11y.speak( 'Copied to clipboard.' );
+				}
+
+				event.clearSelection();
+			}
+		);
 	},
 };
