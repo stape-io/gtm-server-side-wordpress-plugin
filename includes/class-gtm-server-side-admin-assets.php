@@ -33,7 +33,7 @@ class GTM_Server_Side_Admin_Assets {
 		wp_register_script( 'vendor-jquery-validation', GTM_SERVER_SIDE_URL . 'assets/vendors/jquery-validation/jquery.validate.min.js', array( 'jquery' ), get_gtm_server_side_version(), true );
 
 		wp_register_style( 'gtm-server-side-admin', GTM_SERVER_SIDE_URL . 'assets/css/admin-style.css', null, get_gtm_server_side_version() );
-		wp_register_script( 'gtm-server-side-admin', GTM_SERVER_SIDE_URL . 'assets/js/admin-javascript.js', array( 'vendor-jquery-validation' ), get_gtm_server_side_version(), true );
+		wp_register_script( 'gtm-server-side-admin', GTM_SERVER_SIDE_URL . 'assets/js/admin-javascript.js', array( 'vendor-jquery-validation', 'clipboard', 'wp-a11y' ), get_gtm_server_side_version(), true );
 
 		wp_localize_script(
 			'gtm-server-side-admin',

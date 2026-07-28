@@ -364,6 +364,42 @@ class GTM_Server_Side_Admin_Settings_General {
 							<span class="js-gtm-server-side-same-origin-message"></span>
 							<br>
 							<?php esc_html_e( 'The path on this domain that requests are proxied through. Must start with a slash. Save settings before testing.', 'gtm-server-side' ); ?>
+							<?php if ( GTM_Server_Side_Helpers::is_same_origin_path_active() ) : ?>
+							<div class="gtm-so-status js-gtm-so-status" aria-live="polite">
+								<p class="gtm-so-checking js-gtm-so-checking">
+									<span class="spinner is-active"></span>
+									<?php esc_html_e( 'Checking proxy status…', 'gtm-server-side' ); ?>
+								</p>
+								<div class="gtm-so-notice js-gtm-so-notice" hidden>
+									<?php
+									$same_origin_url_html = sprintf(
+										'<span class="gtm-copy"><code>%1$s</code><button type="button" class="copy-button js-gtm-copy" aria-label="%2$s"><span class="dashicons dashicons-admin-page" aria-hidden="true"></span><span class="copy-tooltip" aria-hidden="true">%3$s</span></button></span>',
+										esc_html( GTM_Server_Side_Helpers::get_same_origin_url() ),
+										esc_attr__( 'Copy URL to clipboard', 'gtm-server-side' ),
+										esc_html__( 'Copied!', 'gtm-server-side' )
+									);
+									echo wp_kses(
+										sprintf(
+											__( '%s is now configured as reverse proxy for your Stape container. You can now use it as <code>server_container_url</code> in your web GTM.', 'gtm-server-side' ),
+											$same_origin_url_html
+										),
+										array(
+											'code'   => array(),
+											'span'   => array(
+												'class'       => array(),
+												'aria-hidden' => array(),
+											),
+											'button' => array(
+												'type'       => array(),
+												'class'      => array(),
+												'aria-label' => array(),
+											),
+										)
+									);
+									?>
+								</div>
+							</div>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr class="gtm-server-side-same-origin-field">

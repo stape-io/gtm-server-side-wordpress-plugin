@@ -177,21 +177,15 @@ class GTM_Server_Side_Helpers {
 	 * @return array|null  Indexed array [0..3] or null on parse failure.
 	 */
 	public static function parse_stape_api_key( $key ) {
-		$parts = explode( ':', trim( (string) $key ) );
-		if (
-			count( $parts ) < 3 ||
-			'' === $parts[0] ||
-			'' === $parts[1] ||
-			'' === $parts[2]
-		) {
+		if ( ! preg_match( '/^([A-Za-z0-9.-]+):([A-Za-z0-9.-]+):([^:\s]+)(?::([A-Za-z0-9.-]+))?$/', trim( (string) $key ), $matches ) ) {
 			return null;
 		}
 
 		return array(
-			0 => $parts[0],
-			1 => $parts[1],
-			2 => $parts[2],
-			3 => ( isset( $parts[3] ) && '' !== $parts[3] ) ? $parts[3] : 'io',
+			0 => $matches[1],
+			1 => $matches[2],
+			2 => $matches[3],
+			3 => isset( $matches[4] ) ? $matches[4] : 'io',
 		);
 	}
 
@@ -246,6 +240,20 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Whether the same-origin proxy path is live on this site.
+	 *
+	 * Mirrors the conditions under which the rewrite rule is registered, so it
+	 * answers the same question the admin status check does: can this path be
+	 * reached? The API key is deliberately not considered — it governs whether
+	 * requests can be forwarded upstream, not whether the path resolves.
+	 *
+	 * @return bool
+	 */
+	public static function is_same_origin_path_active() {
+		return self::is_enable_same_origin() && '' !== self::get_raw_same_origin_path();
+	}
+
+	/**
 	 * Sanitize a same-origin path value.
 	 * Trims whitespace; the trailing slash is preserved if the user included it.
 	 * Rejects values that don't start with '/' and keeps the previously saved
@@ -261,18 +269,18 @@ class GTM_Server_Side_Helpers {
 			return '';
 		}
 
-		if ( '/' !== $value[0] ) {
-			add_settings_error(
-				GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
-				'gtm_server_side_same_origin_path_invalid',
-				__( 'Same-origin proxy path must start with "/" (e.g. /gtm/). The previous value was kept.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN )
-			);
-			return self::get_raw_same_origin_path();
-		}
-
 		// Drop any query/fragment if the user pasted it, and normalize duplicate slashes.
 		$value = preg_replace( '/[?#].*$/', '', $value );
 		$value = preg_replace( '#/+#', '/', $value );
+
+		if ( ! preg_match( '#^/[^/\s]\S*$#', $value ) ) {
+			add_settings_error(
+				GTM_SERVER_SIDE_FIELD_SAME_ORIGIN_PATH,
+				'gtm_server_side_same_origin_path_invalid',
+				__( 'Same-origin proxy path must start with "/" and contain a path segment (e.g. /gtm). The previous value was kept.', GTM_SERVER_SIDE_TRANSLATION_DOMAIN )
+			);
+			return self::get_raw_same_origin_path();
+		}
 
 		return $value;
 	}

@@ -121,21 +121,13 @@ class GTM_Server_Side_Same_Origin_Proxy {
 	 * @return void
 	 */
 	public function register_rewrite_rule() {
-		if ( ! GTM_Server_Side_Helpers::is_enable_same_origin() ) {
-			return;
-		}
-
-		$raw_path = GTM_Server_Side_Helpers::get_raw_same_origin_path();
-		if ( '' === $raw_path ) {
+		if ( ! GTM_Server_Side_Helpers::is_same_origin_path_active() ) {
 			return;
 		}
 
 		// Trim slashes so the regex anchor works correctly regardless of
 		// whether the stored path has a leading/trailing slash.
-		$path = trim( $raw_path, '/' );
-		if ( '' === $path ) {
-			return;
-		}
+		$path = trim( GTM_Server_Side_Helpers::get_raw_same_origin_path(), '/' );
 
 		add_rewrite_rule(
 			'^' . preg_quote( $path, '/' ) . '(/.*)?$',
@@ -241,6 +233,7 @@ class GTM_Server_Side_Same_Origin_Proxy {
 		if ( '' !== $test_uid ) {
 			header( 'Content-Type: text/plain; charset=utf-8' );
 			header( 'Cache-Control: no-store' );
+			header( 'X-Content-Type-Options: nosniff' );
 			echo esc_html( $test_uid );
 			exit;
 		}
