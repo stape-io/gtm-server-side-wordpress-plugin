@@ -157,6 +157,10 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	private function add_cookie_keeper() {
+		if ( wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+			return;
+		}
+
 		if ( ! GTM_Server_Side_Helpers::is_enable_cookie_keeper() ) {
 			if ( ! empty( $_COOKIE[ GTM_SERVER_SIDE_COOKIE_KEEPER_NAME ] ) ) {
 				GTM_Server_Side_Helpers::delete_cookie( GTM_SERVER_SIDE_COOKIE_KEEPER_NAME );
