@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.0.0
-Stable tag: 2.3.3
+Stable tag: 2.3.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.4 =
+* Fixed a "Cannot modify header information" warning caused by the cookie keeper running on WP-Cron and WP-CLI requests.
 
 = 2.3.3 =
 * Added a proxy status check that confirms the server_container_url to use in web GTM once the same-origin proxy path is verified.

@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.0.0
 
-**Stable tag:** 2.3.3
+**Stable tag:** 2.3.4
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.4
+- Fixed a "Cannot modify header information" warning caused by the cookie keeper running on WP-Cron and WP-CLI requests.
 
 ## 2.3.3
 - Added a proxy status check that confirms the `server_container_url` to use in web GTM once the same-origin proxy path is verified.
