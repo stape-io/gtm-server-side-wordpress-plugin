@@ -373,16 +373,21 @@ class GTM_Server_Side_Same_Origin_Proxy {
 	 * @return void
 	 */
 	private function send_response_headers( $headers ) {
+		$has_get_values = is_object( $headers ) && method_exists( $headers, 'getValues' );
+
 		foreach ( $headers as $key => $value ) {
 			$lower = strtolower( $key );
 			if ( in_array( $lower, self::$hop_by_hop_response, true )
 				|| in_array( $lower, self::$stripped_security_response, true ) ) {
 				continue;
 			}
+
+			$values = $has_get_values ? (array) $headers->getValues( $key ) : (array) $value;
+
 			// Remove any header WordPress (or nginx) already set under this
 			// name so we don't emit duplicates.
 			header_remove( $key );
-			foreach ( (array) $value as $v ) {
+			foreach ( $values as $v ) {
 				if ( 'set-cookie' === $lower ) {
 					$v = $this->strip_cookie_domain( $v );
 				}

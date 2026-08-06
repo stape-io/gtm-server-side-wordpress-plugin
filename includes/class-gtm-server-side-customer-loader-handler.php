@@ -18,7 +18,7 @@ class GTM_Server_Side_Customer_Loader_Handler {
 	/**
 	 * Send data.
 	 *
-	 * @return mixed
+	 * @return array|WP_Error
 	 */
 	public function send_data() {
 		$request_context = $this->get_request_context();
@@ -199,7 +199,7 @@ class GTM_Server_Side_Customer_Loader_Handler {
 	 * @param array $response Response.
 	 * @param array $request  Original request.
 	 *
-	 * @return mixed
+	 * @return array|WP_Error
 	 */
 	private function parse_response( $response, $request ) {
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
@@ -219,6 +219,55 @@ class GTM_Server_Side_Customer_Loader_Handler {
 
 		$decoded = json_decode( $raw_body, true );
 
-		return ( json_last_error() === JSON_ERROR_NONE ) ? $decoded : $raw_body;
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
+			return new WP_Error(
+				'stape_api_invalid_json',
+				'Stape API returned a response that could not be decoded.',
+				array(
+					'status_code' => $status_code,
+					'body'        => $raw_body,
+					'request'     => $request,
+				)
+			);
+		}
+
+		if ( ! empty( $decoded['body']['jsCode'] ) && GTM_Server_Side_Helpers::has_same_origin_settings() ) {
+			$decoded['body']['jsCode'] = $this->rewrite_loader_extension( (string) $decoded['body']['jsCode'] );
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Rewrite the loader extension from ".js" to ".load".
+	 *
+	 * Web servers often serve ".js" paths as static files, so the same-origin loader is
+	 * requested with the ".load" extension and mapped back by the proxy handler.
+	 *
+	 * The match is anchored to a URL whose path begins with the same value that was
+	 * sent to the API as `sameOriginPath`, so it cannot touch the GTM bootstrap event
+	 * name ("gtm.js") or third-party URLs that merely contain the proxy path further
+	 * down their own path. The path is taken from get_same_origin_url() rather than the
+	 * raw setting because it must include the WordPress home path on sub-directory
+	 * installs (e.g. "/wp/gtm"), which is what the returned snippet contains.
+	 *
+	 * @param  string $js_code Loader snippet returned by the API.
+	 * @return string
+	 */
+	private function rewrite_loader_extension( $js_code ) {
+		$path = (string) wp_parse_url( GTM_Server_Side_Helpers::get_same_origin_url(), PHP_URL_PATH );
+		$path = rtrim( $path, '/' );
+
+		if ( '' === $path ) {
+			return $js_code;
+		}
+
+		$path = '/' . ltrim( $path, '/' );
+
+		$pattern = '#((?:https?:)?//[^/"\'\s?]+'
+			. preg_quote( $path, '#' )
+			. '(?:/[A-Za-z0-9._~-]+)+)\.js(?=[?"\'])#i';
+
+		return (string) preg_replace( $pattern, '$1.load', $js_code );
 	}
 }
