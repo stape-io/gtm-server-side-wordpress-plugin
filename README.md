@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.0.0
 
-**Stable tag:** 2.3.4
+**Stable tag:** 2.3.5
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,11 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.5
+- Fixed the same-origin loader rewrite so that only the proxied loader URL is changed from `.js` to `.load`, leaving the `gtm.js` bootstrap event name and third-party URLs untouched.
+- The `.js` to `.load` rewrite is now applied to every generated loader snippet, including the ones refreshed by cron.
+- Fixed same-origin proxy responses that set more than one cookie: repeated `Set-Cookie` headers are no longer merged into a single malformed header.
 
 ## 2.3.4
 - Fixed a "Cannot modify header information" warning caused by the cookie keeper running on WP-Cron and WP-CLI requests.

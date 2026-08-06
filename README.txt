@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.0.0
-Stable tag: 2.3.4
+Stable tag: 2.3.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,11 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.5 =
+* Fixed the same-origin loader rewrite so that only the proxied loader URL is changed from ".js" to ".load", leaving the gtm.js bootstrap event name and third-party URLs untouched.
+* The ".js" to ".load" rewrite is now applied to every generated loader snippet, including the ones refreshed by cron.
+* Fixed same-origin proxy responses that set more than one cookie: repeated Set-Cookie headers are no longer merged into a single malformed header.
 
 = 2.3.4 =
 * Fixed a "Cannot modify header information" warning caused by the cookie keeper running on WP-Cron and WP-CLI requests.

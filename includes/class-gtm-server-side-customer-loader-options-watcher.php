@@ -64,14 +64,7 @@ class GTM_Server_Side_Customer_Loader_Options_Watcher {
 			! empty( $result['body'] ) &&
 			! empty( $result['body']['jsCode'] )
 		) {
-			$js_code = (string) $result['body']['jsCode'];
-
-			if ( GTM_Server_Side_Helpers::has_same_origin_settings() ) {
-				// jsCode is generated for the same-origin context, so every ".js" reference in it must land on the proxy as ".load" to avoid static file server.
-				$js_code = preg_replace( '/\.js(?=(\?|"|\'))/', '.load', $js_code );
-			}
-
-			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, $js_code );
+			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, (string) $result['body']['jsCode'] );
 			return;
 		}
 
