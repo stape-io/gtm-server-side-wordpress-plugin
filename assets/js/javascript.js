@@ -373,26 +373,28 @@ var pluginGtmServerSide = {
 	/**
 	 * Push to dataLayer.
 	 *
-	 * @param object originalItem List items.
+	 * @param object|array originalItem Single item or list of items.
 	 * @param string event Event name.
 	 * @param string pagetype Page type name.
 	 * @param object customEcommerce Ecommerce data.
 	 */
 	_pushToDataLayer: function ( originalItem, event, pagetype, customEcommerce = {} ) {
-		item = Object.assign( {}, originalItem );
-		if ( item.item_id ) {
-			item = [ item ];
-		}
+		var originalItems = Array.isArray( originalItem ) ? originalItem : [ originalItem ];
 
 		var items = [];
 		var value = 0;
 		var index = 1;
-		for ( var item_loop of item ) {
+		for ( var original of originalItems ) {
+			var item_loop      = Object.assign( {}, original );
 			item_loop.index    = index++;
 			item_loop.quantity = item_loop.quantity ? parseInt( item_loop.quantity, 10 ) : 1;
 			item_loop          = this.filterItemPrice( item_loop );
 			value              = parseFloat( value + ( item_loop.price * item_loop.quantity ) );
 			items.push( item_loop );
+		}
+
+		if ( ! items.length ) {
+			return;
 		}
 
 		let eventDataEcommerce = {

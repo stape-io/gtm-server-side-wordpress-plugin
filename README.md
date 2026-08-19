@@ -4,9 +4,9 @@
 
 **Requires at least:** 5.2.0
 
-**Tested up to:** 7.0.0
+**Tested up to:** 7.1.0
 
-**Stable tag:** 2.3.5
+**Stable tag:** 2.3.6
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,10 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.6
+- Fixed a JavaScript error (`item is not iterable`) that broke the `add_to_cart` data layer event when adding a grouped product to the cart.
+- Tested up to WordPress 7.1.0
 
 ## 2.3.5
 - Fixed the same-origin loader rewrite so that only the proxied loader URL is changed from `.js` to `.load`, leaving the `gtm.js` bootstrap event name and third-party URLs untouched.
