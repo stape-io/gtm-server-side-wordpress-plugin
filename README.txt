@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.1.0
-Stable tag: 2.3.6
+Stable tag: 2.3.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.7 =
+* Fixed the same-origin service worker returning a 404. The tag container registers it from a proxied iframe, using a ".js" URL built at runtime that the web server answers from its static file handler before WordPress can proxy it. The registration now goes out as ".load", like the loader already does.
 
 = 2.3.6 =
 * Fixed a JavaScript error ("item is not iterable") that broke the add_to_cart data layer event when adding a grouped product to the cart.
