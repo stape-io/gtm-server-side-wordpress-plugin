@@ -55,7 +55,6 @@ class GTM_Server_Side_Tracking_Code {
 		}
 
 		if ( GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) {
-			$this->print_same_origin_service_worker_patch();
 			$this->print_gtm_custom_loader_from_api();
 			return;
 		}
@@ -128,19 +127,6 @@ class GTM_Server_Side_Tracking_Code {
 	}
 
 	/**
-	 * Print the same-origin service worker patch, ahead of the loader snippet.
-	 *
-	 * GTM_Server_Side_Same_Origin_Proxy injects the same script into the
-	 * registration iframe, which is where the container registers from.
-	 *
-	 * @return void
-	 */
-	private function print_same_origin_service_worker_patch() {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo GTM_Server_Side_Helpers::get_same_origin_service_worker_patch();
-	}
-
-	/**
 	 * Print GTM Code from api.
 	 *
 	 * @return void
@@ -150,7 +136,30 @@ class GTM_Server_Side_Tracking_Code {
 		if ( GTM_Server_Side_Helpers::is_enable_placement_gtm_consent() ) {
 			$code = str_replace( '<script', '<script' . $this->print_tag_script_attrs(), $code );
 		}
-		echo $code; /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */
+		echo $this->add_same_origin_service_worker_patch( $code ); /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */
+	}
+
+	/**
+	 * Place the service worker patch inside the loader's own script element.
+	 *
+	 * Sharing the element keeps the patch on the right side of the consent
+	 * gate, which marks that element `type="text/plain"` until consent is
+	 * granted, and guarantees the patch runs before the loader it precedes.
+	 *
+	 * @param  string $code Loader snippet.
+	 * @return string
+	 */
+	private function add_same_origin_service_worker_patch( $code ) {
+		$js = GTM_Server_Side_Helpers::get_same_origin_service_worker_patch_js();
+		if ( '' === $js ) {
+			return $code;
+		}
+
+		if ( ! preg_match( '/<script\b[^>]*>/i', $code, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return GTM_Server_Side_Helpers::get_same_origin_service_worker_patch() . $code;
+		}
+
+		return substr_replace( $code, $js, $matches[0][1] + strlen( $matches[0][0] ), 0 );
 	}
 
 	/**

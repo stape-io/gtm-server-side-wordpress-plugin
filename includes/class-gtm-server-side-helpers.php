@@ -267,6 +267,18 @@ class GTM_Server_Side_Helpers {
 	 *                 configured or the built asset is unreadable.
 	 */
 	public static function get_same_origin_service_worker_patch() {
+		$js = self::get_same_origin_service_worker_patch_js();
+
+		return '' === $js ? '' : '<script>' . $js . '</script>';
+	}
+
+	/**
+	 * The same patch without a script element, to place inside an existing one.
+	 *
+	 * @return string  Empty when same-origin is not configured or the built
+	 *                 asset is unreadable.
+	 */
+	public static function get_same_origin_service_worker_patch_js() {
 		if ( ! self::has_same_origin_settings() ) {
 			return '';
 		}
@@ -287,7 +299,7 @@ class GTM_Server_Side_Helpers {
 			JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
 		);
 
-		return '<script>window.gtmServerSideSameOriginBase=' . $base . ';' . $script . '</script>';
+		return 'window.gtmServerSideSameOriginBase=' . $base . ';' . $script;
 	}
 
 	/**
