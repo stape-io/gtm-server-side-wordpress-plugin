@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".build",
+    "rootDir": "assets/src"
+  },
+  "include": [
+    "assets/src"
+  ],
+  "exclude": [
+    "assets/src/**/*.test.ts"
+  ]
+}

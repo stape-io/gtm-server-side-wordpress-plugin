@@ -1,8 +1,14 @@
 # Directories
 /.wordpress-org export-ignore
 /.github export-ignore
+/assets/src export-ignore
+/node_modules export-ignore
 
 # Files
 /.gitattributes export-ignore
 /.gitignore export-ignore
 README.md export-ignore
+package.json export-ignore
+package-lock.json export-ignore
+tsconfig.json export-ignore
+tsconfig.build.json export-ignore
