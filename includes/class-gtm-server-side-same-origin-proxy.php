@@ -250,8 +250,9 @@ class GTM_Server_Side_Same_Origin_Proxy {
 		}
 
 		// Sub-path captured by the rewrite rule, e.g. '/collect' or ''.
-		$sub_path              = (string) get_query_var( self::PATH_VAR );
-		$is_custom_loader_load = (bool) preg_match( '/\.load$/i', $sub_path );
+		$sub_path                 = (string) get_query_var( self::PATH_VAR );
+		$is_custom_loader_load    = (bool) preg_match( '/\.load$/i', $sub_path );
+		$is_service_worker_iframe = (bool) preg_match( '#/_/service_worker/[^/]+/sw_iframe\.html$#i', $sub_path );
 		$upstream_path         = $is_custom_loader_load
 			? (string) preg_replace( '/\.load$/i', '.js', $sub_path )
 			: $sub_path;
@@ -296,9 +297,40 @@ class GTM_Server_Side_Same_Origin_Proxy {
 			ob_end_clean();
 		}
 
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( $is_service_worker_iframe
+			&& false !== stripos( (string) wp_remote_retrieve_header( $response, 'content-type' ), 'html' ) ) {
+			$body = $this->inject_service_worker_patch( $body );
+		}
+
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo wp_remote_retrieve_body( $response );
+		echo $body;
 		exit;
+	}
+
+	/**
+	 * Insert the service worker patch into the proxied registration iframe.
+	 *
+	 * The container registers from inside this document, not from the page, so
+	 * the patch goes in ahead of the document's own script.
+	 *
+	 * @param  string $body Upstream HTML.
+	 * @return string
+	 */
+	private function inject_service_worker_patch( $body ) {
+		$patch = GTM_Server_Side_Helpers::get_same_origin_service_worker_patch();
+		if ( '' === $patch ) {
+			return $body;
+		}
+
+		foreach ( array( '/<head\b[^>]*>/i', '/<body\b[^>]*>/i' ) as $pattern ) {
+			if ( preg_match( $pattern, $body, $matches, PREG_OFFSET_CAPTURE ) ) {
+				return substr_replace( $body, $patch, $matches[0][1] + strlen( $matches[0][0] ), 0 );
+			}
+		}
+
+		return $body;
 	}
 
 	/**

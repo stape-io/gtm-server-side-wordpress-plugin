@@ -55,6 +55,7 @@ class GTM_Server_Side_Tracking_Code {
 		}
 
 		if ( GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) {
+			$this->print_same_origin_service_worker_patch();
 			$this->print_gtm_custom_loader_from_api();
 			return;
 		}
@@ -124,6 +125,19 @@ class GTM_Server_Side_Tracking_Code {
 	 */
 	private function print_gtm_consent_loader() {
 		echo '<script>!function(){"use strict";for(var t={window:window,gtmVariable:"dataLayer",onConsentGranted:function(){var t,e,n;t="custom-loader",(t=document.getElementById(t))&&"text/plain"===t.type&&(t.type="text/javascript",n=t.cloneNode(!0),null!=(e=t.parentNode))&&e.replaceChild(n,t)}},e=t.window,n=t.gtmVariable,a=t.onConsentGranted,r=((t=e)[n]||(t[n]=[]),!1),o=t[n],d=function(){r||(r=!0,a())},i=function(t){return!(!t||"consent"!==t[0]||-1===["default","update"].indexOf(t[1])||!(t=t[2])||"object"!=typeof t||"granted"!==t.ad_storage&&"granted"!==t.analytics_storage)},u=o.push,l=(o.push=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];var n=u.apply(o,t);return i(t[0])&&d(),n},t[n]),c=l.length-1;0<=c;c--){var p=l[c];if(i(p))return d()}}();</script>';
+	}
+
+	/**
+	 * Print the same-origin service worker patch, ahead of the loader snippet.
+	 *
+	 * GTM_Server_Side_Same_Origin_Proxy injects the same script into the
+	 * registration iframe, which is where the container registers from.
+	 *
+	 * @return void
+	 */
+	private function print_same_origin_service_worker_patch() {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo GTM_Server_Side_Helpers::get_same_origin_service_worker_patch();
 	}
 
 	/**
