@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.1.0
 
-**Stable tag:** 2.3.6
+**Stable tag:** 2.3.7
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.7
+- Fixed the same-origin service worker returning a 404: the tag container builds its service worker URL at runtime, so the `.js` to `.load` rewrite never reached it and the request was answered by the web server's static file handler before WordPress could proxy it.
 
 ## 2.3.6
 - Fixed a JavaScript error (`item is not iterable`) that broke the `add_to_cart` data layer event when adding a grouped product to the cart.
