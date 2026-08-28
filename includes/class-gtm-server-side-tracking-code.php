@@ -55,6 +55,7 @@ class GTM_Server_Side_Tracking_Code {
 		}
 
 		if ( GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) {
+			$this->print_same_origin_service_worker_patch();
 			$this->print_gtm_custom_loader_from_api();
 			return;
 		}
@@ -124,6 +125,38 @@ class GTM_Server_Side_Tracking_Code {
 	 */
 	private function print_gtm_consent_loader() {
 		echo '<script>!function(){"use strict";for(var t={window:window,gtmVariable:"dataLayer",onConsentGranted:function(){var t,e,n;t="custom-loader",(t=document.getElementById(t))&&"text/plain"===t.type&&(t.type="text/javascript",n=t.cloneNode(!0),null!=(e=t.parentNode))&&e.replaceChild(n,t)}},e=t.window,n=t.gtmVariable,a=t.onConsentGranted,r=((t=e)[n]||(t[n]=[]),!1),o=t[n],d=function(){r||(r=!0,a())},i=function(t){return!(!t||"consent"!==t[0]||-1===["default","update"].indexOf(t[1])||!(t=t[2])||"object"!=typeof t||"granted"!==t.ad_storage&&"granted"!==t.analytics_storage)},u=o.push,l=(o.push=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];var n=u.apply(o,t);return i(t[0])&&d(),n},t[n]),c=l.length-1;0<=c;c--){var p=l[c];if(i(p))return d()}}();</script>';
+	}
+
+	/**
+	 * Print the same-origin service worker patch.
+	 *
+	 * The tag container builds its service worker URL at runtime — the proxy
+	 * path followed by "/_/service_worker/<id>/sw.js" — so that URL never
+	 * appears in the loader snippet the ".js" to ".load" rewrite runs on.
+	 * Requested as ".js" it is answered by the web server's static file
+	 * handler (typically a 404, since nothing is on disk there) before
+	 * WordPress routes it to the proxy, so the registration fails. Swapping
+	 * the extension at registration time sends it down the same ".load" path
+	 * the loader already uses, which the proxy maps back to ".js" upstream.
+	 *
+	 * Registrations outside the proxy path — a PWA service worker, for
+	 * example — are handed to the original implementation untouched, as is
+	 * the rewritten one if the browser rejects it (a Trusted Types policy
+	 * refusing a plain string, say).
+	 *
+	 * @return void
+	 */
+	private function print_same_origin_service_worker_patch() {
+		if ( ! GTM_Server_Side_Helpers::has_same_origin_settings() ) {
+			return;
+		}
+
+		$base_path = GTM_Server_Side_Helpers::get_same_origin_base_path();
+		if ( '' === $base_path ) {
+			return;
+		}
+
+		echo '<script>!function(w){var b="' . esc_js( $base_path ) . '/",c=w.navigator&&w.navigator.serviceWorker;if(!c||"function"!=typeof c.register)return;var r=c.register;c.register=function(u,o){try{var a=new URL(String(u),w.location.href);if(a.origin===w.location.origin&&0===a.pathname.indexOf(b)&&/\.js$/i.test(a.pathname)){a.pathname=a.pathname.replace(/\.js$/i,".load");try{return r.call(this,a.href,o)}catch(e){}}}catch(e){}return r.apply(this,arguments)}}(window);</script>';
 	}
 
 	/**

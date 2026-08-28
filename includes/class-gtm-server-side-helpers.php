@@ -240,6 +240,26 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Absolute path prefix the proxy answers on, as it appears in browser URLs.
+	 *
+	 * Derived from get_same_origin_url() rather than the raw setting so that it
+	 * carries the WordPress home path on sub-directory installs (e.g. "/wp/gtm").
+	 * Normalized to a leading slash and no trailing slash so it can be used both
+	 * as a string prefix and as a regex anchor.
+	 *
+	 * @return string  Empty string when no path is configured.
+	 */
+	public static function get_same_origin_base_path() {
+		$path = rtrim( (string) wp_parse_url( self::get_same_origin_url(), PHP_URL_PATH ), '/' );
+
+		if ( '' === $path ) {
+			return '';
+		}
+
+		return '/' . ltrim( $path, '/' );
+	}
+
+	/**
 	 * Whether the same-origin proxy path is live on this site.
 	 *
 	 * Mirrors the conditions under which the rewrite rule is registered, so it
