@@ -240,6 +240,89 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Absolute path prefix the proxy answers on, as it appears in browser URLs.
+	 *
+	 * Taken from get_same_origin_url() so it carries the home path of a
+	 * sub-directory install. Leading slash, no trailing slash.
+	 *
+	 * @return string  Empty string when no path is configured.
+	 */
+	public static function get_same_origin_base_path() {
+		$path = rtrim( (string) wp_parse_url( self::get_same_origin_url(), PHP_URL_PATH ), '/' );
+
+		if ( '' === $path ) {
+			return '';
+		}
+
+		return '/' . ltrim( $path, '/' );
+	}
+
+	/**
+	 * Inline script that keeps service worker registrations on the proxy path.
+	 *
+	 * Built from assets/src/service-worker-patch.ts, which explains what it does.
+	 * After editing that, run `npm run build` and commit the rebuilt bundle.
+	 *
+	 * @return string  Script tag, or an empty string when same-origin is not
+	 *                 configured or the built asset is unreadable.
+	 */
+	public static function get_same_origin_service_worker_patch() {
+		$js = self::get_same_origin_service_worker_patch_js();
+
+		return '' === $js ? '' : '<script>' . $js . '</script>';
+	}
+
+	/**
+	 * The same patch without a script element, to place inside an existing one.
+	 *
+	 * @return string  Empty when same-origin is not configured or the built
+	 *                 asset is unreadable.
+	 */
+	public static function get_same_origin_service_worker_patch_js() {
+		if ( ! self::has_same_origin_settings() ) {
+			return '';
+		}
+
+		$base_path = self::get_same_origin_base_path();
+		if ( '' === $base_path ) {
+			return '';
+		}
+
+		$script = self::get_service_worker_patch_script();
+		if ( '' === $script ) {
+			return '';
+		}
+
+		// The HEX flags keep a stray "<" from closing the script element.
+		$base = wp_json_encode(
+			$base_path . '/',
+			JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+		);
+
+		return 'window.gtmServerSideSameOriginBase=' . $base . ';' . $script;
+	}
+
+	/**
+	 * Read the built service worker patch, once per request.
+	 *
+	 * @return string  Bundle contents, or an empty string when it is missing.
+	 */
+	private static function get_service_worker_patch_script() {
+		static $cache = null;
+
+		if ( null !== $cache ) {
+			return $cache;
+		}
+
+		$file = GTM_SERVER_SIDE_PATH . 'assets/js/service-worker-patch.js';
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions
+		$cache = is_readable( $file ) ? trim( (string) file_get_contents( $file ) ) : '';
+
+		return $cache;
+	}
+
+	/**
 	 * Whether the same-origin proxy path is live on this site.
 	 *
 	 * Mirrors the conditions under which the rewrite rule is registered, so it

@@ -247,22 +247,17 @@ class GTM_Server_Side_Customer_Loader_Handler {
 	 * The match is anchored to a URL whose path begins with the same value that was
 	 * sent to the API as `sameOriginPath`, so it cannot touch the GTM bootstrap event
 	 * name ("gtm.js") or third-party URLs that merely contain the proxy path further
-	 * down their own path. The path is taken from get_same_origin_url() rather than the
-	 * raw setting because it must include the WordPress home path on sub-directory
-	 * installs (e.g. "/wp/gtm"), which is what the returned snippet contains.
+	 * down their own path.
 	 *
 	 * @param  string $js_code Loader snippet returned by the API.
 	 * @return string
 	 */
 	private function rewrite_loader_extension( $js_code ) {
-		$path = (string) wp_parse_url( GTM_Server_Side_Helpers::get_same_origin_url(), PHP_URL_PATH );
-		$path = rtrim( $path, '/' );
+		$path = GTM_Server_Side_Helpers::get_same_origin_base_path();
 
 		if ( '' === $path ) {
 			return $js_code;
 		}
-
-		$path = '/' . ltrim( $path, '/' );
 
 		$pattern = '#((?:https?:)?//[^/"\'\s?]+'
 			. preg_quote( $path, '#' )
