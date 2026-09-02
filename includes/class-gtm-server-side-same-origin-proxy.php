@@ -73,6 +73,35 @@ class GTM_Server_Side_Same_Origin_Proxy {
 	);
 
 	/**
+	 * Request headers that carry a client IP. They are never forwarded as they
+	 * arrive: the browser can set any of them, and the site's own proxies write
+	 * chains that mean nothing to the container. get_client_ip() resolves them
+	 * into a single value instead.
+	 *
+	 * @var string[]
+	 */
+	private static $client_ip_request = array(
+		'x-forwarded-for',
+		'x-real-ip',
+		'forwarded',
+		'true-client-ip',
+		'cf-connecting-ip',
+	);
+
+	/**
+	 * $_SERVER keys consulted, in order, to recover the visitor's IP when the
+	 * site sits behind a reverse proxy or CDN and REMOTE_ADDR is that hop.
+	 *
+	 * @var string[]
+	 */
+	private static $client_ip_sources = array(
+		'HTTP_CF_CONNECTING_IP',
+		'HTTP_TRUE_CLIENT_IP',
+		'HTTP_X_REAL_IP',
+		'HTTP_X_FORWARDED_FOR',
+	);
+
+	/**
 	 * Hop-by-hop headers that must not be forwarded to the browser.
 	 *
 	 * @var string[]
@@ -361,7 +390,11 @@ class GTM_Server_Side_Same_Origin_Proxy {
 
 	/**
 	 * Build the set of request headers to forward upstream.
-	 * Removes hop-by-hop headers and adds x-stape-host.
+	 * Removes hop-by-hop headers, restates the visitor's IP and adds
+	 * x-stape-host.
+	 *
+	 * Header keys are lower-cased so the ones set here cannot end up alongside
+	 * a differently-cased copy of the same header from the incoming request.
 	 *
 	 * @return array<string,string>
 	 */
@@ -370,14 +403,110 @@ class GTM_Server_Side_Same_Origin_Proxy {
 
 		$out = array();
 		foreach ( $all as $key => $value ) {
-			if ( ! in_array( strtolower( $key ), self::$hop_by_hop_request, true ) ) {
-				$out[ $key ] = $value;
+			$lower = strtolower( $key );
+			if ( in_array( $lower, self::$hop_by_hop_request, true )
+				|| in_array( $lower, self::$client_ip_request, true ) ) {
+				continue;
 			}
+			$out[ $lower ] = $value;
 		}
 
 		$out['x-stape-host'] = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+		$out['x-from-cdn'] = 'cft-stape';
+
+		$client_ip = $this->get_client_ip();
+		if ( '' !== $client_ip ) {
+			$out['x-forwarded-for'] = $client_ip;
+			$out['x-real-ip']       = $client_ip;
+			$out['true-client-ip']  = $client_ip;
+		}
 
 		return $out;
+	}
+
+	/**
+	 * Resolve the visitor's IP address.
+	 *
+	 * REMOTE_ADDR is the connecting peer, which on a site behind a CDN or load
+	 * balancer is that hop rather than the visitor, so the usual forwarding
+	 * headers are consulted first. Only public addresses are accepted from
+	 * them: private and reserved ones are internal hops, and a public one that
+	 * the visitor forged only misreports their own geo. Sites that terminate
+	 * connections directly, where those headers are attacker-controlled and
+	 * REMOTE_ADDR is already correct, can opt out through the filter.
+	 *
+	 * @return string  IP address, or '' when none could be resolved.
+	 */
+	private function get_client_ip() {
+		$sources = (bool) apply_filters( 'gtm_server_side_trust_proxy_client_ip', true )
+			? self::$client_ip_sources
+			: array();
+
+		foreach ( $sources as $key ) {
+			if ( empty( $_SERVER[ $key ] ) ) {
+				continue;
+			}
+
+			$chain = explode( ',', (string) wp_unslash( $_SERVER[ $key ] ) );
+			foreach ( $chain as $candidate ) {
+				$ip = $this->normalize_client_ip( $candidate, true );
+				if ( '' !== $ip ) {
+					return $this->filter_client_ip( $ip );
+				}
+			}
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+
+		return $this->filter_client_ip( $this->normalize_client_ip( $remote, false ) );
+	}
+
+	/**
+	 * Let sites override the resolved address, e.g. for a host whose visitor IP
+	 * arrives in a header this class does not know about.
+	 *
+	 * @param  string $ip Resolved IP address, possibly empty.
+	 * @return string
+	 */
+	private function filter_client_ip( $ip ) {
+		$filtered = apply_filters( 'gtm_server_side_same_origin_client_ip', $ip );
+
+		return is_string( $filtered ) ? trim( $filtered ) : '';
+	}
+
+	/**
+	 * Validate one IP candidate taken from a header or from REMOTE_ADDR.
+	 *
+	 * Strips the port that some proxies append and the brackets that wrap an
+	 * IPv6 literal when they do.
+	 *
+	 * @param  string $candidate   Raw value.
+	 * @param  bool   $public_only Reject private and reserved ranges.
+	 * @return string              Valid IP address, or '' when it is not one.
+	 */
+	private function normalize_client_ip( $candidate, $public_only ) {
+		$candidate = trim( $candidate );
+		if ( '' === $candidate ) {
+			return '';
+		}
+
+		if ( 0 === strpos( $candidate, '[' ) ) {
+			$close = strpos( $candidate, ']' );
+			if ( false !== $close ) {
+				$candidate = substr( $candidate, 1, $close - 1 );
+			}
+		} elseif ( substr_count( $candidate, ':' ) === 1 && false !== strpos( $candidate, '.' ) ) {
+			$candidate = strstr( $candidate, ':', true );
+		}
+
+		$flags = $public_only
+			? FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+			: 0;
+
+		$valid = filter_var( $candidate, FILTER_VALIDATE_IP, $flags );
+
+		return false === $valid ? '' : (string) $valid;
 	}
 
 	/**
