@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.1.0
-Stable tag: 2.3.7
+Stable tag: 2.3.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,9 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.8 =
+* Fixed the same-origin proxy reaching the container without the visitor's IP address, which made analytics report every visitor from the server's own location. The proxy turns a browser request into a server-to-server one, so the visitor's address is now resolved from the incoming request and restated upstream in X-Forwarded-For and X-Real-IP. Forwarding headers are trusted for that lookup by default; sites that terminate connections directly can opt out with the gtm_server_side_trust_proxy_client_ip filter, and gtm_server_side_same_origin_client_ip overrides the resolved address outright.
 
 = 2.3.7 =
 * Fixed the same-origin service worker returning a 404. The tag container registers it from a proxied iframe, using a ".js" URL built at runtime that the web server answers from its static file handler before WordPress can proxy it. The registration now goes out as ".load", like the loader already does.
