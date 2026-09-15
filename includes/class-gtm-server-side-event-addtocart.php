@@ -49,7 +49,7 @@ class GTM_Server_Side_Event_AddToCart {
 			return;
 		}
 
-		add_action( 'woocommerce_add_to_cart', array( $this, 'woocommerce_add_to_cart' ), 10, 4 );
+		add_action( 'woocommerce_add_to_cart', array( $this, 'woocommerce_add_to_cart' ), 10, 5 );
 		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
 
 		add_filter( 'woocommerce_cart_item_remove_link', array( $this, 'woocommerce_cart_item_remove_link' ), 10, 2 );
@@ -74,9 +74,10 @@ class GTM_Server_Side_Event_AddToCart {
 	 * @param  int    $product_id Product id.
 	 * @param  int    $quantity Quantity.
 	 * @param  int    $variation_id Variation id.
+	 * @param  array  $variation Chosen variation attributes.
 	 * @return void
 	 */
-	public function woocommerce_add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id ) {
+	public function woocommerce_add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation = array() ) {
 		if ( ! $this->is_page_load_request() ) {
 			return;
 		}
@@ -94,6 +95,7 @@ class GTM_Server_Side_Event_AddToCart {
 			'product_id'   => (int) $product_id,
 			'variation_id' => (int) $variation_id,
 			'quantity'     => max( 1, (int) $quantity ),
+			'variation'    => $this->sanitize_variation( $variation ),
 			'time'         => time(),
 		);
 
@@ -232,10 +234,76 @@ class GTM_Server_Side_Event_AddToCart {
 			$array['quantity'] = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 1;
 			$array['index']    = $index++;
 
+			$item_variant = $this->get_item_variant( $product, isset( $item['variation'] ) ? $item['variation'] : array() );
+			if ( '' !== $item_variant ) {
+				$array['item_variant'] = $item_variant;
+			}
+
 			$result[] = $array;
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Sanitize the chosen variation attributes before they are stashed.
+	 *
+	 * They arrive from the add-to-cart request, and the session outlives it.
+	 *
+	 * @param  mixed $variation Chosen variation attributes.
+	 * @return array
+	 */
+	private function sanitize_variation( $variation ) {
+		if ( ! is_array( $variation ) ) {
+			return array();
+		}
+
+		$result = array();
+		foreach ( $variation as $key => $value ) {
+			if ( ! is_scalar( $value ) ) {
+				continue;
+			}
+
+			$result[ sanitize_text_field( (string) $key ) ] = sanitize_text_field( (string) $value );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Return the variant label for a stashed product.
+	 *
+	 * A variation's own attributes are empty for an "Any …" attribute, so the
+	 * value the shopper chose is taken from the attributes the add-to-cart
+	 * request carried instead.
+	 *
+	 * @param  WC_Product $product Added product.
+	 * @param  array      $variation Chosen variation attributes.
+	 * @return string
+	 */
+	private function get_item_variant( $product, $variation ) {
+		if ( 'variation' !== $product->get_type() ) {
+			return '';
+		}
+
+		$variation  = is_array( $variation ) ? $variation : array();
+		$attributes = array();
+
+		foreach ( $product->get_variation_attributes() as $key => $value ) {
+			if ( '' === $value || null === $value ) {
+				$value = isset( $variation[ $key ] ) ? $variation[ $key ] : '';
+			}
+
+			if ( '' === $value ) {
+				continue;
+			}
+
+			$attributes[ $key ] = $value;
+		}
+
+		$labels = GTM_Server_Side_WC_Helpers::instance()->get_variation_attribute_labels( $attributes );
+
+		return implode( ',', $labels );
 	}
 
 	/**

@@ -390,8 +390,17 @@ class GTM_Server_Side_WC_Helpers {
 	 * @return array
 	 */
 	public function get_product_variations( $product ) {
-		$labels     = array();
-		$attributes = $product->get_variation_attributes();
+		return $this->get_variation_attribute_labels( $product->get_variation_attributes() );
+	}
+
+	/**
+	 * Return readable labels for a set of variation attributes.
+	 *
+	 * @param  array $attributes Attributes, keyed `attribute_*`.
+	 * @return array
+	 */
+	public function get_variation_attribute_labels( $attributes ) {
+		$labels = array();
 		foreach ( $attributes as $key => $value ) {
 			if ( false === strstr( $key, 'attribute_pa_' ) ) {
 				$labels[] = $value;
