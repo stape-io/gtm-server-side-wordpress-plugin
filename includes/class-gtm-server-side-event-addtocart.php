@@ -28,6 +28,18 @@ class GTM_Server_Side_Event_AddToCart {
 	const SESSION_ITEMS_KEY = '_gtm_server_side_add_to_cart';
 
 	/**
+	 * How long a stashed item stays eligible for its render, in seconds.
+	 *
+	 * The render that follows the add may never reach wp_footer (a cached
+	 * page, a closed tab, a non-HTML response). A WooCommerce session lives
+	 * for days, so an item that missed its render expires instead of firing on
+	 * an unrelated page view.
+	 *
+	 * @var int
+	 */
+	const SESSION_ITEMS_MAX_AGE = 300;
+
+	/**
 	 * Init.
 	 *
 	 * @return void
@@ -82,6 +94,7 @@ class GTM_Server_Side_Event_AddToCart {
 			'product_id'   => (int) $product_id,
 			'variation_id' => (int) $variation_id,
 			'quantity'     => max( 1, (int) $quantity ),
+			'time'         => time(),
 		);
 
 		WC()->session->set( self::SESSION_ITEMS_KEY, $items );
@@ -103,6 +116,11 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		WC()->session->__unset( self::SESSION_ITEMS_KEY );
+
+		$items = $this->drop_expired_items( $items );
+		if ( empty( $items ) ) {
+			return;
+		}
 
 		$data_layer_items = $this->get_stashed_data_layer_items( $items );
 		if ( empty( $data_layer_items ) ) {
@@ -161,6 +179,31 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Drop stashed items whose render never happened.
+	 *
+	 * @param  array $items Stashed items.
+	 * @return array
+	 */
+	private function drop_expired_items( $items ) {
+		$now    = time();
+		$result = array();
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['time'] ) ) {
+				continue;
+			}
+
+			if ( ( $now - (int) $item['time'] ) > self::SESSION_ITEMS_MAX_AGE ) {
+				continue;
+			}
+
+			$result[] = $item;
+		}
+
+		return $result;
 	}
 
 	/**

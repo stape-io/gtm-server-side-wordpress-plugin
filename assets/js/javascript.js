@@ -38,7 +38,9 @@ jQuery( document ).ready(
 				let gtmData    = pluginGtmServerSide.getGtmItemData( el.dataset );
 				let customData = pluginGtmServerSide.getCustomItemData( el.dataset );
 
-				pluginGtmServerSide.pushAddToCart( gtmData );
+				if ( pluginGtmServerSide.isAjaxAddToCart( this ) ) {
+					pluginGtmServerSide.pushAddToCart( gtmData );
+				}
 				pluginGtmServerSide.pushSelectItem( gtmData, customData );
 			}
 		);
@@ -59,7 +61,9 @@ jQuery( document ).ready(
 				let gtmData    = pluginGtmServerSide.getGtmItemData( $el.data() );
 				let customData = pluginGtmServerSide.getCustomItemData( $el.data() );
 
-				pluginGtmServerSide.pushAddToCart( gtmData );
+				if ( pluginGtmServerSide.isAjaxAddToCart( this ) ) {
+					pluginGtmServerSide.pushAddToCart( gtmData );
+				}
 				pluginGtmServerSide.pushSelectItem( gtmData, customData );
 			}
 		);
@@ -68,6 +72,10 @@ jQuery( document ).ready(
 			'click',
 			'.single_add_to_cart_button:not(.disabled)',
 			function ( e ) {
+				if ( ! pluginGtmServerSide.isAjaxAddToCart( this ) ) {
+					return;
+				}
+
 				var $elForm = jQuery( this ).closest( 'form.cart' );
 				if ( ! $elForm.length ) {
 					return true;
@@ -129,6 +137,23 @@ jQuery( document ).ready(
 );
 
 var pluginGtmServerSide = {
+	/**
+	 * Whether the clicked control adds the product over AJAX.
+	 *
+	 * WooCommerce marks a loop button with `ajax_add_to_cart` only while
+	 * "Enable AJAX add to cart buttons on archives" is on, and never marks the
+	 * single-product button. Every other add ends in a page load, where the
+	 * click-time push is lost: those are pushed on the next render by
+	 * GTM_Server_Side_Event_AddToCart instead, so the click must stay silent
+	 * to keep exactly one add_to_cart per add.
+	 *
+	 * @param element el Clicked element.
+	 * @returns bool
+	 */
+	isAjaxAddToCart: function ( el ) {
+		return jQuery( el ).closest( '.ajax_add_to_cart' ).length > 0;
+	},
+
 	pushSimpleProduct: function ( $elForm ) {
 		var item = this.convertInputsToObject(
 			$elForm.find( '[name^=gtm_]' )
