@@ -140,18 +140,36 @@ var pluginGtmServerSide = {
 	/**
 	 * Whether the clicked control adds the product over AJAX.
 	 *
-	 * WooCommerce marks a loop button with `ajax_add_to_cart` only while
-	 * "Enable AJAX add to cart buttons on archives" is on, and never marks the
-	 * single-product button. Every other add ends in a page load, where the
-	 * click-time push is lost: those are pushed on the next render by
-	 * GTM_Server_Side_Event_AddToCart instead, so the click must stay silent
-	 * to keep exactly one add_to_cart per add.
+	 * This reproduces the condition WooCommerce's own `wc-add-to-cart.js`
+	 * applies before it takes a click over AJAX, so the answer follows the
+	 * handler that is actually present rather than a class name alone:
+	 *
+	 * - the script is enqueued. "Enable AJAX add to cart buttons on archives"
+	 *   is what decides that, and the script localises `wc_add_to_cart_params`,
+	 *   so the global is present exactly when the handler is;
+	 * - the clicked control itself carries `ajax_add_to_cart` (the class is set
+	 *   from the product's own `ajax_add_to_cart` support, independently of the
+	 *   option, so it is not sufficient on its own);
+	 * - it carries `data-product_id`, which the handler posts.
+	 *
+	 * Every other add ends in a page load, where the click-time push is lost:
+	 * those are pushed on the next render by GTM_Server_Side_Event_AddToCart
+	 * instead, so the click stays silent to keep exactly one add_to_cart per
+	 * add. A theme that submits `form.cart` over AJAX without WooCommerce's
+	 * handler is therefore read as a page load; that trade-off is in the manual
+	 * checklist on the pull request.
 	 *
 	 * @param element el Clicked element.
 	 * @returns bool
 	 */
 	isAjaxAddToCart: function ( el ) {
-		return jQuery( el ).closest( '.ajax_add_to_cart' ).length > 0;
+		if ( 'undefined' === typeof wc_add_to_cart_params ) {
+			return false;
+		}
+
+		var $el = jQuery( el );
+
+		return $el.is( '.ajax_add_to_cart' ) && !! $el.attr( 'data-product_id' );
 	},
 
 	pushSimpleProduct: function ( $elForm ) {
