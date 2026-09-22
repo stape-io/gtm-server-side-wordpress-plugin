@@ -5,9 +5,14 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && esbuild .build/index.js --bundle --format=iife --target=es5 --minify --legal-comments=none --outfile=assets/js/service-worker-patch.js",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "env:destroy": "wp-env destroy",
+    "env:logs": "wp-env logs"
   },
   "devDependencies": {
+    "@wordpress/env": "^11.15.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
