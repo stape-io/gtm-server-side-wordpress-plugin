@@ -2,3 +2,11 @@
 composer.lock
 /node_modules
 /.build
+
+# Playwright / @wordpress/e2e-test-utils-playwright.
+# Unanchored: output lands next to whichever directory the run resolves from
+# (repo root, or tests/e2e when invoked through its own config).
+artifacts/
+test-results/
+playwright-report/
+blob-report/
