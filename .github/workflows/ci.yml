@@ -5,9 +5,15 @@ on:
   push:
     branches: [master]
 
-# The job only reads the repository.
+# The jobs only read the repository.
 permissions:
   contents: read
+
+# A newer push to the same pull request makes the in-flight run obsolete.
+# Pushes to master keep running, since each commit there is checked on its own.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   scripts:
@@ -25,6 +31,11 @@ jobs:
 
       - run: npm run typecheck
 
+      # Type-checks tests/e2e, which the line above does not cover: the root
+      # tsconfig only includes assets/src. Needs no browser or WordPress, so it
+      # runs here rather than holding up the e2e job.
+      - run: npm run typecheck:e2e
+
       - run: npm test
 
       # The package ships straight from the repository, so the bundle is
@@ -33,3 +44,49 @@ jobs:
         run: |
           npm run build
           git diff --exit-code -- assets/js/service-worker-patch.js
+
+  e2e:
+    name: End-to-end (WordPress + WooCommerce)
+    runs-on: ubuntu-latest
+    # The suite currently takes seconds; the cap is here to stop a hung
+    # wp-env or browser from burning a full runner hour.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Only chromium: playwright.config.ts defines no other project.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # Boots WordPress + WooCommerce in Docker and runs bin/wp-env-setup.sh
+      # through the afterStart lifecycle hook, which configures the store.
+      - name: Start WordPress
+        run: npm run env:start
+
+      - run: npm run test:e2e
+
+      # Traces are configured as retain-on-failure, so this is what makes a red
+      # run debuggable without reproducing it locally.
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # WP_DEBUG_LOG is on (see .wp-env.json), so PHP notices and fatals land
+      # here. They never reach the Playwright report, and a failing test is
+      # often explained by them. The container is `wordpress`, not
+      # `tests-wordpress`: .wp-env.json sets testsEnvironment to false.
+      - name: Print WordPress debug log
+        if: failure()
+        run: npx wp-env run wordpress cat /var/www/html/wp-content/debug.log || true
