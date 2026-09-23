@@ -26,8 +26,8 @@ jQuery( document ).ready(
 			'click',
 			'.add_to_cart_button:not(.product_type_variable, .product_type_grouped, .single_add_to_cart_button)',
 			function ( e ) {
-				var el = e.target;
-				if ( ! el.dataset ) {
+				var el = e.currentTarget || e.target.closest( '.add_to_cart_button' );
+				if ( ! el || ! el.dataset ) {
 					return;
 				}
 
