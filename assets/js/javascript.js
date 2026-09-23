@@ -38,7 +38,7 @@ jQuery( document ).ready(
 				let gtmData    = pluginGtmServerSide.getGtmItemData( el.dataset );
 				let customData = pluginGtmServerSide.getCustomItemData( el.dataset );
 
-				pluginGtmServerSide.pushAddToCart( gtmData );
+				pluginGtmServerSide.trackAddToCart( gtmData, this );
 				pluginGtmServerSide.pushSelectItem( gtmData, customData );
 			}
 		);
@@ -59,7 +59,7 @@ jQuery( document ).ready(
 				let gtmData    = pluginGtmServerSide.getGtmItemData( $el.data() );
 				let customData = pluginGtmServerSide.getCustomItemData( $el.data() );
 
-				pluginGtmServerSide.pushAddToCart( gtmData );
+				pluginGtmServerSide.trackAddToCart( gtmData, this );
 				pluginGtmServerSide.pushSelectItem( gtmData, customData );
 			}
 		);
@@ -74,16 +74,29 @@ jQuery( document ).ready(
 				}
 
 				if ( $elForm.find( '[name=variation_id]' ).length > 0 ) {
-					pluginGtmServerSide.pushVariationProduct( $elForm );
+					pluginGtmServerSide.pushVariationProduct( $elForm, this );
 					return;
 				}
 
 				if ( $elForm.hasClass( 'grouped_form' ) ) {
-					pluginGtmServerSide.pushGroupProduct( $elForm );
+					pluginGtmServerSide.pushGroupProduct( $elForm, this );
 					return;
 				}
 
-				pluginGtmServerSide.pushSimpleProduct( $elForm );
+				pluginGtmServerSide.pushSimpleProduct( $elForm, this );
+			}
+		);
+
+		/**
+		 * Add over AJAX without WooCommerce's own handler: a theme or plugin that
+		 * AJAX-ifies the add posts it and then triggers added_to_cart to refresh
+		 * the fragments. The click left the item pending; this is where it is
+		 * pushed, because no page render follows to drain the server-side stash.
+		 */
+		jQuery( document.body ).on(
+			'added_to_cart',
+			function () {
+				pluginGtmServerSide.flushPendingAddToCart();
 			}
 		);
 
@@ -129,7 +142,102 @@ jQuery( document ).ready(
 );
 
 var pluginGtmServerSide = {
-	pushSimpleProduct: function ( $elForm ) {
+	/**
+	 * Add built at click time that has not been pushed yet, with the moment it
+	 * was built. See trackAddToCart().
+	 */
+	pendingAddToCart: null,
+
+	/**
+	 * How long a pending add stays eligible for its added_to_cart, in ms.
+	 *
+	 * A click that neither loads a page nor completes an AJAX add (a failed
+	 * validation, an aborted request) would otherwise leave its item behind and
+	 * see it pushed by an unrelated add later on.
+	 */
+	PENDING_ADD_TO_CART_MAX_AGE: 30000,
+
+	/**
+	 * Push an add_to_cart for a click, or hold it until the add lands.
+	 *
+	 * WooCommerce's own AJAX handler is the only case where the push can happen
+	 * at click time and be certain of both arriving and being the only one. Any
+	 * other add either ends in a page load — where the click-time push is lost
+	 * and GTM_Server_Side_Event_AddToCart emits the event on the next render
+	 * instead — or is a theme's or plugin's own AJAX add, which leaves no render
+	 * to drain the stash but does trigger added_to_cart. Holding the item covers
+	 * the second case without duplicating the first: a pending item dies with
+	 * the page when the click turns out to be a page load.
+	 *
+	 * @param object|array item Item or list of items.
+	 * @param element el Clicked element.
+	 */
+	trackAddToCart: function ( item, el ) {
+		if ( this.isAjaxAddToCart( el ) ) {
+			this.pendingAddToCart = null;
+			this.pushAddToCart( item );
+
+			return;
+		}
+
+		this.pendingAddToCart = {
+			item: item,
+			time: Date.now(),
+		};
+	},
+
+	/**
+	 * Push the add held by trackAddToCart(), if there is still one to push.
+	 */
+	flushPendingAddToCart: function () {
+		var pending           = this.pendingAddToCart;
+		this.pendingAddToCart = null;
+
+		if ( ! pending ) {
+			return;
+		}
+
+		if ( ( Date.now() - pending.time ) > this.PENDING_ADD_TO_CART_MAX_AGE ) {
+			return;
+		}
+
+		this.pushAddToCart( pending.item );
+	},
+
+	/**
+	 * Whether the clicked control adds the product over AJAX.
+	 *
+	 * This reproduces the condition WooCommerce's own `wc-add-to-cart.js`
+	 * applies before it takes a click over AJAX, so the answer follows the
+	 * handler that is actually present rather than a class name alone:
+	 *
+	 * - the script is enqueued. "Enable AJAX add to cart buttons on archives"
+	 *   is what decides that, and the script localises `wc_add_to_cart_params`,
+	 *   so the global is present exactly when the handler is;
+	 * - the clicked control itself carries `ajax_add_to_cart` (the class is set
+	 *   from the product's own `ajax_add_to_cart` support, independently of the
+	 *   option, so it is not sufficient on its own);
+	 * - it carries `data-product_id`, which the handler posts.
+	 *
+	 * Every other add is held by trackAddToCart() instead of pushed, because it
+	 * either ends in a page load — where the click-time push is lost and
+	 * GTM_Server_Side_Event_AddToCart emits the event on the next render — or is
+	 * a theme's own AJAX add, which the held item covers on added_to_cart.
+	 *
+	 * @param element el Clicked element.
+	 * @returns bool
+	 */
+	isAjaxAddToCart: function ( el ) {
+		if ( 'undefined' === typeof wc_add_to_cart_params ) {
+			return false;
+		}
+
+		var $el = jQuery( el );
+
+		return $el.is( '.ajax_add_to_cart' ) && !! $el.attr( 'data-product_id' );
+	},
+
+	pushSimpleProduct: function ( $elForm, el ) {
 		var item = this.convertInputsToObject(
 			$elForm.find( '[name^=gtm_]' )
 		);
@@ -140,10 +248,10 @@ var pluginGtmServerSide = {
 			item.quantity = $elQty.val();
 		}
 
-		this.pushAddToCart( item );
+		this.trackAddToCart( item, el );
 	},
 
-	pushVariationProduct: function ( $elForm ) {
+	pushVariationProduct: function ( $elForm, el ) {
 		var item = this.convertInputsToObject(
 			$elForm.find( '[name^=gtm_]' )
 		);
@@ -165,10 +273,10 @@ var pluginGtmServerSide = {
 			item.item_variant = variations.join( ',' );
 		}
 
-		this.pushAddToCart( item );
+		this.trackAddToCart( item, el );
 	},
 
-	pushGroupProduct: function ( $elForm ) {
+	pushGroupProduct: function ( $elForm, el ) {
 		var items = [];
 		$elForm.find( '[name^=quantity\\[]' ).each(
 			function () {
@@ -192,7 +300,7 @@ var pluginGtmServerSide = {
 				items.push( item );
 			}
 		);
-		this.pushAddToCart( items );
+		this.trackAddToCart( items, el );
 	},
 
 	/**

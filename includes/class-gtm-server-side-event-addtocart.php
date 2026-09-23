@@ -21,6 +21,25 @@ class GTM_Server_Side_Event_AddToCart {
 	const DATA_ATTR_PREFIX = 'data-gtm_';
 
 	/**
+	 * Session key holding the items added by a non-AJAX request.
+	 *
+	 * @var string
+	 */
+	const SESSION_ITEMS_KEY = '_gtm_server_side_add_to_cart';
+
+	/**
+	 * How long a stashed item stays eligible for its render, in seconds.
+	 *
+	 * The render that follows the add may never reach wp_footer (a cached
+	 * page, a closed tab, a non-HTML response). A WooCommerce session lives
+	 * for days, so an item that missed its render expires instead of firing on
+	 * an unrelated page view.
+	 *
+	 * @var int
+	 */
+	const SESSION_ITEMS_MAX_AGE = 300;
+
+	/**
 	 * Init.
 	 *
 	 * @return void
@@ -30,6 +49,9 @@ class GTM_Server_Side_Event_AddToCart {
 			return;
 		}
 
+		add_action( 'woocommerce_add_to_cart', array( $this, 'woocommerce_add_to_cart' ), 10, 5 );
+		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
+
 		add_filter( 'woocommerce_cart_item_remove_link', array( $this, 'woocommerce_cart_item_remove_link' ), 10, 2 );
 		add_filter( 'woocommerce_loop_add_to_cart_args', array( $this, 'woocommerce_loop_add_to_cart_args' ), 10, 2 );
 		add_filter( 'woocommerce_blocks_product_grid_item_html', array( $this, 'woocommerce_blocks_product_grid_item_html' ), 10, 3 );
@@ -38,6 +60,250 @@ class GTM_Server_Side_Event_AddToCart {
 
 		add_filter( 'gtm_server_side_before_html_data_attributes', array( $this, 'format_data_attributes' ) );
 		add_filter( 'gtm_server_side_after_html_data_attributes', array( $this, 'attach_data_to_event_select_item' ), 20, 3 );
+	}
+
+	/**
+	 * Hook: woocommerce_add_to_cart.
+	 *
+	 * The click-time push in assets/js/javascript.js is lost whenever the add
+	 * ends in a page load, so the item is stashed here and pushed on the next
+	 * render instead. An AJAX add keeps its click-time push: it has no page
+	 * render afterwards, so a stashed event might never fire.
+	 *
+	 * @param  string $cart_item_key Cart item key.
+	 * @param  int    $product_id Product id.
+	 * @param  int    $quantity Quantity.
+	 * @param  int    $variation_id Variation id.
+	 * @param  array  $variation Chosen variation attributes.
+	 * @return void
+	 */
+	public function woocommerce_add_to_cart( $cart_item_key, $product_id, $quantity, $variation_id, $variation = array() ) {
+		if ( ! $this->is_page_load_request() ) {
+			return;
+		}
+
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+
+		$items = WC()->session->get( self::SESSION_ITEMS_KEY );
+		if ( ! is_array( $items ) ) {
+			$items = array();
+		}
+
+		$items[] = array(
+			'product_id'   => (int) $product_id,
+			'variation_id' => (int) $variation_id,
+			'quantity'     => max( 1, (int) $quantity ),
+			'variation'    => $this->sanitize_variation( $variation ),
+			'time'         => time(),
+		);
+
+		WC()->session->set( self::SESSION_ITEMS_KEY, $items );
+	}
+
+	/**
+	 * WP footer hook.
+	 *
+	 * @return void
+	 */
+	public function wp_footer() {
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return;
+		}
+
+		$items = WC()->session->get( self::SESSION_ITEMS_KEY );
+		if ( empty( $items ) || ! is_array( $items ) ) {
+			return;
+		}
+
+		WC()->session->__unset( self::SESSION_ITEMS_KEY );
+
+		$items = $this->drop_expired_items( $items );
+		if ( empty( $items ) ) {
+			return;
+		}
+
+		$data_layer_items = $this->get_stashed_data_layer_items( $items );
+		if ( empty( $data_layer_items ) ) {
+			return;
+		}
+
+		$value = 0;
+		foreach ( $data_layer_items as $item ) {
+			$value += floatval( $item['price'] ) * $item['quantity'];
+		}
+
+		$data_layer = array(
+			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'add_to_cart' ),
+			'ecomm_pagetype' => 'product',
+			'ecommerce'      => array(
+				'currency' => esc_attr( get_woocommerce_currency() ),
+				'value'    => GTM_Server_Side_WC_Helpers::instance()->formatted_price( $value ),
+				'items'    => $data_layer_items,
+			),
+		);
+
+		if ( GTM_Server_Side_Helpers::is_enable_data_layer_custom_event_name() ) {
+			$data_layer['cart_state'] = GTM_Server_Side_State_Helpers::instance()->get_cart_data( WC()->cart );
+		}
+
+		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
+			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
+		}
+		?>
+		<script type="text/javascript">
+			dataLayer.push( { ecommerce: null } );
+			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
+		</script>
+		<?php
+	}
+
+	/**
+	 * Whether the current request is one that ends in a page render.
+	 *
+	 * An AJAX or Store API add keeps the click-time JavaScript push, so only a
+	 * plain front-end request produces the server-side event.
+	 *
+	 * @return bool
+	 */
+	private function is_page_load_request() {
+		if ( wp_doing_ajax() || wp_doing_cron() ) {
+			return false;
+		}
+
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return false;
+		}
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Drop stashed items whose render never happened.
+	 *
+	 * @param  array $items Stashed items.
+	 * @return array
+	 */
+	private function drop_expired_items( $items ) {
+		$now    = time();
+		$result = array();
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['time'] ) ) {
+				continue;
+			}
+
+			if ( ( $now - (int) $item['time'] ) > self::SESSION_ITEMS_MAX_AGE ) {
+				continue;
+			}
+
+			$result[] = $item;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Return data layer items for the stashed products.
+	 *
+	 * @param  array $items Stashed items.
+	 * @return array
+	 */
+	private function get_stashed_data_layer_items( $items ) {
+		$index  = 1;
+		$result = array();
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) || empty( $item['product_id'] ) ) {
+				continue;
+			}
+
+			$product_id = empty( $item['variation_id'] ) ? (int) $item['product_id'] : (int) $item['variation_id'];
+			$product    = wc_get_product( $product_id );
+
+			if ( ! ( $product instanceof WC_Product ) ) {
+				continue;
+			}
+
+			$array             = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_item( $product );
+			$array['quantity'] = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 1;
+			$array['index']    = $index++;
+
+			$item_variant = $this->get_item_variant( $product, isset( $item['variation'] ) ? $item['variation'] : array() );
+			if ( '' !== $item_variant ) {
+				$array['item_variant'] = $item_variant;
+			}
+
+			$result[] = $array;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sanitize the chosen variation attributes before they are stashed.
+	 *
+	 * They arrive from the add-to-cart request, and the session outlives it.
+	 *
+	 * @param  mixed $variation Chosen variation attributes.
+	 * @return array
+	 */
+	private function sanitize_variation( $variation ) {
+		if ( ! is_array( $variation ) ) {
+			return array();
+		}
+
+		$result = array();
+		foreach ( $variation as $key => $value ) {
+			if ( ! is_scalar( $value ) ) {
+				continue;
+			}
+
+			$result[ sanitize_text_field( (string) $key ) ] = sanitize_text_field( (string) $value );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Return the variant label for a stashed product.
+	 *
+	 * A variation's own attributes are empty for an "Any …" attribute, so the
+	 * value the shopper chose is taken from the attributes the add-to-cart
+	 * request carried instead.
+	 *
+	 * @param  WC_Product $product Added product.
+	 * @param  array      $variation Chosen variation attributes.
+	 * @return string
+	 */
+	private function get_item_variant( $product, $variation ) {
+		if ( 'variation' !== $product->get_type() ) {
+			return '';
+		}
+
+		$variation  = is_array( $variation ) ? $variation : array();
+		$attributes = array();
+
+		foreach ( $product->get_variation_attributes() as $key => $value ) {
+			if ( '' === $value || null === $value ) {
+				$value = isset( $variation[ $key ] ) ? $variation[ $key ] : '';
+			}
+
+			if ( '' === $value ) {
+				continue;
+			}
+
+			$attributes[ $key ] = $value;
+		}
+
+		$labels = GTM_Server_Side_WC_Helpers::instance()->get_variation_attribute_labels( $attributes );
+
+		return implode( ',', $labels );
 	}
 
 	/**
