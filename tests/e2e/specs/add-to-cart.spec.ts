@@ -1,22 +1,5 @@
 import { expect, test } from '../fixtures';
 
-/**
- * Expected to fail against an open bug: DEV-12401.
- *
- * The click handler in assets/js/javascript.js reads `e.target`, but the block
- * Product Collection grid wraps the button label in a `<span>`, so a real click
- * lands on the span, `dataset.gtm_item_id` is undefined and the handler returns
- * without pushing anything. Dispatching the click on the button itself produces
- * the expected event, which pins the cause to `e.target` vs `e.currentTarget`.
- *
- * `test.fail()` rather than `test.skip()`: the test still runs, so the bug
- * stays measured rather than merely remembered, and the day it is fixed the
- * run goes red with "expected to fail, but passed" - which is the signal to
- * delete this annotation. A skipped test would go quiet instead, and quiet
- * tests are how a suite rots.
- */
-test.fail();
-
 test( 'clicking "Add to cart" on the shop grid pushes an add_to_cart event', async ( {
 	shopPage,
 	dataLayer,
