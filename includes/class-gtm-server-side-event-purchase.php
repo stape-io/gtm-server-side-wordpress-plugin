@@ -77,11 +77,20 @@ class GTM_Server_Side_Event_Purchase {
 	 * @return void
 	 */
 	public function wp_footer() {
-		/* phpcs:ignore
-		if ( ! is_wc_endpoint_url( 'order-received' ) ) {
+		/**
+		 * Filters whether the current request is the order confirmation page.
+		 *
+		 * The order received endpoint covers the classic thank you page and the
+		 * block Order Confirmation template. Use this filter on a store whose
+		 * confirmation page is somewhere else.
+		 *
+		 * @since 2.3.9
+		 *
+		 * @param bool $is_confirmation_page Whether this is the order confirmation page.
+		 */
+		if ( ! apply_filters( 'gtm_server_side_is_order_confirmation_page', is_wc_endpoint_url( 'order-received' ) ) ) {
 			return;
 		}
-		*/
 
 		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
 			return;
@@ -101,6 +110,10 @@ class GTM_Server_Side_Event_Purchase {
 
 		$order = wc_get_order( $order_id );
 		if ( ! ( $order instanceof WC_Order ) ) {
+			return;
+		}
+
+		if ( $order->has_status( array( 'failed', 'cancelled' ) ) ) {
 			return;
 		}
 
