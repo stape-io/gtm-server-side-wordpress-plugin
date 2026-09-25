@@ -3,10 +3,12 @@ composer.lock
 /node_modules
 /.build
 
-# Playwright / @wordpress/e2e-test-utils-playwright.
-# Unanchored: output lands next to whichever directory the run resolves from
-# (repo root, or tests/e2e when invoked through its own config).
-artifacts/
-test-results/
-playwright-report/
-blob-report/
+# wp-env: local overrides of .wp-env.json / .wp-env.e2e.json.
+/.wp-env.override.json
+/.wp-env.e2e.override.json
+
+# Playwright output; paths are pinned in playwright.config.ts.
+/tests/e2e/artifacts/
+/tests/e2e/test-results/
+/tests/e2e/playwright-report/
+/tests/e2e/blob-report/

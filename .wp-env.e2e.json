@@ -1,6 +1,7 @@
 {
   "core": "https://wordpress.org/wordpress-7.1.2.zip",
   "phpVersion": "8.2",
+  "port": 8889,
   "testsEnvironment": false,
   "plugins": [
     "https://downloads.wordpress.org/plugin/woocommerce.11.1.2.zip",
@@ -16,6 +17,6 @@
     "SCRIPT_DEBUG": true
   },
   "lifecycleScripts": {
-    "afterStart": "bash bin/wp-env-setup.sh"
+    "afterStart": "bash bin/wp-env-setup.sh .wp-env.e2e.json"
   }
 }
