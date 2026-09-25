@@ -1,86 +1,91 @@
-import type { Page } from '@playwright/test';
-import type { DataLayerEvent } from '../types/data-layer';
+import { expect, type Page } from '@playwright/test';
+import type { DataLayerEvent } from './types';
+import type { PluginConfig } from '../types/plugin-config';
 
 /**
- * Returns the raw window.dataLayer array pushed by assets/js/javascript.js.
- * Internal: only the timeout path below needs it, to say what did arrive.
+ * How long to keep watching after the first matching push before counting.
+ * A duplicate push (say, two click handlers bound to the same button) lands
+ * within the same tick or the same fallback timer as the original one, so
+ * this only needs to cover a few event-loop turns and an admin-ajax round trip.
  */
-async function getDataLayer( page: Page ): Promise< DataLayerEvent[] > {
-	return page.evaluate(
-		() => ( window as unknown as { dataLayer?: DataLayerEvent[] } ).dataLayer ?? []
-	);
-}
+const LATE_PUSH_GRACE_MS = 500;
+
+type Snapshot = {
+	/** `eventName` as the plugin names it on this page, suffix included. */
+	fullName: string;
+	/** Every named event pushed so far, in order. */
+	pushed: string[];
+	matches: DataLayerEvent[];
+};
 
 /**
- * Event names carry a configurable suffix - `view_item` vs `view_item_stape`,
- * see getDataLayerEventName() in assets/js/javascript.js - so specs name the
- * bare event and the suffix is resolved here, from the
- * DATA_LAYER_CUSTOM_EVENT_NAME the plugin localizes into the page.
+ * Driver for window.dataLayer: the one place that knows how the plugin names
+ * its events and what counts as a match.
  *
- * Deliberately an exact match against `name` and `name + suffix`, not a prefix
- * match: `view_item` is a prefix of `view_item_list`, so a prefix match would
- * quietly hand a category page's view_item_list to a spec asking for
- * view_item, and the assertions that followed would be judging the wrong
- * event.
+ * Specs name the bare event (`add_to_cart`); the suffix is resolved the way
+ * getDataLayerEventName() in assets/js/javascript.js does it, from the
+ * `varGtmServerSide` config the plugin localizes into the page. Matching is
+ * exact, not by prefix, so `view_item` never picks up `view_item_list`.
  */
-async function findInPage( page: Page, eventName: string ): Promise< DataLayerEvent | undefined > {
-	return page.evaluate( ( name ) => {
-		const w = window as unknown as {
-			dataLayer?: DataLayerEvent[];
-			varGtmServerSide?: { DATA_LAYER_CUSTOM_EVENT_NAME?: string };
-		};
-		const suffix = w.varGtmServerSide?.DATA_LAYER_CUSTOM_EVENT_NAME ?? '';
-		return ( w.dataLayer ?? [] ).find(
-			( entry ) => entry.event === name || entry.event === name + suffix
-		);
-	}, eventName );
-}
+export class DataLayer {
+	constructor( private readonly page: Page ) {}
 
-/**
- * Waits for an event to show up, then returns it.
- *
- * A plain snapshot right after the click is a race: for `add_to_cart` the
- * plugin can defer the push behind an ajaxComplete listener with a 1500 ms
- * fallback timer plus a further admin-ajax round trip for `cart_state` (see
- * _pushWithStateCartData() in assets/js/javascript.js). Specs should say
- * "eventually this event appears", not "it is already there".
- *
- * On timeout it reports what it wanted and what the page actually pushed.
- * Playwright's own TimeoutError says only "waitForFunction exceeded 10000ms",
- * which reads the same whether the plugin pushed nothing, pushed the event
- * under a different name, or never loaded at all - three very different bugs.
- */
-export async function waitForDataLayerEvent(
-	page: Page,
-	eventName: string,
-	timeout = 10_000
-): Promise< DataLayerEvent > {
-	try {
-		await page.waitForFunction(
-			( name ) => {
-				const w = window as unknown as {
-					dataLayer?: Array< { event?: string } >;
-					varGtmServerSide?: { DATA_LAYER_CUSTOM_EVENT_NAME?: string };
-				};
-				const suffix = w.varGtmServerSide?.DATA_LAYER_CUSTOM_EVENT_NAME ?? '';
-				return ( w.dataLayer ?? [] ).some(
-					( entry ) => entry.event === name || entry.event === name + suffix
-				);
-			},
-			eventName,
-			{ timeout }
-		);
-	} catch {
-		const pushed = ( await getDataLayer( page ) )
-			.map( ( entry ) => entry.event )
-			.filter( ( name ): name is string => Boolean( name ) );
+	/**
+	 * Waits for `eventName` to be pushed, then asserts it was pushed exactly
+	 * once and returns it. Duplicate pushes are the most common tracking bug,
+	 * so "exactly once" is part of every event assertion rather than opt-in.
+	 *
+	 * Waits rather than snapshotting: the plugin can defer add_to_cart behind
+	 * a 1500 ms fallback timer plus an admin-ajax round trip for `cart_state`
+	 * (_pushWithStateCartData() in assets/js/javascript.js).
+	 */
+	async expectPushedOnce( eventName: string ): Promise< DataLayerEvent > {
+		const { fullName } = await this.snapshot( eventName );
 
-		throw new Error(
-			`Timed out after ${ timeout }ms waiting for the dataLayer event "${ eventName }" (with or without the configured suffix).\n` +
-				`Events actually pushed: ${ pushed.length ? pushed.join( ', ' ) : '(none)' }`
-		);
+		// On timeout, the failure message lists what was pushed instead.
+		await expect
+			.poll( async () => ( await this.snapshot( eventName ) ).pushed, {
+				message: `dataLayer event "${ fullName }" was never pushed`,
+			} )
+			.toContain( fullName );
+
+		await this.page.waitForTimeout( LATE_PUSH_GRACE_MS );
+
+		const { matches } = await this.snapshot( eventName );
+		expect( matches, `dataLayer event "${ fullName }" pushed more than once` ).toHaveLength( 1 );
+
+		return matches[ 0 ];
 	}
 
-	// Guaranteed by the wait above.
-	return ( await findInPage( page, eventName ) ) as DataLayerEvent;
+	private async snapshot( eventName: string ): Promise< Snapshot > {
+		const snapshot = await this.page.evaluate( ( name ) => {
+			const w = window as unknown as {
+				dataLayer?: DataLayerEvent[];
+				varGtmServerSide?: PluginConfig;
+			};
+			if ( ! w.varGtmServerSide ) {
+				return null;
+			}
+
+			const { is_custom_event_name, DATA_LAYER_CUSTOM_EVENT_NAME } = w.varGtmServerSide;
+			const fullName = is_custom_event_name === 'yes' ? name + DATA_LAYER_CUSTOM_EVENT_NAME : name;
+			const events = w.dataLayer ?? [];
+
+			return {
+				fullName,
+				pushed: events
+					.map( ( entry ) => entry.event )
+					.filter( ( event ): event is string => typeof event === 'string' ),
+				matches: events.filter( ( entry ) => entry.event === fullName ),
+			};
+		}, eventName );
+
+		if ( ! snapshot ) {
+			throw new Error(
+				`Cannot resolve the dataLayer event "${ eventName }": this page has no varGtmServerSide, so the plugin's frontend script did not load here.`
+			);
+		}
+
+		return snapshot;
+	}
 }

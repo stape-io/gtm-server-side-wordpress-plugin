@@ -1,44 +1,65 @@
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
-import { waitForDataLayerEvent } from '../utils/data-layer';
-import type { DataLayerEvent } from '../types/data-layer';
-import { ShopPage } from '../pages/shop-page';
-import { createProduct, deleteProduct, type CreatedProduct } from '../api/products';
+import { DataLayer } from '../data-layer/data-layer';
+import { CategoryPage } from '../pages/category-page';
+import { ProductPage } from '../pages/product-page';
+import {
+	createCategory,
+	createProduct,
+	deleteCategory,
+	deleteProduct,
+	type CreatedCategory,
+	type CreatedProduct,
+} from '../api/products';
 
 /**
  * Base test: @wordpress/e2e-test-utils-playwright's `test`, which already
- * carries the `admin`, `editor`, `pageUtils` and `requestUtils` fixtures
- * (see https://developer.wordpress.org/news/2026/05/getting-started-writing-wordpress-e2e-tests-with-playwright/).
- * None of those log the browser `page` itself into wp-admin - `admin.*`
- * helpers handle auth on demand - so storefront specs stay anonymous by
- * default, and future admin-context specs (settings, order status changes
- * for the webhook layer) can request `admin`/`requestUtils` without a
- * separate fixture set.
+ * carries the `admin`, `editor`, `pageUtils` and `requestUtils` fixtures.
+ * None of those log the browser `page` itself into wp-admin, so storefront
+ * specs stay anonymous by default.
  */
 type ShopFixtures = {
-	dataLayer: {
-		/** Waits for the event to appear, then returns it. Throws on timeout. */
-		waitFor: ( eventName: string, timeout?: number ) => Promise< DataLayerEvent >;
-	};
-	shopPage: ShopPage;
-	/**
-	 * A throwaway WooCommerce simple product, created via the REST API
-	 * before the test and deleted after - see api/products.ts.
-	 */
+	dataLayer: DataLayer;
+	categoryPage: CategoryPage;
+	productPage: ProductPage;
+	/** A throwaway product category, created before the test and deleted after. */
+	category: CreatedCategory;
+	/** A throwaway simple product in `category`, created before the test and deleted after. */
 	product: CreatedProduct;
+	/**
+	 * Automatic: answers requests for gtm.js with an empty script. The store is
+	 * configured with a placeholder container, so the real one would only add
+	 * a network dependency and a third-party script writing to the same
+	 * window.dataLayer the specs assert on.
+	 */
+	stubGtm: void;
 };
 
 export const test = base.extend< ShopFixtures >( {
+	stubGtm: [
+		async ( { page }, use ) => {
+			await page.route( 'https://www.googletagmanager.com/**', ( route ) =>
+				route.fulfill( { status: 200, contentType: 'text/javascript', body: '' } )
+			);
+			await use();
+		},
+		{ auto: true },
+	],
 	dataLayer: async ( { page }, use ) => {
-		await use( {
-			waitFor: ( eventName: string, timeout?: number ) =>
-				waitForDataLayerEvent( page, eventName, timeout ),
-		} );
+		await use( new DataLayer( page ) );
 	},
-	shopPage: async ( { page }, use ) => {
-		await use( new ShopPage( page ) );
+	categoryPage: async ( { page }, use ) => {
+		await use( new CategoryPage( page ) );
 	},
-	product: async ( { requestUtils }, use ) => {
-		const created = await createProduct( requestUtils );
+	productPage: async ( { page }, use ) => {
+		await use( new ProductPage( page ) );
+	},
+	category: async ( { requestUtils }, use ) => {
+		const created = await createCategory( requestUtils );
+		await use( created );
+		await deleteCategory( requestUtils, created.id );
+	},
+	product: async ( { requestUtils, category }, use ) => {
+		const created = await createProduct( requestUtils, category );
 		await use( created );
 		await deleteProduct( requestUtils, created.id );
 	},

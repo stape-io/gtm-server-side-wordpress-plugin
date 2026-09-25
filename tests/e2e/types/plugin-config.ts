@@ -4,7 +4,7 @@
  * includes/class-gtm-server-side-frontend-assets.php.
  *
  * Settings the plugin was rendered with, not anything it pushed, which is why
- * this does not live alongside the dataLayer contract in ./data-layer.ts.
+ * this does not live alongside the dataLayer contract in ../data-layer/.
  */
 export type PluginConfig = {
 	ajax: string;

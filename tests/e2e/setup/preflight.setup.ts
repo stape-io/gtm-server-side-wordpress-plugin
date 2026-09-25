@@ -1,43 +1,64 @@
-import { test as setup, expect } from '@wordpress/e2e-test-utils-playwright';
-import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
+import { test as preflight, expect } from '../fixtures';
+import { purgeTestCatalog } from '../api/products';
+import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
 
 /**
- * Environment checks, kept out of the specs.
+ * Checks, once per run and before any spec starts, that the store is in the
+ * state bin/wp-env-configure.sh puts it in - everything the specs depend on.
+ * A misconfigured environment then fails here, with a message that says how
+ * to fix it, instead of as a puzzling assertion failure inside every spec.
  *
- * A spec should read as a shopper scenario; whether the store under test was
- * configured correctly is a property of bin/wp-env-setup.sh, not of the
- * behaviour being tested. Running it as a Playwright setup project (see
- * `dependencies` in playwright.config.ts) means a misconfigured environment
- * fails once, up front, with a message that says how to fix it - rather than
- * once per worker, or as a puzzling assertion failure inside every spec.
+ * Also removes catalog leftovers from killed runs, and records the WordPress,
+ * WooCommerce and theme versions on the test, so a report says what it ran
+ * against.
  */
 
-/**
- * Reads the `varGtmServerSide` object the plugin localizes into the storefront,
- * straight from the rendered HTML - no browser needed.
- */
-async function readPluginConfig( requestUtils: RequestUtils ): Promise< PluginConfig > {
-	const html = await ( await requestUtils.request.get( '/shop/' ) ).text();
-	const match = html.match( /var varGtmServerSide = (\{.*?\});/s );
+const THEME = 'twentytwentyfive';
+const FIX = 'Recreate the environment: npm run env:e2e:destroy && npm run env:e2e:start';
 
-	if ( ! match ) {
-		throw new Error(
-			'The plugin did not localize varGtmServerSide on /shop/. Is the plugin active and is /shop/ reachable? Try: npm run env:start'
-		);
-	}
+type InstalledPlugin = { plugin: string; status: string; version: string; textdomain: string };
+type InstalledTheme = { stylesheet: string; version: string };
 
-	return JSON.parse( match[ 1 ] ) as PluginConfig;
-}
+preflight( 'store is configured the way the specs assume', async ( { page, requestUtils } ) => {
+	await purgeTestCatalog( requestUtils );
 
-setup( 'store is configured for data layer specs', async ( { requestUtils } ) => {
-	const config = await readPluginConfig( requestUtils );
+	const plugins: InstalledPlugin[] = await requestUtils.rest( { path: '/wp/v2/plugins' } );
+	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
+	const plugin = plugins.find( ( p ) => p.textdomain === 'gtm-server-side' );
+	expect( woocommerce?.status, `WooCommerce is not active. ${ FIX }` ).toBe( 'active' );
+	expect( plugin?.status, `This plugin is not active. ${ FIX }` ).toBe( 'active' );
 
-	// Drives both the `_stape` event name suffix and whether add_to_cart
-	// carries a `cart_state` payload (see _pushWithStateCartData() in
-	// assets/js/javascript.js). Specs assert on both.
+	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
+		path: '/wp/v2/themes',
+		params: { status: 'active' },
+	} );
+	expect( theme?.stylesheet, `Page objects are written against ${ THEME }. ${ FIX }` ).toBe( THEME );
+
+	await page.goto( '/shop/' );
+	const config = await page.evaluate(
+		() => ( window as unknown as { varGtmServerSide?: PluginConfig } ).varGtmServerSide
+	);
 	expect(
-		config.is_custom_event_name,
-		"Enable it with: npx wp-env run cli wp option update gtm_server_side_data_layer_custom_event_name 'yes' (bin/wp-env-setup.sh does this on env start)"
+		config,
+		`The plugin's frontend script is missing on /shop/, so its ecommerce data layer (gtm_server_side_data_layer_ecommerce) is off. ${ FIX }`
+	).toBeDefined();
+	expect( config?.currency, `Specs expect a ${ STORE_CURRENCY } store. ${ FIX }` ).toBe( STORE_CURRENCY );
+	// Drives the `_stape` event name suffix and the `cart_state` payload, which
+	// specs assert on.
+	expect(
+		config?.is_custom_event_name,
+		`gtm_server_side_data_layer_custom_event_name is off. ${ FIX }`
 	).toBe( 'yes' );
+	expect( config?.DATA_LAYER_CUSTOM_EVENT_NAME ).toBe( '_stape' );
+
+	const wordpress = await page
+		.locator( 'meta[name="generator"][content^="WordPress "]' )
+		.getAttribute( 'content' );
+	preflight.info().annotations.push(
+		{ type: 'WordPress', description: wordpress?.replace( 'WordPress ', '' ) },
+		{ type: 'WooCommerce', description: woocommerce?.version },
+		{ type: 'Theme', description: `${ theme.stylesheet } ${ theme.version }` },
+		{ type: 'Plugin', description: plugin?.version }
+	);
 } );

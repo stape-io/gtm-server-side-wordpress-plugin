@@ -1,14 +1,10 @@
 /**
- * The shape of what this plugin pushes to window.dataLayer.
+ * The shape of what this plugin pushes to window.dataLayer, written against
+ * captured payloads.
  *
- * Written against a captured `add_to_cart` payload, not from reading the
- * source, so the field names here are the ones the plugin actually emits.
- *
- * Note the deliberate absence of `[key: string]: unknown` on everything
- * except DataLayerEvent: an index signature makes every typo compile, which
- * would leave these types as documentation that cannot be wrong because it
- * never checks anything. Fields stay optional (the plugin emits different
- * subsets per event) but unknown names are now a compile error.
+ * Fields are optional because the plugin emits a different subset per event,
+ * so these types give autocomplete and catch misspelled field names, but do
+ * not enforce the contract: the exact `toEqual` assertions in the specs do.
  */
 
 /** One entry in `ecommerce.items`. `price` is a string - javascript.js runs it through toFixed(2). */
@@ -44,10 +40,10 @@ export type CartStateLine = {
 };
 
 /**
- * Pushed alongside add_to_cart only when the custom event name suffix is on -
- * see _pushWithStateCartData() in assets/js/javascript.js, which fetches it
- * from the gtm_server_side_state_cart_data admin-ajax action. Server-side
- * shape comes from GTM_Server_Side_State_Helpers::get_cart_data().
+ * Attached to events when the custom event name suffix is on. Built server
+ * side by GTM_Server_Side_State_Helpers::get_cart_data(): printed with the
+ * PHP-rendered events (view_item, view_cart, ...), and fetched over admin-ajax
+ * for add_to_cart (_pushWithStateCartData() in assets/js/javascript.js).
  */
 export type CartState = {
 	cart_id?: string;
@@ -58,11 +54,9 @@ export type CartState = {
 };
 
 /**
- * One dataLayer entry.
- *
- * This one keeps an index signature on purpose: the array is shared with
- * Google Tag Manager itself, so it holds foreign entries (`gtm.js`, `gtm.dom`)
- * whose keys we neither own nor want to enumerate.
+ * One dataLayer entry. Keeps an index signature, unlike the types above: the
+ * array is shared with Google Tag Manager, so it also holds entries such as
+ * `gtm.js` whose keys we don't own.
  */
 export type DataLayerEvent = {
 	event?: string;
