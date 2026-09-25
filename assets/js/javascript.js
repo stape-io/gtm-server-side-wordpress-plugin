@@ -89,9 +89,10 @@ jQuery( document ).ready(
 
 		/**
 		 * Add over AJAX without WooCommerce's own handler: a theme or plugin that
-		 * AJAX-ifies the add posts it and then triggers added_to_cart to refresh
-		 * the fragments. The click left the item pending; this is where it is
-		 * pushed, because no page render follows to drain the server-side stash.
+		 * AJAX-ifies an add-to-cart link or form.cart posts it and then triggers
+		 * added_to_cart to refresh the fragments. The click left the item pending;
+		 * this is where it is pushed, because no page render follows to drain the
+		 * server-side stash.
 		 */
 		jQuery( document.body ).on(
 			'added_to_cart',
@@ -160,20 +161,20 @@ var pluginGtmServerSide = {
 	/**
 	 * Push an add_to_cart for a click, or hold it until the add lands.
 	 *
-	 * WooCommerce's own AJAX handler is the only case where the push can happen
-	 * at click time and be certain of both arriving and being the only one. Any
-	 * other add either ends in a page load — where the click-time push is lost
-	 * and GTM_Server_Side_Event_AddToCart emits the event on the next render
-	 * instead — or is a theme's or plugin's own AJAX add, which leaves no render
-	 * to drain the stash but does trigger added_to_cart. Holding the item covers
-	 * the second case without duplicating the first: a pending item dies with
-	 * the page when the click turns out to be a page load.
+	 * The item is held only when the click is expected to load a page: there
+	 * the click-time push is lost and GTM_Server_Side_Event_AddToCart emits the
+	 * event on the next render instead, and a pending item dies with the page.
+	 * If a theme or plugin AJAX-ifies that link or form, added_to_cart pushes
+	 * the held item. Every other add — WooCommerce's own AJAX handler, or a
+	 * WooCommerce Blocks button adding through the Store API, which triggers no
+	 * added_to_cart — is pushed at click time; the server stashes nothing for
+	 * an AJAX or Store API add, so the push is the only one.
 	 *
 	 * @param object|array item Item or list of items.
 	 * @param element el Clicked element.
 	 */
 	trackAddToCart: function ( item, el ) {
-		if ( this.isAjaxAddToCart( el ) ) {
+		if ( this.isAjaxAddToCart( el ) || ! this.isPageLoadAddToCart( el ) ) {
 			this.pendingAddToCart = null;
 			this.pushAddToCart( item );
 
@@ -219,11 +220,6 @@ var pluginGtmServerSide = {
 	 *   option, so it is not sufficient on its own);
 	 * - it carries `data-product_id`, which the handler posts.
 	 *
-	 * Every other add is held by trackAddToCart() instead of pushed, because it
-	 * either ends in a page load — where the click-time push is lost and
-	 * GTM_Server_Side_Event_AddToCart emits the event on the next render — or is
-	 * a theme's own AJAX add, which the held item covers on added_to_cart.
-	 *
 	 * @param element el Clicked element.
 	 * @returns bool
 	 */
@@ -235,6 +231,34 @@ var pluginGtmServerSide = {
 		var $el = jQuery( el );
 
 		return $el.is( '.ajax_add_to_cart' ) && !! $el.attr( 'data-product_id' );
+	},
+
+	/**
+	 * Whether the clicked control is expected to add the product by loading a
+	 * page.
+	 *
+	 * That is a submit of the product's `form.cart`, or a link that goes
+	 * somewhere, such as the plain `?add-to-cart=` link on archives with AJAX
+	 * off. A WooCommerce Blocks product button is a `<button>` outside any
+	 * form, so it does not qualify.
+	 *
+	 * @param element el Clicked element.
+	 * @returns bool
+	 */
+	isPageLoadAddToCart: function ( el ) {
+		var $el = jQuery( el );
+
+		if ( $el.closest( 'form.cart' ).length ) {
+			return true;
+		}
+
+		if ( ! $el.is( 'a' ) ) {
+			return false;
+		}
+
+		var href = $el.attr( 'href' );
+
+		return !! href && 0 !== href.indexOf( '#' ) && 0 !== href.toLowerCase().indexOf( 'javascript:' );
 	},
 
 	pushSimpleProduct: function ( $elForm, el ) {
