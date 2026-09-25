@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 const __dirname = path.dirname( fileURLToPath( import.meta.url ) );
-const SOURCE = fs.readFileSync( path.join( __dirname, 'javascript.js' ), 'utf8' );
+const SOURCE = fs.readFileSync( path.join( __dirname, '../js/javascript.js' ), 'utf8' );
 
 function makeElement( { tag = 'button', classes = [], attrs = {}, inFormCart = false } = {} ) {
 	return { __isElement: true, tag, classes, attrs, inFormCart };
