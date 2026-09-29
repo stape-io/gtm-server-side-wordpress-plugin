@@ -77,18 +77,22 @@ class GTM_Server_Side_Event_Purchase {
 	 * @return void
 	 */
 	public function wp_footer() {
+		$is_confirmation_page = is_wc_endpoint_url( 'order-received' ) || did_action( 'woocommerce_thankyou' );
+
 		/**
 		 * Filters whether the current request is the order confirmation page.
 		 *
-		 * The order received endpoint covers the classic thank you page and the
-		 * block Order Confirmation template. Use this filter on a store whose
-		 * confirmation page is somewhere else.
+		 * The order received endpoint covers the classic thank you page and the block
+		 * Order Confirmation template. The woocommerce_thankyou check covers custom
+		 * thank you pages, such as the ones CartFlows, FunnelKit and Elementor build,
+		 * which are not that endpoint but still fire the hook. Use this filter for a
+		 * store whose confirmation page does neither.
 		 *
 		 * @since 2.3.9
 		 *
 		 * @param bool $is_confirmation_page Whether this is the order confirmation page.
 		 */
-		if ( ! apply_filters( 'gtm_server_side_is_order_confirmation_page', is_wc_endpoint_url( 'order-received' ) ) ) {
+		if ( ! (bool) apply_filters( 'gtm_server_side_is_order_confirmation_page', $is_confirmation_page ) ) {
 			return;
 		}
 
