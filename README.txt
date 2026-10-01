@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.1.0
-Stable tag: 2.3.8
+Stable tag: 2.3.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,11 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.9 =
+* Fixed the purchase event firing for checkouts that never completed. It was printed in the footer of whatever page rendered after the order was created, with no status check, so a declined card sent a full-value purchase. It now fires only on the order confirmation page, either the order received endpoint or a custom thank you page that runs woocommerce_thankyou (CartFlows, FunnelKit, Elementor), and never for failed or cancelled orders. Unpaid orders still count: cash on delivery and bank transfer are unpaid at that point and are real sales. Stores whose confirmation page does neither can correct the check with the gtm_server_side_is_order_confirmation_page filter.
+* Fixed add_to_cart not being tracked when the add loads a page: AJAX add to cart turned off, a ?add-to-cart= link, or a single product form that submits normally. The click-time push was lost with the page, so the added item is now stored in the WooCommerce session and pushed on the next page render. Adds over AJAX or the Store API keep pushing at click time. Themes that AJAX-ify these links or forms are covered by the added_to_cart event. Grouped products in the "Add to Cart with Options" block are tracked too.
+* Fixed add_to_cart being lost on WooCommerce Blocks "Add to cart" buttons when the click landed on the button's inner label instead of the button itself.
 
 = 2.3.8 =
 * Fixed the same-origin proxy reaching the container without the visitor's IP address, which made analytics report every visitor from the server's own location. The proxy turns a browser request into a server-to-server one, so the visitor's address is now resolved from the incoming request and restated upstream in X-Forwarded-For and X-Real-IP. Forwarding headers are trusted for that lookup by default; sites that terminate connections directly can opt out with the gtm_server_side_trust_proxy_client_ip filter, and gtm_server_side_same_origin_client_ip overrides the resolved address outright.
