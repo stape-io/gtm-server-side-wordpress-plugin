@@ -57,6 +57,7 @@ class GTM_Server_Side_Event_AddToCart {
 		add_filter( 'woocommerce_blocks_product_grid_item_html', array( $this, 'woocommerce_blocks_product_grid_item_html' ), 10, 3 );
 		add_action( 'woocommerce_after_add_to_cart_button', array( $this, 'woocommerce_after_add_to_cart_button' ) );
 		add_filter( 'woocommerce_grouped_product_list_column_quantity', array( $this, 'woocommerce_grouped_product_list_column_quantity' ), 10, 2 );
+		add_filter( 'render_block_woocommerce/add-to-cart-with-options', array( $this, 'render_block_add_to_cart_with_options' ), 10, 3 );
 
 		add_filter( 'gtm_server_side_before_html_data_attributes', array( $this, 'format_data_attributes' ) );
 		add_filter( 'gtm_server_side_after_html_data_attributes', array( $this, 'attach_data_to_event_select_item' ), 20, 3 );
@@ -422,8 +423,55 @@ class GTM_Server_Side_Event_AddToCart {
 			return;
 		}
 
-		$data = $this->get_item( $product );
-		foreach ( $data as $key => $value ) {
+		return $html . $this->get_grouped_item_inputs( $product );
+	}
+
+	/**
+	 * Hook: render_block_woocommerce/add-to-cart-with-options.
+	 *
+	 * The block's grouped product form does not go through
+	 * woocommerce_grouped_product_list_column_quantity, so the children's
+	 * inputs are added here. Adding them in the block output rather than a
+	 * form hook keeps the block in its Interactivity API mode.
+	 *
+	 * @param  string    $block_content Block HTML.
+	 * @param  array     $block Parsed block.
+	 * @param  \WP_Block $instance Block instance.
+	 * @return string
+	 */
+	public function render_block_add_to_cart_with_options( $block_content, $block, $instance ) {
+		if ( ! isset( $instance->context['postId'] ) || false === strpos( $block_content, '</form>' ) ) {
+			return $block_content;
+		}
+
+		$product = wc_get_product( $instance->context['postId'] );
+		if ( ! ( $product instanceof WC_Product ) || 'grouped' !== $product->get_type() ) {
+			return $block_content;
+		}
+
+		$inputs = '';
+		foreach ( $product->get_children() as $child_id ) {
+			$inputs .= $this->get_grouped_item_inputs( wc_get_product( $child_id ) );
+		}
+
+		$pos = strrpos( $block_content, '</form>' );
+
+		return substr_replace( $block_content, $inputs, $pos, 0 );
+	}
+
+	/**
+	 * Hidden inputs carrying a grouped product child's data, keyed by its id.
+	 *
+	 * @param  WC_Product $product Child product.
+	 * @return string
+	 */
+	private function get_grouped_item_inputs( $product ) {
+		if ( ! ( $product instanceof WC_Product ) ) {
+			return '';
+		}
+
+		$html = '';
+		foreach ( $this->get_item( $product ) as $key => $value ) {
 			$html .= '<input type="hidden" name="gtm_' . esc_attr( $key ) . '[' . esc_attr( $product->get_id() ) . ']" value="' . esc_attr( $value ) . '" data-name="' . esc_attr( $key ) . '">' . "\n";
 		}
 
