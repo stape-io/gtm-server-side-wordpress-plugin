@@ -118,6 +118,8 @@ function loadPlugin( { ajaxAddToCart = false } = {} ) {
 			user_data: false,
 		},
 		console,
+		URL,
+		window: { location: { href: 'https://shop.test/shop/' } },
 	};
 	if ( ajaxAddToCart ) {
 		sandbox.wc_add_to_cart_params = {};
@@ -164,6 +166,20 @@ describe( 'trackAddToCart() hold-vs-push (DEV-12446)', () => {
 
 	it( 'AC2: does not hold for a hash/js link outside a form (not a real navigation)', () => {
 		const el = makeElement( { tag: 'a', attrs: { href: '#' } } );
+
+		sandbox.pluginGtmServerSide.trackAddToCart( { item_id: '4' }, el );
+
+		expect( sandbox.dataLayer.filter( ( e ) => e.event === 'add_to_cart' ) ).toHaveLength( 1 );
+		expect( sandbox.pluginGtmServerSide.pendingAddToCart ).toBeNull();
+	} );
+
+	it.each( [
+		'javascript:void(0)',
+		' JavaScript:void(0)',
+		'data:text/html,x',
+		'vbscript:x',
+	] )( 'does not hold for a non-http(s) link outside a form (%s)', ( href ) => {
+		const el = makeElement( { tag: 'a', attrs: { href } } );
 
 		sandbox.pluginGtmServerSide.trackAddToCart( { item_id: '4' }, el );
 

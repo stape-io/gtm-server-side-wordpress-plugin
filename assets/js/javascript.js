@@ -261,7 +261,17 @@ var pluginGtmServerSide = {
 
 		var href = $el.attr( 'href' );
 
-		return !! href && 0 !== href.indexOf( '#' ) && 0 !== href.toLowerCase().indexOf( 'javascript:' );
+		if ( ! href || 0 === href.indexOf( '#' ) ) {
+			return false;
+		}
+
+		try {
+			var protocol = new URL( href, window.location.href ).protocol;
+
+			return 'http:' === protocol || 'https:' === protocol;
+		} catch ( e ) {
+			return false;
+		}
 	},
 
 	pushSimpleProduct: function ( $elForm, el ) {
