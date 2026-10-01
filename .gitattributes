@@ -3,6 +3,8 @@
 /.github export-ignore
 /assets/src export-ignore
 /node_modules export-ignore
+/bin export-ignore
+/tests export-ignore
 
 # Files
 /.gitattributes export-ignore
@@ -12,3 +14,7 @@ package.json export-ignore
 package-lock.json export-ignore
 tsconfig.json export-ignore
 tsconfig.build.json export-ignore
+/.wp-env.json export-ignore
+/.wp-env.e2e.json export-ignore
+playwright.config.ts export-ignore
+vitest.config.ts export-ignore

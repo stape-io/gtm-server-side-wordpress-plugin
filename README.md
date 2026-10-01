@@ -6,7 +6,7 @@
 
 **Tested up to:** 7.1.0
 
-**Stable tag:** 2.3.9
+**Stable tag:** 2.3.10
 
 **License:** GPLv2 or later
 
@@ -86,6 +86,9 @@ Yes. Follow this guide: [How to Setup Facebook Conversion API](https://stape.io/
 
 <details>
   <summary>Version 2 changelog</summary>
+
+## 2.3.10
+- Removed the end-to-end test tooling (`tests/`, `bin/`, the `wp-env` and Playwright/Vitest configs) that 2.3.9 accidentally shipped in the plugin package. None of it was loaded by the plugin; the package is back to runtime files only.
 
 ## 2.3.9
 - Fixed the purchase event firing for checkouts that never completed. It was printed in the footer of whatever page rendered after the order was created, with no status check, so a declined card sent a full-value `purchase`. It now fires only on the order confirmation page, either the order received endpoint or a custom thank you page that runs `woocommerce_thankyou` (CartFlows, FunnelKit, Elementor), and never for failed or cancelled orders. Unpaid orders still count: cash on delivery and bank transfer are unpaid at that point and are real sales. Stores whose confirmation page does neither can correct the check with the `gtm_server_side_is_order_confirmation_page` filter.
