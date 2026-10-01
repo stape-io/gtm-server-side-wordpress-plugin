@@ -68,7 +68,10 @@ jQuery( document ).ready(
 			'click',
 			'.single_add_to_cart_button:not(.disabled)',
 			function ( e ) {
-				var $elForm = jQuery( this ).closest( 'form.cart' );
+				// The "Add to Cart with Options" block's form has the `cart` class
+				// only in its legacy (page-load) mode; otherwise it adds through
+				// the Store API.
+				var $elForm = jQuery( this ).closest( 'form.cart, form.wc-block-add-to-cart-with-options' );
 				if ( ! $elForm.length ) {
 					return true;
 				}
@@ -78,7 +81,7 @@ jQuery( document ).ready(
 					return;
 				}
 
-				if ( $elForm.hasClass( 'grouped_form' ) ) {
+				if ( $elForm.hasClass( 'grouped_form' ) || $elForm.find( '[name^=quantity\\[]' ).length > 0 ) {
 					pluginGtmServerSide.pushGroupProduct( $elForm, this );
 					return;
 				}
@@ -304,19 +307,24 @@ var pluginGtmServerSide = {
 		var items = [];
 		$elForm.find( '[name^=quantity\\[]' ).each(
 			function () {
-				if ( ! jQuery( this ).val() ) {
+				var $elQty = jQuery( this );
+				if ( $elQty.is( ':checkbox' ) && ! $elQty.is( ':checked' ) ) {
 					return;
 				}
 
-				var $elTd = jQuery( this ).closest( 'td' );
-				if ( ! $elTd.length ) {
+				if ( ! ( parseFloat( $elQty.val() ) > 0 ) ) {
+					return;
+				}
+
+				var match = /^quantity\[(\d+)\]$/.exec( $elQty.attr( 'name' ) );
+				if ( ! match ) {
 					return;
 				}
 
 				var item = {
-					quantity: jQuery( this ).val(),
+					quantity: $elQty.val(),
 				};
-				$elTd.find( '[name^=gtm_]' ).each(
+				$elForm.find( '[name^=gtm_][name$="[' + match[1] + ']"]' ).each(
 					function () {
 						item[ jQuery( this ).data( 'name' ) ] = jQuery( this ).val();
 					}
