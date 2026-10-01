@@ -1,0 +1,84 @@
+# End-to-end tests
+
+Playwright specs that check the plugin's dataLayer events against a real
+WordPress + WooCommerce install, asserting the exact payload GTM receives.
+
+## Running
+
+Needs Docker and Node 22.
+
+```sh
+npm ci
+npx playwright install chromium
+npm run env:e2e:start   # WordPress + WooCommerce on http://localhost:8889
+npm run test:e2e        # or test:e2e:ui / test:e2e:debug
+```
+
+`npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
+`WP_BASE_URL` points the suite at another site.
+
+### Two environments
+
+| Config             | URL                     | Scripts        | For                         |
+|--------------------|-------------------------|----------------|-----------------------------|
+| `.wp-env.json`     | `http://localhost:8888` | `env:*`        | Manual poking               |
+| `.wp-env.e2e.json` | `http://localhost:8889` | `env:e2e:*`    | This suite (locally and CI) |
+
+They are separate WordPress installs, so settings changed by hand in the dev
+site's wp-admin never leak into test runs. Both are configured on start by
+`bin/wp-env-configure.sh` (admin / password).
+
+### Pinned versions
+
+Both configs pin WordPress, WooCommerce and the Twenty Twenty-Five theme, so a
+PR can't go red because one of them shipped a release. CI's scheduled run
+(`.github/workflows/ci.yml`) tests against the latest releases every night.
+When it fails, either fix the regression or bump the pins in both configs.
+
+To try the latest releases locally, create `.wp-env.e2e.override.json` with
+the same content that workflow writes, then `npm run env:e2e:start -- --update`.
+
+## Layout
+
+| Path                        | What                                                                 |
+|-----------------------------|----------------------------------------------------------------------|
+| `specs/`                    | One file per event, written as a shopper scenario                    |
+| `fixtures/`                 | The `test` specs import: page objects, `dataLayer`, per-test catalog |
+| `pages/`                    | Page objects                                                         |
+| `data-layer/data-layer.ts`  | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
+| `data-layer/expected.ts`    | Builders for expected payloads                                       |
+| `data-layer/types.ts`       | The payload shape                                                    |
+| `api/`                      | REST setup/teardown of test content                                  |
+| `setup/preflight.setup.ts`  | Runs before every run: checks the store, purges leftovers            |
+
+## Conventions
+
+- **Specs never touch `page`.** Navigation and interaction go through a page
+  object, even a one-line one, so the next spec has somewhere to add to and
+  theme-specific markup stays in one place.
+- **Test content comes from fixtures.** Every test gets its own category and
+  product (`category`, `product`) over REST, deleted afterwards. A listing page
+  is that category's archive, so it shows only what the test created.
+- **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
+  A field the plugin starts or stops sending has to fail. Spell out `event`
+  (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
+- **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event and
+  on a duplicate one.
+- **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
+  depending on a setting, add a check for it to the preflight.
+
+## Known gaps
+
+- Only the block theme is covered. There, "Add to cart" goes through
+  `wc/store/v1/batch`, which jQuery's `ajaxComplete` never sees, so the
+  `add_to_cart` spec exercises only the 1500 ms fallback in
+  `_pushWithStateCartData()`. The classic-theme path (`wc-ajax=add_to_cart`)
+  needs a second Playwright project running a classic theme such as Storefront.
+
+## WebStorm
+
+The gutter run button doesn't recognise these specs as Playwright tests: its
+detector wants `test` imported straight from `@playwright/test`, and specs
+import the extended one from `fixtures/`
+([WEB-75027](https://youtrack.jetbrains.com/issue/WEB-75027)). Run them from a
+Playwright run configuration instead.

@@ -4,14 +4,28 @@ on:
   pull_request:
   push:
     branches: [master]
+  # PRs run e2e against the WordPress/WooCommerce versions pinned in
+  # .wp-env.e2e.json; this run tracks the latest releases instead, so an
+  # upstream change shows up here rather than on an unrelated PR.
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
 
-# The job only reads the repository.
+# The jobs only read the repository.
 permissions:
   contents: read
+
+# A newer push to the same pull request makes the in-flight run obsolete.
+# Pushes to master keep running, since each commit there is checked on its own.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   scripts:
     name: Inline browser scripts
+    # Nothing upstream changes on a schedule for these.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +39,11 @@ jobs:
 
       - run: npm run typecheck
 
+      # Type-checks tests/e2e, which the line above does not cover: the root
+      # tsconfig only includes assets/src. Needs no browser or WordPress, so it
+      # runs here rather than holding up the e2e job.
+      - run: npm run typecheck:e2e
+
       - run: npm test
 
       # The package ships straight from the repository, so the bundle is
@@ -33,3 +52,63 @@ jobs:
         run: |
           npm run build
           git diff --exit-code -- assets/js/service-worker-patch.js
+
+  e2e:
+    name: End-to-end (WordPress + WooCommerce${{ github.event_name == 'schedule' && ', latest' || '' }})
+    runs-on: ubuntu-latest
+    # The suite currently takes seconds; the cap is here to stop a hung
+    # wp-env or browser from burning a full runner hour.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Only chromium: playwright.config.ts defines no other project.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # wp-env merges this file over .wp-env.e2e.json. `plugins` and `themes`
+      # are replaced rather than merged, hence the full lists.
+      - name: Track the latest WordPress, WooCommerce and theme
+        if: github.event_name == 'schedule'
+        run: |
+          cat > .wp-env.e2e.override.json <<'JSON'
+          {
+            "core": null,
+            "plugins": [ "https://downloads.wordpress.org/plugin/woocommerce.zip", "." ],
+            "themes": [ "https://downloads.wordpress.org/theme/twentytwentyfive.zip" ]
+          }
+          JSON
+
+      # Boots WordPress + WooCommerce in Docker and runs bin/wp-env-setup.sh
+      # through the afterStart lifecycle hook, which configures the store.
+      - name: Start WordPress
+        run: npm run env:e2e:start
+
+      - run: npm run test:e2e
+
+      # The HTML report plus the traces kept by retain-on-failure: what makes a
+      # red run debuggable without reproducing it locally.
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      # WP_DEBUG_LOG is on (see .wp-env.e2e.json), so PHP notices and fatals
+      # land here. They never reach the Playwright report, and a failing test
+      # is often explained by them.
+      - name: Print WordPress debug log
+        if: failure()
+        run: npx wp-env --config=.wp-env.e2e.json run wordpress cat /var/www/html/wp-content/debug.log || true

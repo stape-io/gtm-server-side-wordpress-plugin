@@ -2,3 +2,13 @@
 composer.lock
 /node_modules
 /.build
+
+# wp-env: local overrides of .wp-env.json / .wp-env.e2e.json.
+/.wp-env.override.json
+/.wp-env.e2e.override.json
+
+# Playwright output; paths are pinned in playwright.config.ts.
+/tests/e2e/artifacts/
+/tests/e2e/test-results/
+/tests/e2e/playwright-report/
+/tests/e2e/blob-report/
