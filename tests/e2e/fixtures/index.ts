@@ -1,5 +1,5 @@
-import path from 'node:path';
-import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
+import type { Request } from '@playwright/test';
+import { test as base, expect, type RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
 import { ProductPage } from '../pages/product-page';
@@ -12,16 +12,44 @@ import {
 	type CreatedProduct,
 } from '../api/products';
 
-/** The plugin's folder under wp-content/plugins: wp-env names it after the checkout directory. */
-const PLUGIN_DIR = path.basename( path.resolve( __dirname, '../../..' ) );
+/** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
+const CART_STATE_ACTION = 'action=gtm_server_side_state_cart_data';
+
+let pluginDir: Promise< string > | undefined;
+
+/**
+ * The plugin's folder under wp-content/plugins, read from the site under test
+ * (once per worker): it is not always the checkout directory wp-env names it
+ * after, for example when WP_BASE_URL points at another install.
+ */
+function getPluginDir( requestUtils: RequestUtils ): Promise< string > {
+	pluginDir ??= ( async () => {
+		const plugins: { plugin: string; textdomain: string }[] = await requestUtils.rest( {
+			path: '/wp/v2/plugins',
+		} );
+		const plugin = plugins.find( ( p ) => p.textdomain === 'gtm-server-side' );
+		if ( ! plugin ) {
+			throw new Error( 'Cannot find this plugin among the installed ones.' );
+		}
+		return plugin.plugin.split( '/' )[ 0 ];
+	} )();
+	return pluginDir;
+}
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
- * call behind `cart_state`. The sGTM / loader host is not in the list: the
- * store is configured with a placeholder GTM container only.
+ * call behind `cart_state`. Other admin-ajax calls are not ours, and the sGTM /
+ * loader host is not in the list: the store is configured with a placeholder
+ * GTM container only.
  */
-function isPluginUrl( url: string ): boolean {
-	return url.includes( `/wp-content/plugins/${ PLUGIN_DIR }/` ) || url.includes( '/wp-admin/admin-ajax.php' );
+function isPluginRequest( request: Request, dir: string ): boolean {
+	if ( request.url().includes( `/wp-content/plugins/${ dir }/` ) ) {
+		return true;
+	}
+	return (
+		request.url().includes( '/wp-admin/admin-ajax.php' ) &&
+		( request.postData() ?? '' ).includes( CART_STATE_ACTION )
+	);
 }
 
 /**
@@ -47,7 +75,7 @@ type ShopFixtures = {
 	stubGtm: void;
 	/**
 	 * Automatic: fails the test on an uncaught JS error, a `console.error` from
-	 * the page, or a failed request to the plugin (see isPluginUrl()). Other
+	 * the page, or a failed request to the plugin (see isPluginRequest()). Other
 	 * failed loads are the store's and the theme's business.
 	 */
 	pageErrors: void;
@@ -64,7 +92,8 @@ export const test = base.extend< ShopFixtures >( {
 		{ auto: true },
 	],
 	pageErrors: [
-		async ( { page }, use ) => {
+		async ( { page, requestUtils }, use ) => {
+			const dir = await getPluginDir( requestUtils );
 			const errors: string[] = [];
 			page.on( 'pageerror', ( error ) => errors.push( error.message ) );
 			// "Failed to load resource" lines are judged by URL below instead.
@@ -74,13 +103,15 @@ export const test = base.extend< ShopFixtures >( {
 				}
 			} );
 			page.on( 'response', ( response ) => {
-				if ( response.status() >= 400 && isPluginUrl( response.url() ) ) {
+				if ( response.status() >= 400 && isPluginRequest( response.request(), dir ) ) {
 					errors.push( `${ response.status() } ${ response.url() }` );
 				}
 			} );
 			page.on( 'requestfailed', ( request ) => {
-				if ( isPluginUrl( request.url() ) ) {
-					errors.push( `${ request.failure()?.errorText } ${ request.url() }` );
+				// Chrome cancels requests still running when the page navigates away.
+				const error = request.failure()?.errorText;
+				if ( error !== 'net::ERR_ABORTED' && isPluginRequest( request, dir ) ) {
+					errors.push( `${ error } ${ request.url() }` );
 				}
 			} );
 			await use();

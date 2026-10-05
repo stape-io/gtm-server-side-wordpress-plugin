@@ -67,7 +67,9 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
   Every event the plugin pushes (PHP and JS, including login, register and
   home) clears `ecommerce` first, so the check has no opt-out.
 - **Specs fail on uncaught JS errors and `console.error`** (the automatic
-  `pageErrors` fixture). A failed load counts only when it is a request to the plugin (its assets or the `cart_state` call to admin-ajax); the store's own failed loads are ignored.
+  `pageErrors` fixture). A failed load counts only when it is a request to the
+  plugin (its assets, or the `cart_state` call to admin-ajax); requests
+  cancelled by a navigation and the store's own failed loads are ignored.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight.
 
