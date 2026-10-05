@@ -1,5 +1,9 @@
 import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 
+/** What to tell someone whose environment is not the one the specs expect. */
+export const RECREATE_ENVIRONMENT =
+	'Recreate the environment: npm run env:e2e:destroy && npm run env:e2e:start';
+
 /** One entry of GET /wp/v2/plugins. `plugin` is `<folder>/<main file>`. */
 export type InstalledPlugin = { plugin: string; status: string; version: string; textdomain: string };
 

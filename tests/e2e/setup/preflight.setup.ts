@@ -1,5 +1,5 @@
 import { test as preflight, expect } from '../fixtures';
-import { findThisPlugin, getInstalledPlugins } from '../api/plugins';
+import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
@@ -16,7 +16,6 @@ import type { PluginConfig } from '../types/plugin-config';
  */
 
 const THEME = 'twentytwentyfive';
-const FIX = 'Recreate the environment: npm run env:e2e:destroy && npm run env:e2e:start';
 
 type InstalledTheme = { stylesheet: string; version: string };
 

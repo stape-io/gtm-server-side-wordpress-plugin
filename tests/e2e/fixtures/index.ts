@@ -3,7 +3,7 @@ import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
 import { ProductPage } from '../pages/product-page';
-import { findThisPlugin, getInstalledPlugins } from '../api/plugins';
+import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
 	createProduct,
@@ -76,7 +76,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		async ( { requestUtils }, use ) => {
 			const plugin = findThisPlugin( await getInstalledPlugins( requestUtils ) );
 			if ( ! plugin ) {
-				throw new Error( 'Cannot find this plugin among the installed ones.' );
+				throw new Error( `This plugin is not installed on the site under test. ${ RECREATE_ENVIRONMENT }` );
 			}
 			await use( plugin.plugin.split( '/' )[ 0 ] );
 		},
