@@ -31,7 +31,21 @@ export default defineConfig( {
 	forbidOnly: !! process.env.CI,
 	retries: process.env.CI ? 1 : 0,
 	reporter: process.env.CI
-		? [ [ 'github' ], [ 'html', { open: 'never', outputFolder: 'tests/e2e/playwright-report' } ] ]
+		? [
+				[ 'github' ],
+				[ 'html', { open: 'never', outputFolder: 'tests/e2e/playwright-report' } ],
+				// Reports each run to Testomat, matching results to cases by the
+				// @T{id} tag in the test title. Left out without a token (PRs from
+				// forks get no secrets), so the suite never depends on it.
+				...( process.env.TESTOMATIO
+					? [
+							[
+								'@testomatio/reporter/playwright',
+								{ apiKey: process.env.TESTOMATIO },
+							] as const,
+					  ]
+					: [] ),
+		  ]
 		: 'list',
 	expect: {
 		// add_to_cart can arrive a couple of seconds after the click - see

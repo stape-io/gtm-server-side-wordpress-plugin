@@ -91,7 +91,17 @@ jobs:
       - name: Start WordPress
         run: npm run env:e2e:start
 
-      - run: npm run test:e2e
+      # Results go to Testomat when the TESTOMATIO secret exists (it doesn't on
+      # PRs from forks; playwright.config.ts then leaves the reporter out).
+      # Cases are matched by the @T{id} tag in each test title.
+      - name: Run e2e tests
+        run: npm run test:e2e
+        env:
+          TESTOMATIO: ${{ secrets.TESTOMATIO }}
+          TESTOMATIO_TITLE: >-
+            ${{ github.event_name == 'pull_request' && format('PR #{0}: {1}', github.event.number, github.head_ref)
+            || github.event_name == 'schedule' && format('Nightly (latest WP/WC) {0}', github.sha)
+            || format('{0}: {1}', github.ref_name, github.sha) }}
 
       # The HTML report plus the traces kept by retain-on-failure: what makes a
       # red run debuggable without reproducing it locally.

@@ -71,6 +71,20 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight.
 
+## Testomat
+
+Each spec automates one Testomat test case: the test title is the case title,
+followed by the case ID as a tag (`... @Ta58bd16c`). One test per case.
+
+In CI the run is reported to Testomat (`@testomatio/reporter`, wired up in
+`playwright.config.ts`) and every result is attached to its case by that tag.
+The reporter needs the `TESTOMATIO` secret and is left out when it is missing,
+so forks and local runs are unaffected. Tests without a tag, such as the
+preflight check, are not meant to land in Testomat.
+
+To automate a case: copy its title from Testomat, append `@T<id>`, and switch
+the case to `automated` there once its first CI run is reported.
+
 ## Known gaps
 
 - Only the block theme is covered. There, "Add to cart" goes through
