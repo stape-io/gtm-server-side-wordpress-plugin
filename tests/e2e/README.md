@@ -82,6 +82,15 @@ The reporter needs the `TESTOMATIO` secret and is left out when it is missing,
 so forks and local runs are unaffected. Tests without a tag, such as the
 preflight check, are still sent, as unmatched tests.
 
+Two limits of the Testomat run to keep in mind:
+
+- A CI run cancelled by a newer push (`cancel-in-progress`) never closes its
+  Testomat run, which stays in "running" with whatever it reported. The next
+  push starts a fresh run.
+- With `retries: 1` a retried test keeps one result per case in Testomat, the
+  last attempt. A test that failed and then passed shows as passed there, and
+  as flaky only in the GitHub report.
+
 To automate a case: copy its title from Testomat, append `@T<id>`, and switch
 the case to `automated` there once its first CI run is reported.
 
