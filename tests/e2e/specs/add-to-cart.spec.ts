@@ -6,7 +6,7 @@ import {
 	expectedItem,
 } from '../data-layer/expected';
 
-test( 'clicking "Add to cart" in a product grid pushes an add_to_cart event', async ( {
+test( "Add to cart on the Baseline shop grid pushes one add_to_cart for the clicked product @T7b4669bf", async ( {
 	categoryPage,
 	dataLayer,
 	product,

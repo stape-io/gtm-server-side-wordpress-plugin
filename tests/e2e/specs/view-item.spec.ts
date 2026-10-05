@@ -7,7 +7,7 @@ import { expectedCartState, expectedEcommerce, expectedItem } from '../data-laye
  * includes/class-gtm-server-side-event-viewitem.php), so it does not depend on
  * the theme's markup or on any click handler.
  */
-test( 'opening a product page pushes a view_item event for that product', async ( {
+test( "view_item reports a simple product's id, SKU, name, price and category, once per page view @Ta58bd16c", async ( {
 	productPage,
 	dataLayer,
 	product,

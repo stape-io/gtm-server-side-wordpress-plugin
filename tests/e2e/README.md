@@ -62,8 +62,12 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
-- **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event and
-  on a duplicate one.
+- **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event,
+  on a duplicate one and on one that isn't preceded by `{ ecommerce: null }`.
+  Every event the plugin pushes (PHP and JS, including login, register and
+  home) clears `ecommerce` first, so the check has no opt-out.
+- **Specs fail on uncaught JS errors and `console.error`** (the automatic
+  `pageErrors` fixture). Failed resource loads are ignored.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight.
 

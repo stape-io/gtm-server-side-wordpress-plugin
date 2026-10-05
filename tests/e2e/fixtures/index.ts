@@ -32,6 +32,12 @@ type ShopFixtures = {
 	 * window.dataLayer the specs assert on.
 	 */
 	stubGtm: void;
+	/**
+	 * Automatic: fails the test on an uncaught JS error or a `console.error`
+	 * from the page. Failed resource loads are left out: they are the store's
+	 * and the theme's business, not the plugin's script.
+	 */
+	pageErrors: void;
 };
 
 export const test = base.extend< ShopFixtures >( {
@@ -41,6 +47,20 @@ export const test = base.extend< ShopFixtures >( {
 				route.fulfill( { status: 200, contentType: 'text/javascript', body: '' } )
 			);
 			await use();
+		},
+		{ auto: true },
+	],
+	pageErrors: [
+		async ( { page }, use ) => {
+			const errors: string[] = [];
+			page.on( 'pageerror', ( error ) => errors.push( error.message ) );
+			page.on( 'console', ( message ) => {
+				if ( message.type() === 'error' && ! message.text().startsWith( 'Failed to load resource' ) ) {
+					errors.push( message.text() );
+				}
+			} );
+			await use();
+			expect( errors, 'JS errors on the page' ).toEqual( [] );
 		},
 		{ auto: true },
 	],
