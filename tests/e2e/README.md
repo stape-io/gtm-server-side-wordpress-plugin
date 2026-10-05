@@ -67,7 +67,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
   Every event the plugin pushes (PHP and JS, including login, register and
   home) clears `ecommerce` first, so the check has no opt-out.
 - **Specs fail on uncaught JS errors and `console.error`** (the automatic
-  `pageErrors` fixture). Failed resource loads are ignored.
+  `pageErrors` fixture). A failed load counts only when it is a request to the plugin (its assets or the `cart_state` call to admin-ajax); the store's own failed loads are ignored.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight.
 
@@ -80,7 +80,7 @@ In CI the run is reported to Testomat (`@testomatio/reporter`, wired up in
 `playwright.config.ts`) and every result is attached to its case by that tag.
 The reporter needs the `TESTOMATIO` secret and is left out when it is missing,
 so forks and local runs are unaffected. Tests without a tag, such as the
-preflight check, are not meant to land in Testomat.
+preflight check, are still sent, as unmatched tests.
 
 To automate a case: copy its title from Testomat, append `@T<id>`, and switch
 the case to `automated` there once its first CI run is reported.

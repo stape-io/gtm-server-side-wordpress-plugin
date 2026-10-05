@@ -81,13 +81,15 @@ export class DataLayer {
 			const fullName = is_custom_event_name === 'yes' ? name + DATA_LAYER_CUSTOM_EVENT_NAME : name;
 			const events = w.dataLayer ?? [];
 
+			const matches = events.filter( ( entry ) => entry.event === fullName );
+
 			return {
 				fullName,
 				pushed: events
 					.map( ( entry ) => entry.event )
 					.filter( ( event ): event is string => typeof event === 'string' ),
-				matches: events.filter( ( entry ) => entry.event === fullName ),
-				beforeFirstMatch: events[ events.findIndex( ( entry ) => entry.event === fullName ) - 1 ],
+				matches,
+				beforeFirstMatch: matches.length ? events[ events.indexOf( matches[ 0 ] ) - 1 ] : undefined,
 			};
 		}, eventName );
 

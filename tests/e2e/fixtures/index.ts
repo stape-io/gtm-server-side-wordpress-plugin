@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
@@ -10,6 +11,18 @@ import {
 	type CreatedCategory,
 	type CreatedProduct,
 } from '../api/products';
+
+/** The plugin's folder under wp-content/plugins: wp-env names it after the checkout directory. */
+const PLUGIN_DIR = path.basename( path.resolve( __dirname, '../../..' ) );
+
+/**
+ * Whether a request belongs to the plugin: its own assets, or the admin-ajax
+ * call behind `cart_state`. The sGTM / loader host is not in the list: the
+ * store is configured with a placeholder GTM container only.
+ */
+function isPluginUrl( url: string ): boolean {
+	return url.includes( `/wp-content/plugins/${ PLUGIN_DIR }/` ) || url.includes( '/wp-admin/admin-ajax.php' );
+}
 
 /**
  * Base test: @wordpress/e2e-test-utils-playwright's `test`, which already
@@ -33,9 +46,9 @@ type ShopFixtures = {
 	 */
 	stubGtm: void;
 	/**
-	 * Automatic: fails the test on an uncaught JS error or a `console.error`
-	 * from the page. Failed resource loads are left out: they are the store's
-	 * and the theme's business, not the plugin's script.
+	 * Automatic: fails the test on an uncaught JS error, a `console.error` from
+	 * the page, or a failed request to the plugin (see isPluginUrl()). Other
+	 * failed loads are the store's and the theme's business.
 	 */
 	pageErrors: void;
 };
@@ -54,13 +67,24 @@ export const test = base.extend< ShopFixtures >( {
 		async ( { page }, use ) => {
 			const errors: string[] = [];
 			page.on( 'pageerror', ( error ) => errors.push( error.message ) );
+			// "Failed to load resource" lines are judged by URL below instead.
 			page.on( 'console', ( message ) => {
 				if ( message.type() === 'error' && ! message.text().startsWith( 'Failed to load resource' ) ) {
 					errors.push( message.text() );
 				}
 			} );
+			page.on( 'response', ( response ) => {
+				if ( response.status() >= 400 && isPluginUrl( response.url() ) ) {
+					errors.push( `${ response.status() } ${ response.url() }` );
+				}
+			} );
+			page.on( 'requestfailed', ( request ) => {
+				if ( isPluginUrl( request.url() ) ) {
+					errors.push( `${ request.failure()?.errorText } ${ request.url() }` );
+				}
+			} );
 			await use();
-			expect( errors, 'JS errors on the page' ).toEqual( [] );
+			expect( errors, 'JS errors and failed plugin requests on the page' ).toEqual( [] );
 		},
 		{ auto: true },
 	],

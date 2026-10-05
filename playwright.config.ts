@@ -38,12 +38,7 @@ export default defineConfig( {
 				// @T{id} tag in the test title. Left out without a token (PRs from
 				// forks get no secrets), so the suite never depends on it.
 				...( process.env.TESTOMATIO
-					? [
-							[
-								'@testomatio/reporter/playwright',
-								{ apiKey: process.env.TESTOMATIO },
-							] as const,
-					  ]
+					? [ [ '@testomatio/reporter/playwright' ] as const ]
 					: [] ),
 		  ]
 		: 'list',
