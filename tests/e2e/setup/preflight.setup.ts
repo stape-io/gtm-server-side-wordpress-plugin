@@ -1,4 +1,5 @@
 import { test as preflight, expect } from '../fixtures';
+import { findThisPlugin, getInstalledPlugins } from '../api/plugins';
 import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
@@ -17,15 +18,14 @@ import type { PluginConfig } from '../types/plugin-config';
 const THEME = 'twentytwentyfive';
 const FIX = 'Recreate the environment: npm run env:e2e:destroy && npm run env:e2e:start';
 
-type InstalledPlugin = { plugin: string; status: string; version: string; textdomain: string };
 type InstalledTheme = { stylesheet: string; version: string };
 
 preflight( 'store is configured the way the specs assume', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
 
-	const plugins: InstalledPlugin[] = await requestUtils.rest( { path: '/wp/v2/plugins' } );
+	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
-	const plugin = plugins.find( ( p ) => p.textdomain === 'gtm-server-side' );
+	const plugin = findThisPlugin( plugins );
 	expect( woocommerce?.status, `WooCommerce is not active. ${ FIX }` ).toBe( 'active' );
 	expect( plugin?.status, `This plugin is not active. ${ FIX }` ).toBe( 'active' );
 

@@ -1,8 +1,9 @@
 import type { Request } from '@playwright/test';
-import { test as base, expect, type RequestUtils } from '@wordpress/e2e-test-utils-playwright';
+import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
 import { ProductPage } from '../pages/product-page';
+import { findThisPlugin, getInstalledPlugins } from '../api/plugins';
 import {
 	createCategory,
 	createProduct,
@@ -14,27 +15,6 @@ import {
 
 /** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
 const CART_STATE_ACTION = 'action=gtm_server_side_state_cart_data';
-
-let pluginDir: Promise< string > | undefined;
-
-/**
- * The plugin's folder under wp-content/plugins, read from the site under test
- * (once per worker): it is not always the checkout directory wp-env names it
- * after, for example when WP_BASE_URL points at another install.
- */
-function getPluginDir( requestUtils: RequestUtils ): Promise< string > {
-	pluginDir ??= ( async () => {
-		const plugins: { plugin: string; textdomain: string }[] = await requestUtils.rest( {
-			path: '/wp/v2/plugins',
-		} );
-		const plugin = plugins.find( ( p ) => p.textdomain === 'gtm-server-side' );
-		if ( ! plugin ) {
-			throw new Error( 'Cannot find this plugin among the installed ones.' );
-		}
-		return plugin.plugin.split( '/' )[ 0 ];
-	} )();
-	return pluginDir;
-}
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -76,12 +56,32 @@ type ShopFixtures = {
 	/**
 	 * Automatic: fails the test on an uncaught JS error, a `console.error` from
 	 * the page, or a failed request to the plugin (see isPluginRequest()). Other
-	 * failed loads are the store's and the theme's business.
+	 * failed loads are the store's and the theme's business, and so are
+	 * requests Chrome cancels (`net::ERR_ABORTED`) when the page navigates away.
 	 */
 	pageErrors: void;
 };
 
-export const test = base.extend< ShopFixtures >( {
+type WorkerFixtures = {
+	/**
+	 * The plugin's folder under wp-content/plugins, read from the site under
+	 * test: it is not always the checkout directory wp-env names it after, for
+	 * example when WP_BASE_URL points at another install.
+	 */
+	pluginDir: string;
+};
+
+export const test = base.extend< ShopFixtures, WorkerFixtures >( {
+	pluginDir: [
+		async ( { requestUtils }, use ) => {
+			const plugin = findThisPlugin( await getInstalledPlugins( requestUtils ) );
+			if ( ! plugin ) {
+				throw new Error( 'Cannot find this plugin among the installed ones.' );
+			}
+			await use( plugin.plugin.split( '/' )[ 0 ] );
+		},
+		{ scope: 'worker' },
+	],
 	stubGtm: [
 		async ( { page }, use ) => {
 			await page.route( 'https://www.googletagmanager.com/**', ( route ) =>
@@ -92,8 +92,7 @@ export const test = base.extend< ShopFixtures >( {
 		{ auto: true },
 	],
 	pageErrors: [
-		async ( { page, requestUtils }, use ) => {
-			const dir = await getPluginDir( requestUtils );
+		async ( { page, pluginDir }, use ) => {
 			const errors: string[] = [];
 			page.on( 'pageerror', ( error ) => errors.push( error.message ) );
 			// "Failed to load resource" lines are judged by URL below instead.
@@ -103,14 +102,14 @@ export const test = base.extend< ShopFixtures >( {
 				}
 			} );
 			page.on( 'response', ( response ) => {
-				if ( response.status() >= 400 && isPluginRequest( response.request(), dir ) ) {
+				if ( response.status() >= 400 && isPluginRequest( response.request(), pluginDir ) ) {
 					errors.push( `${ response.status() } ${ response.url() }` );
 				}
 			} );
 			page.on( 'requestfailed', ( request ) => {
 				// Chrome cancels requests still running when the page navigates away.
 				const error = request.failure()?.errorText;
-				if ( error !== 'net::ERR_ABORTED' && isPluginRequest( request, dir ) ) {
+				if ( error !== 'net::ERR_ABORTED' && isPluginRequest( request, pluginDir ) ) {
 					errors.push( `${ error } ${ request.url() }` );
 				}
 			} );
