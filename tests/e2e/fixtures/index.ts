@@ -23,13 +23,27 @@ const CART_STATE_ACTION = 'action=gtm_server_side_state_cart_data';
  * GTM container only.
  */
 function isPluginRequest( request: Request, dir: string ): boolean {
-	if ( request.url().includes( `/wp-content/plugins/${ dir }/` ) ) {
+	if ( request.url().includes( `/plugins/${ dir }/` ) ) {
 		return true;
 	}
 	return (
 		request.url().includes( '/wp-admin/admin-ajax.php' ) &&
 		( request.postData() ?? '' ).includes( CART_STATE_ACTION )
 	);
+}
+
+/**
+ * Whether a script belongs to the plugin: one of its files, or an inline
+ * script, which is what the plugin prints into the page for its server-side
+ * events. An inline script reports the page itself as its source.
+ */
+function isPluginScript( url: string, dir: string, pageUrl: string ): boolean {
+	return url.includes( `/plugins/${ dir }/` ) || url === pageUrl;
+}
+
+/** The script URLs in an error's stack, in both Chrome stack-line formats. */
+function stackUrls( stack: string | undefined ): string[] {
+	return [ ...( stack ?? '' ).matchAll( /(https?:\/\/[^\s()]+?):\d+:\d+/g ) ].map( ( match ) => match[ 1 ] );
 }
 
 /**
@@ -54,8 +68,10 @@ type ShopFixtures = {
 	 */
 	stubGtm: void;
 	/**
-	 * Automatic: fails the test on an uncaught JS error, a `console.error` from
-	 * the page, or a failed request to the plugin (see isPluginRequest()). Other
+	 * Automatic: fails the test on an uncaught JS error or a `console.error`
+	 * raised by the plugin's scripts (see isPluginScript()), or a failed request
+	 * to the plugin (see isPluginRequest()). Errors from WooCommerce, the theme
+	 * and other plugins don't count. Other
 	 * failed loads are the store's and the theme's business, and so are
 	 * requests Chrome cancels (`net::ERR_ABORTED`) when the page navigates away.
 	 */
@@ -94,10 +110,21 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	pageErrors: [
 		async ( { page, pluginDir }, use ) => {
 			const errors: string[] = [];
-			page.on( 'pageerror', ( error ) => errors.push( error.message ) );
+			// Only errors from the plugin's own scripts count: WooCommerce, the
+			// theme and other plugins log their own (SCRIPT_DEBUG makes React
+			// warn through console.error), and they change with every release.
+			page.on( 'pageerror', ( error ) => {
+				if ( stackUrls( error.stack ).some( ( url ) => isPluginScript( url, pluginDir, page.url() ) ) ) {
+					errors.push( error.message );
+				}
+			} );
 			// "Failed to load resource" lines are judged by URL below instead.
 			page.on( 'console', ( message ) => {
-				if ( message.type() === 'error' && ! message.text().startsWith( 'Failed to load resource' ) ) {
+				if (
+					message.type() === 'error' &&
+					! message.text().startsWith( 'Failed to load resource' ) &&
+					isPluginScript( message.location().url, pluginDir, page.url() )
+				) {
 					errors.push( message.text() );
 				}
 			} );

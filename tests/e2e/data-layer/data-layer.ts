@@ -82,6 +82,7 @@ export class DataLayer {
 			const events = w.dataLayer ?? [];
 
 			const matches = events.filter( ( entry ) => entry.event === fullName );
+			const first = events.findIndex( ( entry ) => entry.event === fullName );
 
 			return {
 				fullName,
@@ -89,7 +90,7 @@ export class DataLayer {
 					.map( ( entry ) => entry.event )
 					.filter( ( event ): event is string => typeof event === 'string' ),
 				matches,
-				beforeFirstMatch: matches.length ? events[ events.indexOf( matches[ 0 ] ) - 1 ] : undefined,
+				beforeFirstMatch: first > 0 ? events[ first - 1 ] : undefined,
 			};
 		}, eventName );
 

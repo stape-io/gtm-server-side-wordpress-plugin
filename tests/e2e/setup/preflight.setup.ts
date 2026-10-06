@@ -1,4 +1,4 @@
-import { test as preflight, expect } from '../fixtures';
+import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
@@ -9,6 +9,10 @@ import type { PluginConfig } from '../types/plugin-config';
  * state bin/wp-env-configure.sh puts it in - everything the specs depend on.
  * A misconfigured environment then fails here, with a message that says how
  * to fix it, instead of as a puzzling assertion failure inside every spec.
+ *
+ * Uses the base test, not the one from ../fixtures: that one runs the pageErrors
+ * and pluginDir fixtures first, which would fail before any of the checks below
+ * ran and hide what they would have said.
  *
  * Also removes catalog leftovers from killed runs, and records the WordPress,
  * WooCommerce and theme versions on the test, so a report says what it ran
