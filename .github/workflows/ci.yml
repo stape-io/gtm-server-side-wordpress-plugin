@@ -108,6 +108,11 @@ jobs:
             *)            title="${REF_NAME} @ ${short}" ;;
           esac
           echo "TESTOMATIO_TITLE=${title}" >> "$GITHUB_ENV"
+          # The nightly run tests the latest WordPress and WooCommerce, not the
+          # pinned versions, so it gets its own group in Testomat.
+          if [ "$EVENT" = "schedule" ]; then
+            echo "TESTOMATIO_RUNGROUP_TITLE=Nightly (latest WP/WC)" >> "$GITHUB_ENV"
+          fi
 
       # Results go to Testomat when the TESTOMATIO secret exists (it doesn't on
       # PRs from forks; playwright.config.ts then leaves the reporter out).
