@@ -62,6 +62,10 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
+- **`cart_state` is not asserted in the event specs.** It has its own Testomat
+  cases (Data layer - cart_state), and each event case lists it under "Not
+  covered here". Specs pass the event through `withoutCartState()` and compare
+  the rest with `toEqual`. Its spec will use `expectedCartState()`.
 - **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event,
   on a duplicate one and on one that isn't preceded by `{ ecommerce: null }`.
   Every event the plugin pushes (PHP and JS, including login, register and
