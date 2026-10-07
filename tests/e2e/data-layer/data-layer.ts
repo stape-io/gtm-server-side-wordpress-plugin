@@ -16,6 +16,8 @@ type Snapshot = {
 	/** Every named event pushed so far, in order. */
 	pushed: string[];
 	matches: DataLayerEvent[];
+	/** The entry pushed right before the first match, if any. */
+	beforeFirstMatch: DataLayerEvent | undefined;
 };
 
 /**
@@ -35,6 +37,10 @@ export class DataLayer {
 	 * once and returns it. Duplicate pushes are the most common tracking bug,
 	 * so "exactly once" is part of every event assertion rather than opt-in.
 	 *
+	 * Also asserts the entry right before it is `{ ecommerce: null }`, which
+	 * the plugin pushes ahead of every ecommerce event so GTM doesn't merge the
+	 * previous event's items into this one.
+	 *
 	 * Waits rather than snapshotting: the plugin can defer add_to_cart behind
 	 * a 1500 ms fallback timer plus an admin-ajax round trip for `cart_state`
 	 * (_pushWithStateCartData() in assets/js/javascript.js).
@@ -51,8 +57,12 @@ export class DataLayer {
 
 		await this.page.waitForTimeout( LATE_PUSH_GRACE_MS );
 
-		const { matches } = await this.snapshot( eventName );
+		const { matches, beforeFirstMatch } = await this.snapshot( eventName );
 		expect( matches, `dataLayer event "${ fullName }" pushed more than once` ).toHaveLength( 1 );
+		expect(
+			beforeFirstMatch,
+			`dataLayer event "${ fullName }" is not preceded by { ecommerce: null }`
+		).toEqual( { ecommerce: null } );
 
 		return matches[ 0 ];
 	}
@@ -71,12 +81,16 @@ export class DataLayer {
 			const fullName = is_custom_event_name === 'yes' ? name + DATA_LAYER_CUSTOM_EVENT_NAME : name;
 			const events = w.dataLayer ?? [];
 
+			const matches = events.filter( ( entry ) => entry.event === fullName );
+			const first = events.findIndex( ( entry ) => entry.event === fullName );
+
 			return {
 				fullName,
 				pushed: events
 					.map( ( entry ) => entry.event )
 					.filter( ( event ): event is string => typeof event === 'string' ),
-				matches: events.filter( ( entry ) => entry.event === fullName ),
+				matches,
+				beforeFirstMatch: first > 0 ? events[ first - 1 ] : undefined,
 			};
 		}, eventName );
 

@@ -1,12 +1,7 @@
 import { expect, test } from '../fixtures';
-import {
-	expectedCartLine,
-	expectedCartState,
-	expectedEcommerce,
-	expectedItem,
-} from '../data-layer/expected';
+import { expectedEcommerce, expectedItem, withoutCartState } from '../data-layer/expected';
 
-test( 'clicking "Add to cart" in a product grid pushes an add_to_cart event', async ( {
+test( 'Add to cart on a block-theme product grid pushes one add_to_cart for the clicked product @T7b4669bf', async ( {
 	categoryPage,
 	dataLayer,
 	product,
@@ -18,7 +13,8 @@ test( 'clicking "Add to cart" in a product grid pushes an add_to_cart event', as
 
 	// The whole event, not objectContaining: a field the plugin stops or
 	// starts sending has to fail here.
-	expect( addToCart ).toEqual( {
+	// cart_state has its own cases, so it is left out here.
+	expect( withoutCartState( addToCart ) ).toEqual( {
 		// Spelled out rather than resolved, so a dropped suffix fails here.
 		event: 'add_to_cart_stape',
 		// Current behaviour, captured on purpose: pushAddToCart() in
@@ -29,8 +25,5 @@ test( 'clicking "Add to cart" in a product grid pushes an add_to_cart event', as
 			// index is the position in the pushed items array, not in the grid.
 			expectedItem( product, { quantity: 1, index: 1 } ),
 		] ),
-		// Built server side from the real WC_Cart, so a passing ecommerce
-		// payload can't hide a cart that never actually updated.
-		cart_state: expectedCartState( [ expectedCartLine( product, 1 ) ] ),
 	} );
 } );

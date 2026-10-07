@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import type { CreatedProduct } from '../api/products';
-import type { CartState, CartStateLine, Ecommerce, EcommerceItem } from './types';
+import type { CartState, CartStateLine, DataLayerEvent, Ecommerce, EcommerceItem } from './types';
 
 /**
  * Expected payloads, built from what the fixtures created. Specs compare them
@@ -42,6 +42,17 @@ export function expectedEcommerce( items: EcommerceItem[] ): Ecommerce {
 		0
 	);
 	return { currency: STORE_CURRENCY, value: value.toFixed( 2 ), items };
+}
+
+/**
+ * The event without its `cart_state`. The event specs compare everything else
+ * with `toEqual`, and leave `cart_state` to the cases written for it (the Data
+ * layer - cart_state folder in Testomat), so that one change to it does not
+ * fail every event spec at once.
+ */
+export function withoutCartState( event: DataLayerEvent ): Omit< DataLayerEvent, 'cart_state' > {
+	const { cart_state: _cartState, ...rest } = event;
+	return rest;
 }
 
 /** One `cart_state.lines` entry. */

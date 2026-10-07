@@ -91,7 +91,36 @@ jobs:
       - name: Start WordPress
         run: npm run env:e2e:start
 
-      - run: npm run test:e2e
+      # Names the Testomat run. A pull request shows the commit it was pushed
+      # at (github.sha there is the merge commit), so pushes to one PR differ.
+      - name: Name the Testomat run
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.number }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          short="${HEAD_SHA:0:7}"
+          case "$EVENT" in
+            pull_request) title="PR #${PR_NUMBER}: ${HEAD_REF} @ ${short}" ;;
+            schedule)     title="Nightly (latest WP/WC) @ ${short}" ;;
+            *)            title="${REF_NAME} @ ${short}" ;;
+          esac
+          echo "TESTOMATIO_TITLE=${title}" >> "$GITHUB_ENV"
+          # The nightly run tests the latest WordPress and WooCommerce, not the
+          # pinned versions, so it gets its own group in Testomat.
+          if [ "$EVENT" = "schedule" ]; then
+            echo "TESTOMATIO_RUNGROUP_TITLE=Nightly (latest WP and WC)" >> "$GITHUB_ENV"
+          fi
+
+      # Results go to Testomat when the TESTOMATIO secret exists (it doesn't on
+      # PRs from forks; playwright.config.ts then leaves the reporter out).
+      # Cases are matched by the @T{id} tag in each test title.
+      - name: Run e2e tests
+        run: npm run test:e2e
+        env:
+          TESTOMATIO: ${{ secrets.TESTOMATIO }}
 
       # The HTML report plus the traces kept by retain-on-failure: what makes a
       # red run debuggable without reproducing it locally.

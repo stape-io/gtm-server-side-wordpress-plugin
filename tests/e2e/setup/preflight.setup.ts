@@ -1,4 +1,5 @@
-import { test as preflight, expect } from '../fixtures';
+import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
+import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
@@ -9,23 +10,25 @@ import type { PluginConfig } from '../types/plugin-config';
  * A misconfigured environment then fails here, with a message that says how
  * to fix it, instead of as a puzzling assertion failure inside every spec.
  *
+ * Uses the base test, not the one from ../fixtures: that one runs the pageErrors
+ * and pluginDir fixtures first, which would fail before any of the checks below
+ * ran and hide what they would have said.
+ *
  * Also removes catalog leftovers from killed runs, and records the WordPress,
  * WooCommerce and theme versions on the test, so a report says what it ran
  * against.
  */
 
 const THEME = 'twentytwentyfive';
-const FIX = 'Recreate the environment: npm run env:e2e:destroy && npm run env:e2e:start';
 
-type InstalledPlugin = { plugin: string; status: string; version: string; textdomain: string };
 type InstalledTheme = { stylesheet: string; version: string };
 
 preflight( 'store is configured the way the specs assume', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
 
-	const plugins: InstalledPlugin[] = await requestUtils.rest( { path: '/wp/v2/plugins' } );
+	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
-	const plugin = plugins.find( ( p ) => p.textdomain === 'gtm-server-side' );
+	const plugin = findThisPlugin( plugins );
 	expect( woocommerce?.status, `WooCommerce is not active. ${ FIX }` ).toBe( 'active' );
 	expect( plugin?.status, `This plugin is not active. ${ FIX }` ).toBe( 'active' );
 

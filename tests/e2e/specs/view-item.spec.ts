@@ -1,5 +1,5 @@
 import { expect, test } from '../fixtures';
-import { expectedCartState, expectedEcommerce, expectedItem } from '../data-layer/expected';
+import { expectedEcommerce, expectedItem, withoutCartState } from '../data-layer/expected';
 
 /**
  * Unlike add_to_cart, this event is rendered server-side: the plugin prints it
@@ -7,7 +7,7 @@ import { expectedCartState, expectedEcommerce, expectedItem } from '../data-laye
  * includes/class-gtm-server-side-event-viewitem.php), so it does not depend on
  * the theme's markup or on any click handler.
  */
-test( 'opening a product page pushes a view_item event for that product', async ( {
+test( "view_item reports a simple product's id, SKU, name, price and category, once per page view @Ta58bd16c", async ( {
 	productPage,
 	dataLayer,
 	product,
@@ -16,12 +16,11 @@ test( 'opening a product page pushes a view_item event for that product', async 
 
 	const viewItem = await dataLayer.expectPushedOnce( 'view_item' );
 
-	expect( viewItem ).toEqual( {
+	// cart_state has its own cases, so it is left out here.
+	expect( withoutCartState( viewItem ) ).toEqual( {
 		// Spelled out rather than resolved, so a dropped suffix fails here.
 		event: 'view_item_stape',
 		ecomm_pagetype: 'product',
 		ecommerce: expectedEcommerce( [ expectedItem( product ) ] ),
-		// A fresh anonymous visitor's cart.
-		cart_state: expectedCartState( [] ),
 	} );
 } );

@@ -62,10 +62,47 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
-- **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event and
-  on a duplicate one.
+- **`cart_state` is not asserted in the event specs.** It has its own Testomat
+  cases (Data layer - cart_state), and each event case lists it under "Not
+  covered here". Specs pass the event through `withoutCartState()` and compare
+  the rest with `toEqual`. Its spec will use `expectedCartState()`.
+- **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event,
+  on a duplicate one and on one that isn't preceded by `{ ecommerce: null }`.
+  Every event the plugin pushes (PHP and JS, including login, register and
+  home) clears `ecommerce` first, so the check has no opt-out.
+- **Specs fail on JS errors from the plugin** (the automatic `pageErrors`
+  fixture): an uncaught error or a `console.error` raised by one of its files
+  under `/plugins/<plugin folder>/` or by an inline script it prints, and a
+  failed request to the plugin (its assets, or the `cart_state` call to
+  admin-ajax). Errors from WooCommerce, the theme and other plugins are
+  ignored, as are requests cancelled by a navigation: they change with every
+  release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
+  The preflight check uses the base test and skips this fixture.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight.
+
+## Testomat
+
+Each spec automates one Testomat test case: the test title is the case title,
+followed by the case ID as a tag (`... @Ta58bd16c`). One test per case.
+
+In CI the run is reported to Testomat (`@testomatio/reporter`, wired up in
+`playwright.config.ts`) and every result is attached to its case by that tag.
+The reporter needs the `TESTOMATIO` secret and is left out when it is missing,
+so forks and local runs are unaffected. Tests without a tag, such as the
+preflight check, are still sent, as unmatched tests.
+
+Two limits of the Testomat run to keep in mind:
+
+- A CI run cancelled by a newer push (`cancel-in-progress`) never closes its
+  Testomat run, which stays in "running" with whatever it reported. The next
+  push starts a fresh run.
+- With `retries: 1` a retried test keeps one result per case in Testomat, the
+  last attempt. A test that failed and then passed shows as passed there, and
+  as flaky only in the GitHub report.
+
+To automate a case: copy its title from Testomat, append `@T<id>`, and switch
+the case to `automated` there once its first CI run is reported.
 
 ## Known gaps
 
