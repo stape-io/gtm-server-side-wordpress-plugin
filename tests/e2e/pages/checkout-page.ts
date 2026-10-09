@@ -19,16 +19,20 @@ export class CheckoutPage {
 
 	/**
 	 * Types the billing details without placing the order, and waits until the
-	 * Checkout block has saved them to the customer session: it posts each
-	 * change to the Store API (cart/update-customer, inside wc/store/v1/batch),
-	 * and the last field typed is the postcode.
+	 * Checkout block has saved them to the customer session: it posts the
+	 * address to the Store API (cart/update-customer, inside wc/store/v1/batch)
+	 * as it changes, and the batch to wait for is the one carrying this test's
+	 * email and the last field typed, the postcode.
 	 */
 	async fillBillingDetails( details: BillingDetails ): Promise< void > {
-		const saved = this.page.waitForResponse(
-			( response ) =>
+		const saved = this.page.waitForResponse( ( response ) => {
+			const posted = response.request().postData() ?? '';
+			return (
 				response.url().includes( '/wc/store/v1/batch' ) &&
-				( response.request().postData() ?? '' ).includes( `"postcode":"${ details.postcode }"` )
-		);
+				posted.includes( `"email":"${ details.email }"` ) &&
+				posted.includes( `"postcode":"${ details.postcode }"` )
+			);
+		} );
 
 		await this.form.getByLabel( 'Email address' ).fill( details.email );
 		await this.form.getByLabel( 'First name' ).fill( details.firstName );
@@ -38,9 +42,13 @@ export class CheckoutPage {
 		await this.form.getByLabel( 'ZIP Code' ).fill( details.postcode );
 		await this.form.getByLabel( 'ZIP Code' ).blur();
 
-		// Checked after the wait, not in it: a rejected save then fails with its
-		// status instead of a timeout.
-		const response = await saved;
-		expect( response.ok(), `Saving the billing details returned ${ response.status() }` ).toBe( true );
+		// The batch itself always answers 207 Multi-Status; each request in it
+		// carries its own status in the body. Checked after the wait, not in it,
+		// so a rejected save fails with its status instead of a timeout.
+		const { responses } = ( await ( await saved ).json() ) as { responses: Array< { status: number } > };
+		expect(
+			responses.map( ( { status } ) => status ),
+			'Saving the billing details: statuses of the Store API batch requests'
+		).toEqual( responses.map( () => 200 ) );
 	}
 }

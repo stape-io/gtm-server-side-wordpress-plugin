@@ -52,7 +52,12 @@ function gtm_server_side_e2e_cookie_options(): array {
 		return array();
 	}
 
-	return array_intersect_key( $options, array_flip( GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS ) );
+	// Strings only, as stored options are: a false from pre_option_<name>
+	// would mean "don't override", and an array isn't an option value here.
+	return array_filter(
+		array_intersect_key( $options, array_flip( GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS ) ),
+		'is_string'
+	);
 }
 
 // Off anywhere but a local install (wp-env sets WP_ENVIRONMENT_TYPE to
