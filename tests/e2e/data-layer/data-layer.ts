@@ -67,6 +67,20 @@ export class DataLayer {
 		return matches[ 0 ];
 	}
 
+	/**
+	 * The `varGtmServerSide` config the plugin localized into the page: the
+	 * settings it rendered with, which the frontend script pushes from.
+	 */
+	async pluginConfig(): Promise< PluginConfig > {
+		const config = await this.page.evaluate(
+			() => ( window as unknown as { varGtmServerSide?: PluginConfig } ).varGtmServerSide
+		);
+		if ( ! config ) {
+			throw new Error( "This page has no varGtmServerSide, so the plugin's frontend script did not load here." );
+		}
+		return config;
+	}
+
 	private async snapshot( eventName: string ): Promise< Snapshot > {
 		const snapshot = await this.page.evaluate( ( name ) => {
 			const w = window as unknown as {

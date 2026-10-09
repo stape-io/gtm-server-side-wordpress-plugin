@@ -2,6 +2,7 @@ import type { Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
+import { CheckoutPage } from '../pages/checkout-page';
 import { ProductPage } from '../pages/product-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
@@ -12,6 +13,7 @@ import {
 	type CreatedCategory,
 	type CreatedProduct,
 } from '../api/products';
+import { buildGuestBuyer, type BillingDetails } from '../api/customers';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
@@ -57,12 +59,15 @@ type ShopFixtures = {
 	dataLayer: DataLayer;
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
+	checkoutPage: CheckoutPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
 	 * adds to the earlier ones.
 	 */
 	storeOptions: ( options: StoreOptions ) => Promise< void >;
+	/** Billing details for a guest checkout, unique to this test. */
+	guestBuyer: BillingDetails;
 	/** A throwaway product category, created before the test and deleted after. */
 	category: CreatedCategory;
 	/** A throwaway simple product in `category`, created before the test and deleted after. */
@@ -161,6 +166,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	productPage: async ( { page }, use ) => {
 		await use( new ProductPage( page ) );
 	},
+	checkoutPage: async ( { page }, use ) => {
+		await use( new CheckoutPage( page ) );
+	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
 		await use( async ( more ) => {
@@ -169,6 +177,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				{ name: STORE_OPTIONS_COOKIE, value: storeOptionsCookieValue( options ), url: baseURL },
 			] );
 		} );
+	},
+	guestBuyer: async ( {}, use ) => {
+		await use( buildGuestBuyer() );
 	},
 	category: async ( { requestUtils }, use ) => {
 		const created = await createCategory( requestUtils );

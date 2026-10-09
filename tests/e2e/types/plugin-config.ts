@@ -13,5 +13,6 @@ export type PluginConfig = {
 	/** 'yes' when event names carry the DATA_LAYER_CUSTOM_EVENT_NAME suffix. */
 	is_custom_event_name: string;
 	DATA_LAYER_CUSTOM_EVENT_NAME: string;
-	user_data?: Record< string, unknown >;
+	/** Present only with user data on; `[]` for a guest. */
+	user_data?: Record< string, unknown > | [];
 };
