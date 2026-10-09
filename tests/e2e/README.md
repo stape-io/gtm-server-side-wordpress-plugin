@@ -272,7 +272,9 @@ Two limits of the Testomat run to keep in mind:
 To automate a case: copy its title from Testomat and append `@T<id>`. The
 case turns `automated` in Testomat by itself once a CI run reports it. A case
 counts as automated only when the spec asserts every line of its Expected
-result. Cases tagged `known-defect` are not automated for now.
+result. Cases tagged `known-defect` are not automated for now. The
+`/automate-suite <suite>` skill (`.claude/skills/automate-suite/`) runs the
+whole flow for one Testomat suite.
 
 ## Known gaps
 
