@@ -18,8 +18,8 @@ const NAME_PREFIX = 'E2E ';
 
 let sequence = 0;
 
-/** Unique per call, so parallel workers never collide on a name, slug or SKU. */
-function uniqueSuffix(): string {
+/** Unique per call, so parallel workers never collide on a name, slug, SKU or email. */
+export function uniqueSuffix(): string {
 	sequence += 1;
 	return `${ Date.now() }-${ process.pid }-${ sequence }`;
 }

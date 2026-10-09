@@ -30,6 +30,9 @@ export default defineConfig( {
 	fullyParallel: true,
 	forbidOnly: !! process.env.CI,
 	retries: process.env.CI ? 1 : 0,
+	// Retries run at the end, one at a time, so a test that failed because of
+	// load from its neighbours gets its second attempt on a quiet site.
+	retryStrategy: 'isolated',
 	reporter: process.env.CI
 		? [
 				[ 'github' ],

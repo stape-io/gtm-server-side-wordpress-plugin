@@ -5,7 +5,8 @@
   "testsEnvironment": false,
   "plugins": [
     "https://downloads.wordpress.org/plugin/woocommerce.11.1.2.zip",
-    "."
+    ".",
+    "./tests/e2e/test-plugins/gtm-server-side-e2e-helper"
   ],
   "themes": [
     "https://downloads.wordpress.org/theme/twentytwentyfive.1.5.zip"

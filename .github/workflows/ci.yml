@@ -44,6 +44,9 @@ jobs:
       # runs here rather than holding up the e2e job.
       - run: npm run typecheck:e2e
 
+      # The tests/e2e rules a machine can check (eslint.config.mjs).
+      - run: npm run lint:e2e
+
       - run: npm test
 
       # The package ships straight from the repository, so the bundle is
@@ -81,7 +84,7 @@ jobs:
           cat > .wp-env.e2e.override.json <<'JSON'
           {
             "core": null,
-            "plugins": [ "https://downloads.wordpress.org/plugin/woocommerce.zip", "." ],
+            "plugins": [ "https://downloads.wordpress.org/plugin/woocommerce.zip", ".", "./tests/e2e/test-plugins/gtm-server-side-e2e-helper" ],
             "themes": [ "https://downloads.wordpress.org/theme/twentytwentyfive.zip" ]
           }
           JSON
