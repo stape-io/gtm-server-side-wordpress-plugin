@@ -18,3 +18,4 @@ tsconfig.build.json export-ignore
 /.wp-env.e2e.json export-ignore
 playwright.config.ts export-ignore
 vitest.config.ts export-ignore
+eslint.config.mjs export-ignore

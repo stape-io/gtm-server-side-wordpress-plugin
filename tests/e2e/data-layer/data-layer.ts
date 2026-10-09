@@ -55,6 +55,7 @@ export class DataLayer {
 			} )
 			.toContain( fullName );
 
+		// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
 		await this.page.waitForTimeout( LATE_PUSH_GRACE_MS );
 
 		const { matches, beforeFirstMatch } = await this.snapshot( eventName );

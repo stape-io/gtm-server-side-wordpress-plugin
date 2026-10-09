@@ -16,6 +16,7 @@ export class ProductPage {
 	 * have their own.
 	 */
 	async addToCart(): Promise< void > {
+		// eslint-disable-next-line playwright/no-raw-locators -- form.cart is WooCommerce core markup; the form has no accessible name.
 		await this.page.locator( 'form.cart' ).getByRole( 'button', { name: /add to cart/i } ).click();
 		await this.page.getByRole( 'alert' ).filter( { hasText: /has been added to your cart/i } ).waitFor();
 	}

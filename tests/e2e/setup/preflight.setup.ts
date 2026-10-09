@@ -94,6 +94,7 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 		`gtm_server_side_data_layer_user_data is on in the database. ${ FIX }`
 	).toBeUndefined();
 
+	// eslint-disable-next-line playwright/no-raw-locators -- a <meta> tag has no role or text to find it by.
 	const wordpress = await page
 		.locator( 'meta[name="generator"][content^="WordPress "]' )
 		.getAttribute( 'content' );

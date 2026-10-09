@@ -44,6 +44,9 @@ jobs:
       # runs here rather than holding up the e2e job.
       - run: npm run typecheck:e2e
 
+      # The tests/e2e rules a machine can check (eslint.config.mjs).
+      - run: npm run lint:e2e
+
       - run: npm test
 
       # The package ships straight from the repository, so the bundle is
