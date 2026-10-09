@@ -12,6 +12,7 @@ import {
 	type CreatedCategory,
 	type CreatedProduct,
 } from '../api/products';
+import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
 const CART_STATE_ACTION = 'action=gtm_server_side_state_cart_data';
@@ -56,6 +57,12 @@ type ShopFixtures = {
 	dataLayer: DataLayer;
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
+	/**
+	 * Overrides store settings for this test's browser only (see
+	 * ./store-options.ts). Call it before the first page load; a later call
+	 * adds to the earlier ones.
+	 */
+	storeOptions: ( options: StoreOptions ) => Promise< void >;
 	/** A throwaway product category, created before the test and deleted after. */
 	category: CreatedCategory;
 	/** A throwaway simple product in `category`, created before the test and deleted after. */
@@ -71,9 +78,9 @@ type ShopFixtures = {
 	 * Automatic: fails the test on an uncaught JS error or a `console.error`
 	 * raised by the plugin's scripts (see isPluginScript()), or a failed request
 	 * to the plugin (see isPluginRequest()). Errors from WooCommerce, the theme
-	 * and other plugins don't count. Other
-	 * failed loads are the store's and the theme's business, and so are
-	 * requests Chrome cancels (`net::ERR_ABORTED`) when the page navigates away.
+	 * and other plugins don't count. Other failed loads are the store's and the
+	 * theme's business, and so are requests Chrome cancels (`net::ERR_ABORTED`)
+	 * when the page navigates away.
 	 */
 	pageErrors: void;
 };
@@ -153,6 +160,15 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	productPage: async ( { page }, use ) => {
 		await use( new ProductPage( page ) );
+	},
+	storeOptions: async ( { page, baseURL }, use ) => {
+		let options: StoreOptions = {};
+		await use( async ( more ) => {
+			options = { ...options, ...more };
+			await page.context().addCookies( [
+				{ name: STORE_OPTIONS_COOKIE, value: storeOptionsCookieValue( options ), url: baseURL },
+			] );
+		} );
 	},
 	category: async ( { requestUtils }, use ) => {
 		const created = await createCategory( requestUtils );

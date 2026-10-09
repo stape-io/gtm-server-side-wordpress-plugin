@@ -81,7 +81,7 @@ jobs:
           cat > .wp-env.e2e.override.json <<'JSON'
           {
             "core": null,
-            "plugins": [ "https://downloads.wordpress.org/plugin/woocommerce.zip", "." ],
+            "plugins": [ "https://downloads.wordpress.org/plugin/woocommerce.zip", ".", "./tests/e2e/test-plugins/gtm-server-side-e2e-helper" ],
             "themes": [ "https://downloads.wordpress.org/theme/twentytwentyfive.zip" ]
           }
           JSON
