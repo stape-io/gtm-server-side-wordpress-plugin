@@ -263,11 +263,13 @@ when it is not the first.
      rebuilds the loader too), and the rule doesn't depend on the key, so a
      proxy test can override it;
    - the override doesn't put the pages in a state no live store has. The
-     same-origin API key does, so it is for requests to the proxy path only,
-     never with a page load: with it, every page of that browser switches to
-     same-origin (service worker patch, identifier from the key, no Cookie
-     Keeper) but keeps the raw sGTM URL, since the same-origin loader exists
-     only after a real save;
+     same-origin API key would: with it, every page switches to same-origin
+     (service worker patch, identifier from the key, no Cookie Keeper) but
+     keeps the raw sGTM URL, since the same-origin loader exists only after a
+     real save. So the helper applies it to requests under the proxy path
+     only, and any other page renders as without it. An option like that
+     goes into the helper's `GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS`, or a
+     scope of its own;
    - the code under test reads it during a browser request, not in cron, a
      webhook or a REST call made by `requestUtils` (a request made through the
      test's browser context, `page.request`, carries the cookie).

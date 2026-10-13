@@ -22,11 +22,11 @@ type StoreOptionValues = {
 	 * rules (and, in wp-admin, rebuilds the custom loader); the proxy path's
 	 * rule doesn't depend on the key, and the proxy reads it per request.
 	 *
-	 * For requests to the proxy path only, never with a page load: with the
-	 * key, every page of that browser switches to same-origin (service worker
-	 * patch, identifier from the key, no Cookie Keeper) while keeping the raw
-	 * sGTM URL, since the same-origin loader exists only after a real save. No
-	 * live store is ever in that state.
+	 * The helper applies it to requests under the proxy path only. With the
+	 * key, any other page would switch to same-origin (service worker patch,
+	 * identifier from the key, no Cookie Keeper) while keeping the raw sGTM
+	 * URL, since the same-origin loader exists only after a real save - a state
+	 * no live store has - so elsewhere it renders as without the key.
 	 */
 	sameOriginApiKey: string;
 };
@@ -43,7 +43,7 @@ export type StoreOptions = Partial< StoreOptionValues >;
 /** Read by the helper plugin; the PHP side names it GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE. */
 export const STORE_OPTIONS_COOKIE = 'gtm_e2e_options';
 
-/** Response header in which the helper names the options it overrode. */
+/** Response header in which the helper names the options it accepted from the cookie. */
 export const STORE_OPTIONS_HEADER = 'x-gtm-e2e-options';
 
 /** A request with this query arg gets the header and nothing else: no page is rendered. */

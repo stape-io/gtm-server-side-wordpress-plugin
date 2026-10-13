@@ -42,6 +42,34 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 );
 
 /**
+ * Options applied only to requests under the same-origin proxy path. With the
+ * API key, any other page would switch to same-origin (service worker patch,
+ * identifier from the key, no Cookie Keeper) while keeping the raw sGTM URL,
+ * since the same-origin loader exists only after a real save: a state no live
+ * store has. Elsewhere the page renders as if the cookie didn't name them.
+ */
+const GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS = array(
+	'gtm_server_side_same_origin_api_key',
+);
+
+/**
+ * Whether this request is under the same-origin proxy path stored in the
+ * database. False while no path is stored.
+ */
+function gtm_server_side_e2e_is_proxy_request(): bool {
+	$path = trim( (string) get_option( 'gtm_server_side_same_origin_path' ), '/' );
+	if ( '' === $path ) {
+		return false;
+	}
+
+	$base = rtrim( (string) wp_parse_url( home_url( '/' . $path ), PHP_URL_PATH ), '/' );
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- test-only, compared, never output.
+	$request = (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH );
+
+	return $request === $base || 0 === strpos( $request, $base . '/' );
+}
+
+/**
  * Read here, while the plugin loads, rather than inside the filter:
  * wp_magic_quotes() slashes $_COOKIE later in the request.
  */
@@ -70,6 +98,12 @@ if ( 'local' === wp_get_environment_type() ) {
 	$gtm_server_side_e2e_options = gtm_server_side_e2e_cookie_options();
 
 	foreach ( $gtm_server_side_e2e_options as $gtm_server_side_e2e_name => $gtm_server_side_e2e_value ) {
+		if (
+			in_array( $gtm_server_side_e2e_name, GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS, true ) &&
+			! gtm_server_side_e2e_is_proxy_request()
+		) {
+			continue;
+		}
 		add_filter(
 			'pre_option_' . $gtm_server_side_e2e_name,
 			static function () use ( $gtm_server_side_e2e_value ) {
@@ -78,10 +112,11 @@ if ( 'local' === wp_get_environment_type() ) {
 		);
 	}
 
-	// Names the options this request overrides, so the preflight can tell a
-	// helper that is off, or an option missing from the list above, from a
-	// failing spec. The preflight's probe stops here, before any page is
-	// rendered with the values it sent.
+	// Names the options the cookie may set here - all it named that are on the
+	// list above, including the proxy-path ones this request leaves alone - so
+	// the preflight can tell a helper that is off, or an option missing from
+	// the list, from a failing spec. The preflight's probe stops here, before
+	// any page is rendered with the values it sent.
 	if ( $gtm_server_side_e2e_options ) {
 		add_action(
 			'send_headers',
