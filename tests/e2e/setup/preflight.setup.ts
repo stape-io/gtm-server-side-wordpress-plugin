@@ -44,6 +44,7 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 	// overrides nothing off a local environment, nor an option missing from its
 	// own list. Ask it to override every STORE_OPTIONS key and read back which
 	// ones it did.
+	// Any value will do: the header only names the options overridden.
 	const everyOption = Object.fromEntries(
 		Object.keys( STORE_OPTIONS ).map( ( key ) => [ key, 'yes' ] )
 	) as StoreOptions;

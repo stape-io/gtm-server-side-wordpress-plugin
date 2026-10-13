@@ -253,11 +253,16 @@ when it is not the first.
    It overrides reads only, and only for requests the browser makes. To add a
    setting, add it to `STORE_OPTIONS` in `fixtures/store-options.ts` and to
    the helper's `GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS`, after checking that:
-   - nothing hooks the option being saved (`update_option_<name>`); the sGTM
-     URL, container ID, Cookie Keeper and same-origin settings do, since saving
-     them rebuilds the custom loader;
+   - what the test checks doesn't depend on what runs when the option is
+     saved (`update_option_<name>` hooks), since an override never saves it.
+     Saving the sGTM URL, container ID or Cookie Keeper rebuilds the custom
+     loader, so a test of the loader can't override them. Saving the
+     same-origin API key only flushes the rewrite rules (and, in wp-admin,
+     rebuilds the loader too), and the proxy path's rule doesn't depend on the
+     key, so a proxy test can override it;
    - the code under test reads it during a browser request, not in cron, a
-     webhook or a REST call made by `requestUtils`.
+     webhook or a REST call made by `requestUtils` (a request made through the
+     test's browser context, `page.request`, carries the cookie).
 
    Otherwise the spec belongs to group 2 or 3.
 2. **Lock.** The spec writes an option to the database that only specs
