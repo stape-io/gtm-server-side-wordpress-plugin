@@ -197,6 +197,12 @@ decision of its own: name it in the plan before making it.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.
+- **Same-origin is half set up in the database:** enable and path (`/metrics`),
+  so the proxy's rewrite rule exists, but no API key, so no page changes and
+  `/metrics` answers 404. A proxy spec supplies the key for its own requests
+  with `storeOptions( { sameOriginApiKey } )`; a key ending in `:test` sends
+  the proxy to `*.stape.test`, which `mu-plugins/stub-same-origin-upstream.php`
+  answers with the URL it was sent.
 
 ### Test plugins
 
