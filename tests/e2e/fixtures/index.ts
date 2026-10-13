@@ -1,4 +1,4 @@
-import type { Request } from '@playwright/test';
+import type { APIResponse, Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
@@ -49,6 +49,11 @@ function stackUrls( stack: string | undefined ): string[] {
 	return [ ...( stack ?? '' ).matchAll( /(https?:\/\/[^\s()]+?):\d+:\d+/g ) ].map( ( match ) => match[ 1 ] );
 }
 
+type SameOriginProxy = {
+	/** GETs a path on this site, expecting the proxy to answer it with a 200. */
+	get: ( path: string ) => Promise< APIResponse >;
+};
+
 /**
  * Base test: @wordpress/e2e-test-utils-playwright's `test`, which already
  * carries the `admin`, `editor`, `pageUtils` and `requestUtils` fixtures.
@@ -66,6 +71,13 @@ type ShopFixtures = {
 	 * adds to the earlier ones.
 	 */
 	storeOptions: ( options: StoreOptions ) => Promise< void >;
+	/**
+	 * Requests through the same-origin proxy, from this test's browser context
+	 * so they carry its storeOptions() cookie (the standalone `request` fixture
+	 * doesn't). Redirects are not followed, so a canonical redirect can't hide
+	 * what the proxy did, and anything but a 200 fails the test.
+	 */
+	sameOriginProxy: SameOriginProxy;
 	/** Billing details for a guest checkout, unique to this test. */
 	guestBuyer: BillingDetails;
 	/** A throwaway product category, created before the test and deleted after. */
@@ -176,6 +188,18 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			await page.context().addCookies( [
 				{ name: STORE_OPTIONS_COOKIE, value: storeOptionsCookieValue( options ), url: baseURL },
 			] );
+		} );
+	},
+	sameOriginProxy: async ( { page }, use ) => {
+		await use( {
+			get: async ( path ) => {
+				const response = await page.request.get( path, { maxRedirects: 0 } );
+				expect(
+					response.status(),
+					`${ path } did not reach the proxy's upstream. Is same-origin set up, and did the test supply sameOriginApiKey? ${ RECREATE_ENVIRONMENT }`
+				).toBe( 200 );
+				return response;
+			},
 		} );
 	},
 	guestBuyer: async ( {}, use ) => {

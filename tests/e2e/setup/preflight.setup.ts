@@ -29,6 +29,9 @@ import {
 
 const THEME = 'twentytwentyfive';
 
+/** The same-origin proxy path bin/wp-env-configure.sh stores. */
+const PROXY_PATH = '/metrics';
+
 type InstalledTheme = { stylesheet: string; version: string };
 
 preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { page, requestUtils } ) => {
@@ -65,6 +68,21 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 		refused,
 		"The e2e helper plugin doesn't accept these STORE_OPTIONS: add them to GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS in its main file."
 	).toEqual( [] );
+
+	// Same-origin is half set up in the database: enable and path, so the
+	// proxy's rewrite rule exists, but no API key, so it changes no page. The
+	// connection test answers whenever the path is live; without a key every
+	// other request under it is a 404. No storeOptions() cookie is sent here.
+	const connection = await page.request.get( `${ PROXY_PATH }/?test-uid=e2e-preflight` );
+	expect(
+		await connection.text(),
+		`The same-origin proxy doesn't answer on ${ PROXY_PATH }: gtm_server_side_same_origin_enable / _path are not set, or the rewrite rules were not flushed. ${ FIX }`
+	).toBe( 'e2e-preflight' );
+	const keyless = await page.request.get( `${ PROXY_PATH }/`, { maxRedirects: 0 } );
+	expect(
+		keyless.status(),
+		`${ PROXY_PATH }/ should answer 404 on the baseline. A same-origin API key is stored in the database (specs supply it through storeOptions). ${ FIX }`
+	).toBe( 404 );
 
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',
