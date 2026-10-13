@@ -31,7 +31,7 @@ const THEME = 'twentytwentyfive';
 
 type InstalledTheme = { stylesheet: string; version: string };
 
-preflight( 'store is configured the way the specs assume', async ( { page, requestUtils } ) => {
+preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );

@@ -295,8 +295,10 @@ followed by the case ID as a tag (`... @Ta58bd16c`). One test per case.
 In CI the run is reported to Testomat (`@testomatio/reporter`, wired up in
 `playwright.config.ts`) and every result is attached to its case by that tag.
 The reporter needs the `TESTOMATIO` secret and is left out when it is missing,
-so forks and local runs are unaffected. Tests without a tag, such as the
-preflight check, are still sent, as unmatched tests.
+so forks and local runs are unaffected. Tests without a tag are still sent,
+as unmatched tests. The preflight check has a case of its own, `Environment` →
+`Store is configured the way the specs assume`, so it shows up in a run by
+name; it is not a product case, and a failure means the environment is off.
 
 Two limits of the Testomat run to keep in mind:
 
