@@ -7,6 +7,7 @@ import {
 	STORE_OPTIONS,
 	STORE_OPTIONS_COOKIE,
 	STORE_OPTIONS_HEADER,
+	STORE_OPTIONS_PROBE,
 	storeOptionsCookieValue,
 	type StoreOptions,
 } from '../fixtures/store-options';
@@ -44,15 +45,16 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 	// overrides nothing off a local environment, nor an option missing from its
 	// own list. Ask it to override every STORE_OPTIONS key and read back which
 	// ones it did.
-	// Any value will do: the header only names the options overridden.
+	// Any value will do: the header only names the options overridden, and
+	// the probe renders no page with them.
 	const everyOption = Object.fromEntries(
 		Object.keys( STORE_OPTIONS ).map( ( key ) => [ key, 'yes' ] )
 	) as StoreOptions;
-	const probe = await page.request.get( '/shop/', {
+	const probe = await page.request.get( STORE_OPTIONS_PROBE, {
 		headers: { Cookie: `${ STORE_OPTIONS_COOKIE }=${ storeOptionsCookieValue( everyOption ) }` },
 	} );
 	// A broken page sends no header either; say so rather than blame the helper.
-	expect( probe.ok(), `/shop/ returned ${ probe.status() }. ${ FIX }` ).toBe( true );
+	expect( probe.ok(), `${ STORE_OPTIONS_PROBE } returned ${ probe.status() }. ${ FIX }` ).toBe( true );
 	const overridden = ( probe.headers()[ STORE_OPTIONS_HEADER ] ?? '' ).split( ',' ).filter( Boolean );
 	expect(
 		overridden,

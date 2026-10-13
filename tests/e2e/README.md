@@ -256,10 +256,18 @@ when it is not the first.
    - what the test checks doesn't depend on what runs when the option is
      saved (`update_option_<name>` hooks), since an override never saves it.
      Saving the sGTM URL, container ID or Cookie Keeper rebuilds the custom
-     loader, so a test of the loader can't override them. Saving the
+     loader, so a test of the loader can't override them. Saving same-origin
+     enable or path writes the proxy path's rewrite rule, without which the
+     proxy answers 404, so they can't be overridden either. Saving the
      same-origin API key only flushes the rewrite rules (and, in wp-admin,
-     rebuilds the loader too), and the proxy path's rule doesn't depend on the
-     key, so a proxy test can override it;
+     rebuilds the loader too), and the rule doesn't depend on the key, so a
+     proxy test can override it;
+   - the override doesn't put the pages in a state no live store has. The
+     same-origin API key does, so it is for requests to the proxy path only,
+     never with a page load: with it, every page of that browser switches to
+     same-origin (service worker patch, identifier from the key, no Cookie
+     Keeper) but keeps the raw sGTM URL, since the same-origin loader exists
+     only after a real save;
    - the code under test reads it during a browser request, not in cron, a
      webhook or a REST call made by `requestUtils` (a request made through the
      test's browser context, `page.request`, carries the cookie).

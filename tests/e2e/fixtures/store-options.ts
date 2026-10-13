@@ -13,28 +13,41 @@
  * The helper plugin accepts only the options in its own list
  * (GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS), so a key added here goes there too.
  */
-export const STORE_OPTIONS = {
-	/** "Add user data to Data Layer events" ('yes' / 'no'). Not set on the baseline store. */
-	userData: 'gtm_server_side_data_layer_user_data',
+/** The value each setting takes, as WordPress stores it. */
+type StoreOptionValues = {
+	/** "Add user data to Data Layer events". Not set on the baseline store. */
+	userData: 'yes' | 'no';
 	/**
 	 * The same-origin proxy's Stape API key. Saving it only flushes the rewrite
 	 * rules (and, in wp-admin, rebuilds the custom loader); the proxy path's
-	 * rule doesn't depend on the key, and the proxy reads it per request, so a
-	 * proxy spec can supply it here.
+	 * rule doesn't depend on the key, and the proxy reads it per request.
+	 *
+	 * For requests to the proxy path only, never with a page load: with the
+	 * key, every page of that browser switches to same-origin (service worker
+	 * patch, identifier from the key, no Cookie Keeper) while keeping the raw
+	 * sGTM URL, since the same-origin loader exists only after a real save. No
+	 * live store is ever in that state.
 	 */
+	sameOriginApiKey: string;
+};
+
+export const STORE_OPTIONS = {
+	userData: 'gtm_server_side_data_layer_user_data',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
-} as const;
+} as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;
 
-/** Values as WordPress stores them: 'yes' / 'no' for a checkbox, the text for a field. */
-export type StoreOptions = Partial< Record< StoreOption, string > >;
+export type StoreOptions = Partial< StoreOptionValues >;
 
 /** Read by the helper plugin; the PHP side names it GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE. */
 export const STORE_OPTIONS_COOKIE = 'gtm_e2e_options';
 
 /** Response header in which the helper names the options it overrode. */
 export const STORE_OPTIONS_HEADER = 'x-gtm-e2e-options';
+
+/** A request with this query arg gets the header and nothing else: no page is rendered. */
+export const STORE_OPTIONS_PROBE = '/?gtm-e2e-probe=1';
 
 /** The cookie value: option name => value, as URL-encoded JSON. */
 export function storeOptionsCookieValue( options: StoreOptions ): string {

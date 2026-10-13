@@ -80,12 +80,17 @@ if ( 'local' === wp_get_environment_type() ) {
 
 	// Names the options this request overrides, so the preflight can tell a
 	// helper that is off, or an option missing from the list above, from a
-	// failing spec.
+	// failing spec. The preflight's probe stops here, before any page is
+	// rendered with the values it sent.
 	if ( $gtm_server_side_e2e_options ) {
 		add_action(
 			'send_headers',
 			static function () use ( $gtm_server_side_e2e_options ) {
 				header( 'X-GTM-E2E-Options: ' . implode( ',', array_keys( $gtm_server_side_e2e_options ) ) );
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- test-only probe flag.
+				if ( isset( $_GET['gtm-e2e-probe'] ) ) {
+					exit;
+				}
 			}
 		);
 	}
