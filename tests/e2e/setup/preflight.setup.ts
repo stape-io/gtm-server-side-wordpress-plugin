@@ -3,6 +3,14 @@ import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from
 import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
+import {
+	STORE_OPTIONS,
+	STORE_OPTIONS_COOKIE,
+	STORE_OPTIONS_HEADER,
+	STORE_OPTIONS_PROBE,
+	storeOptionsCookieValue,
+	type StoreOptions,
+} from '../fixtures/store-options';
 
 /**
  * Checks, once per run and before any spec starts, that the store is in the
@@ -23,7 +31,7 @@ const THEME = 'twentytwentyfive';
 
 type InstalledTheme = { stylesheet: string; version: string };
 
-preflight( 'store is configured the way the specs assume', async ( { page, requestUtils } ) => {
+preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
@@ -31,6 +39,32 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 	const plugin = findThisPlugin( plugins );
 	expect( woocommerce?.status, `WooCommerce is not active. ${ FIX }` ).toBe( 'active' );
 	expect( plugin?.status, `This plugin is not active. ${ FIX }` ).toBe( 'active' );
+
+	// The e2e helper behind storeOptions() is a must-use plugin, so it isn't in
+	// the plugins list, and being loaded wouldn't be enough anyway: it
+	// overrides nothing off a local environment, nor an option missing from its
+	// own list. Ask it to override every STORE_OPTIONS key and read back which
+	// ones it did.
+	// Any value will do: the header only names the options overridden, and
+	// the probe renders no page with them.
+	const everyOption = Object.fromEntries(
+		Object.keys( STORE_OPTIONS ).map( ( key ) => [ key, 'yes' ] )
+	) as StoreOptions;
+	const probe = await page.request.get( STORE_OPTIONS_PROBE, {
+		headers: { Cookie: `${ STORE_OPTIONS_COOKIE }=${ storeOptionsCookieValue( everyOption ) }` },
+	} );
+	// A broken page sends no header either; say so rather than blame the helper.
+	expect( probe.ok(), `${ STORE_OPTIONS_PROBE } returned ${ probe.status() }. ${ FIX }` ).toBe( true );
+	const overridden = ( probe.headers()[ STORE_OPTIONS_HEADER ] ?? '' ).split( ',' ).filter( Boolean );
+	expect(
+		overridden,
+		'The e2e helper (tests/e2e/mu-plugins) overrides no options. Either it is not loaded - after a branch switch, restart the store: npm run env:e2e:stop && npm run env:e2e:start - or wp_get_environment_type() is not "local".'
+	).not.toEqual( [] );
+	const refused = Object.values( STORE_OPTIONS ).filter( ( name ) => ! overridden.includes( name ) );
+	expect(
+		refused,
+		"The e2e helper plugin doesn't accept these STORE_OPTIONS: add them to GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS in its main file."
+	).toEqual( [] );
 
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',
@@ -54,7 +88,14 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 		`gtm_server_side_data_layer_custom_event_name is off. ${ FIX }`
 	).toBe( 'yes' );
 	expect( config?.DATA_LAYER_CUSTOM_EVENT_NAME ).toBe( '_stape' );
+	// Off in the database: event specs compare whole events, so user_data must
+	// be absent unless a test turns it on for itself through storeOptions.
+	expect(
+		config?.user_data,
+		`gtm_server_side_data_layer_user_data is on in the database. ${ FIX }`
+	).toBeUndefined();
 
+	// eslint-disable-next-line playwright/no-raw-locators -- a <meta> tag has no role or text to find it by.
 	const wordpress = await page
 		.locator( 'meta[name="generator"][content^="WordPress "]' )
 		.getAttribute( 'content' );

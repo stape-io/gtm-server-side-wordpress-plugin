@@ -63,6 +63,7 @@ export type DataLayerEvent = {
 	ecomm_pagetype?: string;
 	ecommerce?: Ecommerce | null;
 	cart_state?: CartState;
-	user_data?: Record< string, unknown >;
+	/** Present only with user data on; `[]` for a guest. */
+	user_data?: Record< string, unknown > | [];
 	[ key: string ]: unknown;
 };

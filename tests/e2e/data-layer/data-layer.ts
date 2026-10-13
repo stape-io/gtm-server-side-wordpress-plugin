@@ -55,6 +55,7 @@ export class DataLayer {
 			} )
 			.toContain( fullName );
 
+		// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
 		await this.page.waitForTimeout( LATE_PUSH_GRACE_MS );
 
 		const { matches, beforeFirstMatch } = await this.snapshot( eventName );
@@ -65,6 +66,20 @@ export class DataLayer {
 		).toEqual( { ecommerce: null } );
 
 		return matches[ 0 ];
+	}
+
+	/**
+	 * The `varGtmServerSide` config the plugin localized into the page: the
+	 * settings it rendered with, which the frontend script pushes from.
+	 */
+	async pluginConfig(): Promise< PluginConfig > {
+		const config = await this.page.evaluate(
+			() => ( window as unknown as { varGtmServerSide?: PluginConfig } ).varGtmServerSide
+		);
+		if ( ! config ) {
+			throw new Error( "This page has no varGtmServerSide, so the plugin's frontend script did not load here." );
+		}
+		return config;
 	}
 
 	private async snapshot( eventName: string ): Promise< Snapshot > {

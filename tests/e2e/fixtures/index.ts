@@ -2,6 +2,7 @@ import type { Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
+import { CheckoutPage } from '../pages/checkout-page';
 import { ProductPage } from '../pages/product-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
@@ -12,6 +13,8 @@ import {
 	type CreatedCategory,
 	type CreatedProduct,
 } from '../api/products';
+import { buildGuestBuyer, type BillingDetails } from '../api/customers';
+import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
 const CART_STATE_ACTION = 'action=gtm_server_side_state_cart_data';
@@ -56,6 +59,15 @@ type ShopFixtures = {
 	dataLayer: DataLayer;
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
+	checkoutPage: CheckoutPage;
+	/**
+	 * Overrides store settings for this test's browser only (see
+	 * ./store-options.ts). Call it before the first page load; a later call
+	 * adds to the earlier ones.
+	 */
+	storeOptions: ( options: StoreOptions ) => Promise< void >;
+	/** Billing details for a guest checkout, unique to this test. */
+	guestBuyer: BillingDetails;
 	/** A throwaway product category, created before the test and deleted after. */
 	category: CreatedCategory;
 	/** A throwaway simple product in `category`, created before the test and deleted after. */
@@ -71,9 +83,9 @@ type ShopFixtures = {
 	 * Automatic: fails the test on an uncaught JS error or a `console.error`
 	 * raised by the plugin's scripts (see isPluginScript()), or a failed request
 	 * to the plugin (see isPluginRequest()). Errors from WooCommerce, the theme
-	 * and other plugins don't count. Other
-	 * failed loads are the store's and the theme's business, and so are
-	 * requests Chrome cancels (`net::ERR_ABORTED`) when the page navigates away.
+	 * and other plugins don't count. Other failed loads are the store's and the
+	 * theme's business, and so are requests Chrome cancels (`net::ERR_ABORTED`)
+	 * when the page navigates away.
 	 */
 	pageErrors: void;
 };
@@ -153,6 +165,21 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	productPage: async ( { page }, use ) => {
 		await use( new ProductPage( page ) );
+	},
+	checkoutPage: async ( { page }, use ) => {
+		await use( new CheckoutPage( page ) );
+	},
+	storeOptions: async ( { page, baseURL }, use ) => {
+		let options: StoreOptions = {};
+		await use( async ( more ) => {
+			options = { ...options, ...more };
+			await page.context().addCookies( [
+				{ name: STORE_OPTIONS_COOKIE, value: storeOptionsCookieValue( options ), url: baseURL },
+			] );
+		} );
+	},
+	guestBuyer: async ( {}, use ) => {
+		await use( buildGuestBuyer() );
 	},
 	category: async ( { requestUtils }, use ) => {
 		const created = await createCategory( requestUtils );
