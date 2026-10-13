@@ -1,11 +1,14 @@
 <?php
 /**
  * Plugin Name:       GTM Server Side e2e helper
- * Description:       Test-only. Overrides store options for the requests of one e2e test, read from a cookie. Works on a local environment only. Loaded by .wp-env.e2e.json.
+ * Description:       Test-only. Overrides store options for the requests of one e2e test, read from a cookie. Works on a local environment only.
  * Version:           1.0.0
  * Requires PHP:      7.4
  * Author:            Stape
- * Text Domain:       gtm-server-side-e2e-helper
+ *
+ * A must-use plugin: .wp-env.e2e.json maps tests/e2e/mu-plugins into
+ * wp-content/mu-plugins, so it loads on every request, before any regular
+ * plugin reads the options it overrides, and can't be switched off.
  *
  * @package GTM_Server_Side_E2E_Helper
  */

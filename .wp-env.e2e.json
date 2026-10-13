@@ -5,12 +5,14 @@
   "testsEnvironment": false,
   "plugins": [
     "https://downloads.wordpress.org/plugin/woocommerce.11.1.2.zip",
-    ".",
-    "./tests/e2e/test-plugins/gtm-server-side-e2e-helper"
+    "."
   ],
   "themes": [
     "https://downloads.wordpress.org/theme/twentytwentyfive.1.5.zip"
   ],
+  "mappings": {
+    "wp-content/mu-plugins": "./tests/e2e/mu-plugins"
+  },
   "config": {
     "WP_DEBUG": true,
     "WP_DEBUG_LOG": true,

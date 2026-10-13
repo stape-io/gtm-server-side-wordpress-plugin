@@ -19,8 +19,8 @@ before step 1; this skill is the procedure and doesn't repeat them.
 - The e2e store must answer on http://localhost:8889. If it doesn't, start it
   with `npm run env:e2e:start` (about a minute). If that fails because Docker
   isn't running, stop and ask to start Docker.
-- If the preflight fails with "plugin is not active" right after a branch
-  switch, restart the store: `npm run env:e2e:stop && npm run env:e2e:start`.
+- If the preflight says the e2e helper overrides no options right after a
+  branch switch, restart the store: `npm run env:e2e:stop && npm run env:e2e:start`.
 
 ## 1. Plan
 

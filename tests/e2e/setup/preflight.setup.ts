@@ -4,7 +4,6 @@ import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
 import {
-	E2E_HELPER_TEXT_DOMAIN,
 	STORE_OPTIONS,
 	STORE_OPTIONS_COOKIE,
 	STORE_OPTIONS_HEADER,
@@ -39,13 +38,12 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 	const plugin = findThisPlugin( plugins );
 	expect( woocommerce?.status, `WooCommerce is not active. ${ FIX }` ).toBe( 'active' );
 	expect( plugin?.status, `This plugin is not active. ${ FIX }` ).toBe( 'active' );
-	// Behind the storeOptions fixture (see fixtures/store-options.ts).
-	const helper = plugins.find( ( p ) => p.textdomain === E2E_HELPER_TEXT_DOMAIN );
-	expect( helper?.status, `The e2e helper plugin is not active. ${ FIX }` ).toBe( 'active' );
 
-	// Active is not enough: the helper overrides nothing off a local
-	// environment, nor an option missing from its own list. Ask it to
-	// override every STORE_OPTIONS key and read back which ones it did.
+	// The e2e helper behind storeOptions() is a must-use plugin, so it isn't in
+	// the plugins list, and being loaded wouldn't be enough anyway: it
+	// overrides nothing off a local environment, nor an option missing from its
+	// own list. Ask it to override every STORE_OPTIONS key and read back which
+	// ones it did.
 	const everyOption = Object.fromEntries(
 		Object.keys( STORE_OPTIONS ).map( ( key ) => [ key, 'yes' ] )
 	) as StoreOptions;
@@ -57,7 +55,7 @@ preflight( 'store is configured the way the specs assume', async ( { page, reque
 	const overridden = ( probe.headers()[ STORE_OPTIONS_HEADER ] ?? '' ).split( ',' ).filter( Boolean );
 	expect(
 		overridden,
-		'The e2e helper plugin overrides no options: it works only where wp_get_environment_type() is "local".'
+		'The e2e helper (tests/e2e/mu-plugins) overrides no options. Either it is not loaded - after a branch switch, restart the store: npm run env:e2e:stop && npm run env:e2e:start - or wp_get_environment_type() is not "local".'
 	).not.toEqual( [] );
 	const refused = Object.values( STORE_OPTIONS ).filter( ( name ) => ! overridden.includes( name ) );
 	expect(

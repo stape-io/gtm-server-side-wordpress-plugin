@@ -1,6 +1,6 @@
 /**
  * Store settings a test can override for its own browser, through the e2e
- * helper plugin (test-plugins/gtm-server-side-e2e-helper): the fixture sets a
+ * helper plugin (mu-plugins/gtm-server-side-e2e-helper.php): the fixture sets a
  * cookie, and the helper answers get_option() from it for that browser's
  * requests only. The database is never written, so tests running in parallel
  * never see each other's settings.
@@ -28,9 +28,6 @@ export const STORE_OPTIONS_COOKIE = 'gtm_e2e_options';
 
 /** Response header in which the helper names the options it overrode. */
 export const STORE_OPTIONS_HEADER = 'x-gtm-e2e-options';
-
-/** The helper plugin's text domain, which the preflight looks it up by. */
-export const E2E_HELPER_TEXT_DOMAIN = 'gtm-server-side-e2e-helper';
 
 /** The cookie value: option name => value, as URL-encoded JSON. */
 export function storeOptionsCookieValue( options: StoreOptions ): string {

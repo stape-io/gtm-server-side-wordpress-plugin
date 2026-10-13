@@ -17,14 +17,14 @@ npm run lint:e2e        # the spec rules a machine can check
 
 `npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
 
-After switching to a branch that doesn't have `test-plugins/` (or back),
+After switching to a branch that doesn't have `mu-plugins/` (or back),
 restart the store with `npm run env:e2e:stop && npm run env:e2e:start`:
-Docker keeps the old, deleted folder mounted, and the preflight reports the
-e2e helper plugin as not active.
+Docker keeps the old, deleted folder mounted, and the preflight reports that
+the e2e helper overrides no options.
 
 `WP_BASE_URL` points the suite at another site. That site needs what
 `bin/wp-env-configure.sh` sets up, and specs that use `storeOptions()` need
-the helper plugin from `test-plugins/`, which works only on a site whose
+the helper from `mu-plugins/` as a must-use plugin, which works only on a site whose
 environment type is `local` (as wp-env's is). Don't install it on a shared
 staging or QA site to get around that; the preflight says what is missing.
 
@@ -62,7 +62,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `data-layer/types.ts`        | The payload shape                                                    |
 | `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`) |
 | `setup/preflight.setup.ts`   | Runs before every run: checks the store, purges leftovers            |
-| `test-plugins/`              | Test-only WordPress plugins, loaded by `.wp-env.e2e.json` only       |
+| `mu-plugins/`                | Test-only WordPress plugins, must-use, in the e2e site only (see Test plugins) |
 
 ## Writing specs
 
@@ -177,6 +177,7 @@ no helper functions inside spec files):
 | An expected payload                                      | `data-layer/expected.ts`                  |
 | Wiring into tests, with clean-up                         | `fixtures/index.ts`                       |
 | A setting to override per test                           | `fixtures/store-options.ts` (see below)   |
+| Code that has to run inside WordPress for a test         | `mu-plugins/` (see Test plugins)          |
 
 A change to the core - `DataLayer`, the `pageErrors` and `storeOptions`
 fixtures, the helper plugin, `playwright.config.ts`, the preflight - is a
@@ -196,6 +197,29 @@ decision of its own: name it in the plan before making it.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.
+
+### Test plugins
+
+Code a test needs inside WordPress - overriding a setting, answering the
+plugin's requests to Stape, recording what it sends - is a test plugin in
+`mu-plugins/`.
+
+- **One file per plugin**, at the top of the folder: WordPress loads
+  must-use plugins only from there, not from subfolders.
+- **Must-use, mapped into the e2e site only.** `.wp-env.e2e.json` maps the
+  folder to `wp-content/mu-plugins`, so a test plugin loads on every request,
+  before any regular plugin, can't be switched off, and isn't affected by the
+  nightly run replacing the plugin list. `/tests` is export-ignored, so none
+  of it ships.
+- **Inert unless the test asks.** Every spec runs with every test plugin
+  loaded, so a test plugin changes nothing on a request that doesn't carry its
+  test's cookie or go to a test host (`*.stape.test`). One that changed the
+  store for everyone would break the specs next to it.
+- **Local only, when a visitor could trigger it.** Anyone can set a cookie,
+  so a plugin that acts on one does so only where `wp_get_environment_type()`
+  is `local`, and only for what it lists.
+- **A third-party plugin under test** (GTM4WP, say) is installed through
+  `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 
 ### Style
 
@@ -219,8 +243,8 @@ when it is not the first.
    await storeOptions( { userData: 'yes' } );
    ```
 
-   The fixture sets a cookie, and the helper plugin in
-   `test-plugins/gtm-server-side-e2e-helper/` answers `get_option()` from it
+   The fixture sets a cookie, and the helper plugin
+   `mu-plugins/gtm-server-side-e2e-helper.php` answers `get_option()` from it
    for that browser's requests. The database is never written, so nothing
    needs restoring and other specs never see the change. The helper works
    only on a `local` environment and only for the options in its own list,
