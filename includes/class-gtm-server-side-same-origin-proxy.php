@@ -4,8 +4,9 @@
  *
  * Registers a WordPress rewrite rule so that requests to the configured
  * path are transparently forwarded to the Stape sGTM container endpoint.
- * Relies entirely on WordPress's native rewrite system — no REQUEST_URI
- * string parsing.
+ * The sub-path comes from WordPress's native rewrite system; REQUEST_URI is
+ * read only to restore a trailing slash, which WordPress trims before
+ * matching rewrite rules.
  *
  * @package    GTM_Server_Side
  * @subpackage GTM_Server_Side/includes
@@ -279,7 +280,18 @@ class GTM_Server_Side_Same_Origin_Proxy {
 		}
 
 		// Sub-path captured by the rewrite rule, e.g. '/collect' or ''.
-		$sub_path                 = (string) get_query_var( self::PATH_VAR );
+		$sub_path = (string) get_query_var( self::PATH_VAR );
+
+		// WP::parse_request() trims slashes off the request path before matching
+		// rewrite rules, so the captured sub-path never ends with one. Restore it
+		// from the original request: upstream, '/fps/<id>/' and '/fps/<id>' are
+		// different URLs.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$request_path = (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '', PHP_URL_PATH );
+		if ( '/' === substr( $request_path, -1 ) && '/' !== substr( $sub_path, -1 ) ) {
+			$sub_path .= '/';
+		}
+
 		$is_custom_loader_load    = (bool) preg_match( '/\.load$/i', $sub_path );
 		$is_service_worker_iframe = (bool) preg_match( '#/_/service_worker/[^/]+/sw_iframe\.html$#i', $sub_path );
 		$upstream_path         = $is_custom_loader_load

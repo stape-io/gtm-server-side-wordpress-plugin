@@ -47,5 +47,18 @@ wp option update gtm_server_side_web_container_id 'GTM-TESTID'
 # ship a `cart_state` payload, which specs assert on.
 wp option update gtm_server_side_data_layer_custom_event_name 'yes'
 
+# Only in the e2e environment, where tests/e2e/mu-plugins is loaded. Enable and
+# path only, so the proxy's rewrite rule exists (the flush persists it). No API
+# key: without one no page changes and /metrics answers 404. A proxy spec
+# supplies the key for its own requests through storeOptions(), and the key's
+# ":test" TLD sends them to *.stape.test, which stub-same-origin-upstream.php
+# answers.
+if wp plugin list --status=must-use --field=name | grep -qx 'stub-same-origin-upstream'; then
+	echo "==> Same-origin proxy path /metrics, no API key"
+	wp option update gtm_server_side_same_origin_enable 'yes'
+	wp option update gtm_server_side_same_origin_path '/metrics'
+	wp rewrite flush --hard
+fi
+
 echo
 echo "Ready: $( wp option get home )/shop/  (wp-admin: admin / password)"
