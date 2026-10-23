@@ -40,6 +40,18 @@ echo "==> AJAX add to cart on archives, no redirect to the cart"
 wp option update woocommerce_enable_ajax_add_to_cart 'yes'
 wp option update woocommerce_cart_redirect_after_add 'no'
 
+# WooCommerce's defaults, pinned: cart totals carry no tax, so a total is the
+# sum of the lines. A spec about tax turns it on for its own browser; then a
+# guest is taxed at the store's (US) address, and the cart shows each rate as a
+# line of its own, apart from the net prices.
+echo "==> Taxes off, prices entered without tax; how a taxed cart is shown"
+wp option update woocommerce_calc_taxes 'no'
+wp option update woocommerce_prices_include_tax 'no'
+wp option update woocommerce_default_customer_address 'base'
+wp option update woocommerce_tax_based_on 'shipping'
+wp option update woocommerce_tax_display_cart 'excl'
+wp option update woocommerce_tax_total_display 'itemized'
+
 echo "==> Enabling Cash on Delivery (lets e2e tests complete checkout without a real processor)"
 wp option update woocommerce_cod_settings '{"enabled":"yes","title":"Cash on delivery","instructions":"Pay on delivery."}' --format=json
 

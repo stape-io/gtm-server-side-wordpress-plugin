@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { APIResponse, Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
+import { CartPage } from '../pages/cart-page';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
 import { ClassicCartPage } from '../pages/classic-cart-page';
@@ -26,6 +27,8 @@ import {
 } from '../api/products';
 import { createClassicCartPage, createClassicLoopPage, deletePage, type CreatedPage } from '../api/pages';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
+import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
+import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
@@ -77,6 +80,13 @@ type Catalog = {
 	createClassicLoopPage: ( category: CreatedCategory ) => Promise< CreatedPage >;
 	/** A throwaway page with the classic cart (`[woocommerce_cart]`). */
 	createClassicCartPage: () => Promise< CreatedPage >;
+	/** A throwaway coupon taking `percent` % off the cart. */
+	createCoupon: ( percent: string ) => Promise< CreatedCoupon >;
+	/**
+	 * A throwaway tax rate in a tax class of its own; a product created with
+	 * `{ tax_class: rate.taxClass }` is taxed at it.
+	 */
+	createTaxRate: ( options: TaxRateOptions ) => Promise< CreatedTaxRate >;
 };
 
 type PhpErrors = {
@@ -101,6 +111,7 @@ type SameOriginProxy = {
  */
 type ShopFixtures = {
 	dataLayer: DataLayer;
+	cartPage: CartPage;
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
 	checkoutPage: CheckoutPage;
@@ -133,7 +144,8 @@ type ShopFixtures = {
 	guestBuyer: BillingDetails;
 	/**
 	 * Content the named fixtures below don't cover: variable and grouped
-	 * products, subcategories, tags, sets of products. Deleted after the test.
+	 * products, subcategories, tags, sets of products, coupons, tax rates.
+	 * Deleted after the test.
 	 */
 	catalog: Catalog;
 	/** A throwaway product category, created before the test and deleted after. */
@@ -229,6 +241,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	],
 	dataLayer: async ( { page }, use ) => {
 		await use( new DataLayer( page ) );
+	},
+	cartPage: async ( { page }, use ) => {
+		await use( new CartPage( page ) );
 	},
 	categoryPage: async ( { page }, use ) => {
 		await use( new CategoryPage( page ) );
@@ -327,6 +342,16 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			createClassicCartPage: async () => {
 				const created = await createClassicCartPage( requestUtils );
 				deletions.push( () => deletePage( requestUtils, created.id ) );
+				return created;
+			},
+			createCoupon: async ( percent ) => {
+				const created = await createCoupon( requestUtils, percent );
+				deletions.push( () => deleteCoupon( requestUtils, created.id ) );
+				return created;
+			},
+			createTaxRate: async ( options ) => {
+				const created = await createTaxRate( requestUtils, options );
+				deletions.push( () => deleteTaxRate( requestUtils, created ) );
 				return created;
 			},
 		} );

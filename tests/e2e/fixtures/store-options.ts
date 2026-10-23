@@ -52,6 +52,20 @@ type StoreOptionValues = {
 	 * WC_Form_Handler reads it on the add-to-cart request itself.
 	 */
 	cartRedirectAfterAdd: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Enable tax rates and calculations". Off (`no`) on the
+	 * baseline store, so no cart has tax unless a test turns it on. Nothing
+	 * runs when it is saved, and wc_tax_enabled() reads it on every request
+	 * that prices a cart, the Store API's included.
+	 */
+	calcTaxes: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Prices entered with tax": `yes` is inclusive of tax. Off
+	 * on the baseline store, and it matters only with calcTaxes on. Nothing
+	 * runs when it is saved; WooCommerce reads it per request, and when it
+	 * loads (WC_TAX_ROUNDING_MODE), which is after the helper plugin.
+	 */
+	pricesIncludeTax: 'yes' | 'no';
 };
 
 export const STORE_OPTIONS = {
@@ -61,6 +75,8 @@ export const STORE_OPTIONS = {
 	catalogRows: 'woocommerce_catalog_rows',
 	ajaxAddToCart: 'woocommerce_enable_ajax_add_to_cart',
 	cartRedirectAfterAdd: 'woocommerce_cart_redirect_after_add',
+	calcTaxes: 'woocommerce_calc_taxes',
+	pricesIncludeTax: 'woocommerce_prices_include_tax',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;

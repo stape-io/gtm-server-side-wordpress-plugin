@@ -43,6 +43,8 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'woocommerce_catalog_rows',
 	'woocommerce_enable_ajax_add_to_cart',
 	'woocommerce_cart_redirect_after_add',
+	'woocommerce_calc_taxes',
+	'woocommerce_prices_include_tax',
 );
 
 /**

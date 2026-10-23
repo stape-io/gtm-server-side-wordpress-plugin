@@ -1,7 +1,9 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
+import { purgeTestCoupons } from '../api/coupons';
 import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
+import { purgeTestTaxRates } from '../api/taxes';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
 import {
@@ -23,9 +25,9 @@ import {
  * and pluginDir fixtures first, which would fail before any of the checks below
  * ran and hide what they would have said.
  *
- * Also removes catalog leftovers from killed runs, and records the WordPress,
- * WooCommerce and theme versions on the test, so a report says what it ran
- * against.
+ * Also removes the products, pages, coupons and tax rates killed runs left
+ * behind, and records the WordPress, WooCommerce and theme versions on the
+ * test, so a report says what it ran against.
  */
 
 const THEME = 'twentytwentyfive';
@@ -38,6 +40,8 @@ type InstalledTheme = { stylesheet: string; version: string };
 preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
 	await purgeTestPages( requestUtils );
+	await purgeTestCoupons( requestUtils );
+	await purgeTestTaxRates( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -88,16 +92,40 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 
 	// The classic loop adds over wc-ajax only with AJAX buttons on, and a
 	// redirect to the cart would load a page the add_to_cart specs don't expect.
-	const productSetting = async ( id: string ): Promise< string > =>
-		( await requestUtils.rest( { path: `/wc/v3/settings/products/${ id }` } ) ).value;
+	const wooSetting = async ( group: string, id: string ): Promise< string > =>
+		( await requestUtils.rest( { path: `/wc/v3/settings/${ group }/${ id }` } ) ).value;
 	expect(
-		await productSetting( 'woocommerce_enable_ajax_add_to_cart' ),
+		await wooSetting( 'products', 'woocommerce_enable_ajax_add_to_cart' ),
 		`woocommerce_enable_ajax_add_to_cart is off. ${ FIX }`
 	).toBe( 'yes' );
 	expect(
-		await productSetting( 'woocommerce_cart_redirect_after_add' ),
+		await wooSetting( 'products', 'woocommerce_cart_redirect_after_add' ),
 		`woocommerce_cart_redirect_after_add is on. ${ FIX }`
 	).toBe( 'no' );
+
+	// Cart totals carry no tax, so a total is the sum the case gives; a spec
+	// about tax turns it on for its own browser through storeOptions.
+	expect(
+		await wooSetting( 'general', 'woocommerce_calc_taxes' ),
+		`woocommerce_calc_taxes is on. ${ FIX }`
+	).toBe( 'no' );
+	expect(
+		await wooSetting( 'tax', 'woocommerce_prices_include_tax' ),
+		`woocommerce_prices_include_tax is on. ${ FIX }`
+	).toBe( 'no' );
+	// With taxes on, a guest is taxed where the store is (a US store, so a US
+	// rate applies), and the cart shows each rate as a line of its own, named
+	// after the rate, apart from the net prices.
+	const taxedCart: Array< [ string, string, string ] > = [
+		[ 'general', 'woocommerce_default_country', 'US:CA' ],
+		[ 'general', 'woocommerce_default_customer_address', 'base' ],
+		[ 'tax', 'woocommerce_tax_based_on', 'shipping' ],
+		[ 'tax', 'woocommerce_tax_display_cart', 'excl' ],
+		[ 'tax', 'woocommerce_tax_total_display', 'itemized' ],
+	];
+	for ( const [ group, id, value ] of taxedCart ) {
+		expect( await wooSetting( group, id ), `${ id } is not "${ value }". ${ FIX }` ).toBe( value );
+	}
 
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',

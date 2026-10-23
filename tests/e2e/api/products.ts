@@ -90,9 +90,10 @@ export async function deleteCategory( requestUtils: RequestUtils, id: number ): 
 
 /**
  * What createProduct() makes. Simple by default, at 20.00; a sale price puts
- * it on sale, `tags` tags it, and `description` gives a search something to
- * find besides the generated name. A variable product always has the same two
- * variations, and a grouped one links the given products.
+ * it on sale, `tags` tags it, `description` gives a search something to find
+ * besides the generated name, and `tax_class` taxes it at a test's own rate
+ * (see api/taxes.ts) instead of the standard one. A variable product always
+ * has the same two variations, and a grouped one links the given products.
  */
 export type ProductOptions =
 	| {
@@ -101,6 +102,7 @@ export type ProductOptions =
 			sale_price?: string;
 			tags?: CreatedTag[];
 			description?: string;
+			tax_class?: string;
 	  }
 	| { type: 'variable' }
 	| { type: 'grouped'; children: CreatedProduct[] };
@@ -164,6 +166,7 @@ function typeFields( options: ProductOptions ): Record< string, unknown > {
 				...( options.sale_price ? { sale_price: options.sale_price } : {} ),
 				...( options.tags ? { tags: options.tags.map( ( tag ) => ( { id: tag.id } ) ) } : {} ),
 				...( options.description ? { description: options.description } : {} ),
+				...( options.tax_class ? { tax_class: options.tax_class } : {} ),
 				manage_stock: true,
 				stock_quantity: 100,
 			};
