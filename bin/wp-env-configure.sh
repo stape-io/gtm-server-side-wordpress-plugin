@@ -34,6 +34,12 @@ wp option update woocommerce_store_address '123 Test St'
 wp option update woocommerce_store_city 'San Francisco'
 wp option update woocommerce_store_postcode '94105'
 
+# WooCommerce's defaults, pinned: the classic loop's "Add to cart" then adds
+# over wc-ajax and stays on the page, which the add_to_cart specs assert on.
+echo "==> AJAX add to cart on archives, no redirect to the cart"
+wp option update woocommerce_enable_ajax_add_to_cart 'yes'
+wp option update woocommerce_cart_redirect_after_add 'no'
+
 echo "==> Enabling Cash on Delivery (lets e2e tests complete checkout without a real processor)"
 wp option update woocommerce_cod_settings '{"enabled":"yes","title":"Cash on delivery","instructions":"Pay on delivery."}' --format=json
 

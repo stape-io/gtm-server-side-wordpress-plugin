@@ -1,5 +1,6 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
+import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
@@ -36,6 +37,7 @@ type InstalledTheme = { stylesheet: string; version: string };
 
 preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
+	await purgeTestPages( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -83,6 +85,19 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 		keyless.status(),
 		`${ PROXY_PATH }/ should answer 404 on the baseline. A same-origin API key is stored in the database (specs supply it through storeOptions). ${ FIX }`
 	).toBe( 404 );
+
+	// The classic loop adds over wc-ajax only with AJAX buttons on, and a
+	// redirect to the cart would load a page the add_to_cart specs don't expect.
+	const productSetting = async ( id: string ): Promise< string > =>
+		( await requestUtils.rest( { path: `/wc/v3/settings/products/${ id }` } ) ).value;
+	expect(
+		await productSetting( 'woocommerce_enable_ajax_add_to_cart' ),
+		`woocommerce_enable_ajax_add_to_cart is off. ${ FIX }`
+	).toBe( 'yes' );
+	expect(
+		await productSetting( 'woocommerce_cart_redirect_after_add' ),
+		`woocommerce_cart_redirect_after_add is on. ${ FIX }`
+	).toBe( 'no' );
 
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',
