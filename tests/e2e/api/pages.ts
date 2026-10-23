@@ -37,6 +37,25 @@ export async function createClassicLoopPage(
 	return { id: created.id, link: created.link };
 }
 
+/**
+ * A published page with the classic cart (`[woocommerce_cart]`). WooCommerce
+ * treats a page holding the shortcode as a cart page (`woocommerce-cart` body
+ * class), and its form updates quantities over WooCommerce's `cart.js`, where
+ * the store's own cart page is the Cart block.
+ */
+export async function createClassicCartPage( requestUtils: RequestUtils ): Promise< CreatedPage > {
+	const created = await requestUtils.rest( {
+		path: '/wp/v2/pages',
+		method: 'POST',
+		data: {
+			title: `${ TITLE_PREFIX }Classic Cart ${ uniqueSuffix() }`,
+			status: 'publish',
+			content: '[woocommerce_cart]',
+		},
+	} );
+	return { id: created.id, link: created.link };
+}
+
 export async function deletePage( requestUtils: RequestUtils, id: number ): Promise< void > {
 	await requestUtils.rest( {
 		path: `/wp/v2/pages/${ id }`,
