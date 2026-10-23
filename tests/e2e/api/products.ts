@@ -32,12 +32,19 @@ export type CreatedCategory = {
 	link: string;
 };
 
-export async function createCategory( requestUtils: RequestUtils ): Promise< CreatedCategory > {
+/** A category for this test; with `parent`, a subcategory of it. */
+export async function createCategory(
+	requestUtils: RequestUtils,
+	parent?: CreatedCategory
+): Promise< CreatedCategory > {
 	// wp/v2 rather than wc/v3: only the core endpoint returns the archive link.
 	const created = await requestUtils.rest( {
 		path: '/wp/v2/product_cat',
 		method: 'POST',
-		data: { name: `${ NAME_PREFIX }Category ${ uniqueSuffix() }` },
+		data: {
+			name: `${ NAME_PREFIX }Category ${ uniqueSuffix() }`,
+			...( parent ? { parent: parent.id } : {} ),
+		},
 	} );
 	return { id: created.id, name: created.name, slug: created.slug, link: created.link };
 }
@@ -50,52 +57,139 @@ export async function deleteCategory( requestUtils: RequestUtils, id: number ): 
 	} );
 }
 
-export type SimpleProductRequest = {
-	name: string;
+/**
+ * What createProduct() makes. Simple by default, at 20.00; a sale price puts
+ * it on sale. A variable product always has the same two variations, and a
+ * grouped one links the given products.
+ */
+export type ProductOptions =
+	| { type?: 'simple'; regular_price?: string; sale_price?: string }
+	| { type: 'variable' }
+	| { type: 'grouped'; children: CreatedProduct[] };
+
+type VariationAttribute = { name: string; option: string };
+
+export type CreatedVariation = {
+	id: number;
 	sku: string;
-	type: 'simple';
 	regular_price: string;
-	status: 'publish';
-	manage_stock: true;
-	stock_quantity: number;
+	attributes: VariationAttribute[];
 };
 
-function buildSimpleProduct(
-	overrides: Partial< SimpleProductRequest > = {}
-): SimpleProductRequest {
-	const unique = uniqueSuffix();
-	return {
-		name: `${ NAME_PREFIX }Simple Product ${ unique }`,
-		sku: `e2e-simple-${ unique }`,
-		type: 'simple',
-		regular_price: '20.00',
-		status: 'publish',
-		manage_stock: true,
-		stock_quantity: 100,
-		...overrides,
-	};
-}
+/**
+ * The variable product of the Testomat cases (Cap Hoodie): Color and Size,
+ * both used for variations. The Red variation sets no Size, so a shopper picks
+ * any; it is also the cheaper one.
+ */
+const VARIABLE_ATTRIBUTES = [
+	{ name: 'Color', options: [ 'Red', 'Blue' ], variation: true, visible: true },
+	{ name: 'Size', options: [ 'S', 'M' ], variation: true, visible: true },
+];
+const VARIATIONS: Array< { sku: string; regular_price: string; attributes: VariationAttribute[] } > = [
+	{ sku: 'red', regular_price: '30.00', attributes: [ { name: 'Color', option: 'Red' } ] },
+	{
+		sku: 'blue-m',
+		regular_price: '32.00',
+		attributes: [
+			{ name: 'Color', option: 'Blue' },
+			{ name: 'Size', option: 'M' },
+		],
+	},
+];
 
-export type CreatedProduct = SimpleProductRequest & {
+export type CreatedProduct = {
 	id: number;
+	type: 'simple' | 'variable' | 'grouped';
+	name: string;
+	sku: string;
+	/**
+	 * The price WooCommerce reports: the sale price for a product on sale, the
+	 * lowest variation's or child's for a variable or grouped one.
+	 */
 	price: string;
 	/** Absolute URL of the product page, as WooCommerce generated it. */
 	permalink: string;
 	category: CreatedCategory;
+	/** A variable product's variations, in the order of VARIATIONS; empty for any other. */
+	variations: CreatedVariation[];
 };
 
+function typeFields( options: ProductOptions ): Record< string, unknown > {
+	switch ( options.type ) {
+		case 'variable':
+			return { attributes: VARIABLE_ATTRIBUTES };
+		case 'grouped':
+			return { grouped_products: options.children.map( ( child ) => child.id ) };
+		default:
+			return {
+				regular_price: options.regular_price ?? '20.00',
+				...( options.sale_price ? { sale_price: options.sale_price } : {} ),
+				manage_stock: true,
+				stock_quantity: 100,
+			};
+	}
+}
+
+/** A published product in `category` only. */
 export async function createProduct(
 	requestUtils: RequestUtils,
 	category: CreatedCategory,
-	overrides?: Partial< SimpleProductRequest >
+	options: ProductOptions = {}
 ): Promise< CreatedProduct > {
-	const data = buildSimpleProduct( overrides );
-	const created = await requestUtils.rest( {
+	const type = options.type ?? 'simple';
+	const unique = uniqueSuffix();
+	const label = type.charAt( 0 ).toUpperCase() + type.slice( 1 );
+	let created = await requestUtils.rest( {
 		path: '/wc/v3/products',
 		method: 'POST',
-		data: { ...data, categories: [ { id: category.id } ] },
+		data: {
+			name: `${ NAME_PREFIX }${ label } Product ${ unique }`,
+			sku: `e2e-${ type }-${ unique }`,
+			type,
+			status: 'publish',
+			categories: [ { id: category.id } ],
+			...typeFields( options ),
+		},
 	} );
-	return { ...data, id: created.id, price: created.price, permalink: created.permalink, category };
+
+	const variations: CreatedVariation[] = [];
+	try {
+		if ( type === 'variable' ) {
+			for ( const variation of VARIATIONS ) {
+				const made = await requestUtils.rest( {
+					path: `/wc/v3/products/${ created.id }/variations`,
+					method: 'POST',
+					data: { ...variation, sku: `${ created.sku }-${ variation.sku }` },
+				} );
+				variations.push( {
+					id: made.id,
+					sku: made.sku,
+					regular_price: made.regular_price,
+					attributes: variation.attributes,
+				} );
+			}
+		}
+		if ( type !== 'simple' ) {
+			// The POST answered with the price from before the variations were
+			// added, or before the grouped product's children were synced.
+			created = await requestUtils.rest( { path: `/wc/v3/products/${ created.id }` } );
+		}
+	} catch ( error ) {
+		// The caller never gets the product, so nothing else would delete it.
+		await deleteProduct( requestUtils, created.id );
+		throw error;
+	}
+
+	return {
+		id: created.id,
+		type,
+		name: created.name,
+		sku: created.sku,
+		price: created.price,
+		permalink: created.permalink,
+		category,
+		variations,
+	};
 }
 
 export async function deleteProduct( requestUtils: RequestUtils, id: number ): Promise< void > {

@@ -53,7 +53,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 
 | Path                         | What                                                                 |
 |------------------------------|----------------------------------------------------------------------|
-| `specs/`                     | One file per Testomat suite (see Writing specs)                      |
+| `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
 | `pages/`                     | Page objects                                                         |
@@ -95,6 +95,10 @@ The rest is up to the author and the review.
 - **One spec file per Testomat suite**, named after the suite: `view_item` →
   `view-item.spec.ts`, `add_to_cart - AJAX click` →
   `add-to-cart-ajax-click.spec.ts`.
+- **In a folder named after the suite's Testomat folder** under
+  `CMS / WordPress`, the same way: `Data layer - ecommerce events / view_item`
+  → `specs/data-layer-ecommerce-events/view-item.spec.ts`. Testomat matches
+  results by the `@T` tag, not the path, so the folders are for people.
 - **One `test()` per Testomat case**, in the suite's order. Its title is the
   case title followed by ` @T<case id>` (lint). See Testomat below.
 - **No `test.describe` by default**: the file already groups the suite. Use
@@ -103,8 +107,8 @@ The rest is up to the author and the review.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
 - **Tests are independent.** No serial mode, no state shared between tests,
   no order they rely on.
-- **Specs import `test` and `expect` from `../fixtures`** (lint), never from
-  `@playwright/test` directly.
+- **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
+  never from `@playwright/test` directly.
 
 ### Locators
 
@@ -192,8 +196,16 @@ decision of its own: name it in the plan before making it.
 - **Names are generated** (`E2E …` plus a unique suffix), and so are emails
   (`guestBuyer`). Don't reuse the names from the case text (`Cap Mug`) or
   hard-code IDs.
-- **A new kind of product is an option of `api/products.ts`** plus a fixture,
-  not a new function per case.
+- **A new kind of product is an option of `api/products.ts`**
+  (`ProductOptions`), not a new function per case.
+- **A shape many cases use gets a named fixture; the rest come from
+  `catalog`.** `category`, `product` and `saleProduct` are named, since most
+  cases need just those. Anything else - a variable or grouped product, a
+  subcategory, a set of products - the test creates through
+  `catalog.createCategory()` / `catalog.createProduct()`, which deletes it
+  after the test, newest first. A shape earns a named fixture once cases in
+  several suites need it (`saleProduct`: view_item, view_cart, begin_checkout,
+  purchase), not for one case.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.

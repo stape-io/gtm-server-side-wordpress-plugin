@@ -1,5 +1,5 @@
-import { expect, test } from '../fixtures';
-import { expectedEcommerce, expectedItem, withoutCartState } from '../data-layer/expected';
+import { expect, test } from '../../fixtures';
+import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
 
 test( 'Add to cart on a block-theme product grid pushes one add_to_cart for the clicked product @T7b4669bf', async ( {
 	categoryPage,

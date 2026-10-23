@@ -12,6 +12,7 @@ import {
 	deleteProduct,
 	type CreatedCategory,
 	type CreatedProduct,
+	type ProductOptions,
 } from '../api/products';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -49,6 +50,18 @@ function stackUrls( stack: string | undefined ): string[] {
 	return [ ...( stack ?? '' ).matchAll( /(https?:\/\/[^\s()]+?):\d+:\d+/g ) ].map( ( match ) => match[ 1 ] );
 }
 
+/**
+ * Creates content for one test, and deletes it after the test, newest first:
+ * a grouped product before the products it links, a subcategory before its
+ * parent.
+ */
+type Catalog = {
+	/** A throwaway category; with `parent`, a subcategory of it. */
+	createCategory: ( parent?: CreatedCategory ) => Promise< CreatedCategory >;
+	/** A throwaway product in `category` only (see ProductOptions). */
+	createProduct: ( category: CreatedCategory, options?: ProductOptions ) => Promise< CreatedProduct >;
+};
+
 type SameOriginProxy = {
 	/** GETs a path on this site, expecting the proxy to answer it with a 200. */
 	get: ( path: string ) => Promise< APIResponse >;
@@ -80,10 +93,17 @@ type ShopFixtures = {
 	sameOriginProxy: SameOriginProxy;
 	/** Billing details for a guest checkout, unique to this test. */
 	guestBuyer: BillingDetails;
+	/**
+	 * Content the named fixtures below don't cover: variable and grouped
+	 * products, subcategories, sets of products. Deleted after the test.
+	 */
+	catalog: Catalog;
 	/** A throwaway product category, created before the test and deleted after. */
 	category: CreatedCategory;
-	/** A throwaway simple product in `category`, created before the test and deleted after. */
+	/** A throwaway simple product in `category` at 20.00, created before the test and deleted after. */
 	product: CreatedProduct;
+	/** A throwaway simple product in `category`, regular 50.00 and on sale at 35.00. */
+	saleProduct: CreatedProduct;
 	/**
 	 * Automatic: answers requests for gtm.js with an empty script. The store is
 	 * configured with a placeholder container, so the real one would only add
@@ -205,15 +225,39 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	guestBuyer: async ( {}, use ) => {
 		await use( buildGuestBuyer() );
 	},
-	category: async ( { requestUtils }, use ) => {
-		const created = await createCategory( requestUtils );
-		await use( created );
-		await deleteCategory( requestUtils, created.id );
+	catalog: async ( { requestUtils }, use ) => {
+		const deletions: Array< () => Promise< void > > = [];
+		await use( {
+			createCategory: async ( parent ) => {
+				const created = await createCategory( requestUtils, parent );
+				deletions.push( () => deleteCategory( requestUtils, created.id ) );
+				return created;
+			},
+			createProduct: async ( category, options ) => {
+				const created = await createProduct( requestUtils, category, options );
+				deletions.push( () => deleteProduct( requestUtils, created.id ) );
+				return created;
+			},
+		} );
+		// One at a time, newest first: what was created later may depend on
+		// what came before it. A failed deletion doesn't stop the rest; the
+		// first error is rethrown once they have all run.
+		const errors: unknown[] = [];
+		for ( const deletion of deletions.reverse() ) {
+			await deletion().catch( ( error: unknown ) => errors.push( error ) );
+		}
+		if ( errors.length ) {
+			throw errors[ 0 ];
+		}
 	},
-	product: async ( { requestUtils, category }, use ) => {
-		const created = await createProduct( requestUtils, category );
-		await use( created );
-		await deleteProduct( requestUtils, created.id );
+	category: async ( { catalog }, use ) => {
+		await use( await catalog.createCategory() );
+	},
+	product: async ( { catalog, category }, use ) => {
+		await use( await catalog.createProduct( category ) );
+	},
+	saleProduct: async ( { catalog, category }, use ) => {
+		await use( await catalog.createProduct( category, { regular_price: '50.00', sale_price: '35.00' } ) );
 	},
 } );
 
