@@ -192,8 +192,16 @@ decision of its own: name it in the plan before making it.
 - **Names are generated** (`E2E …` plus a unique suffix), and so are emails
   (`guestBuyer`). Don't reuse the names from the case text (`Cap Mug`) or
   hard-code IDs.
-- **A new kind of product is an option of `api/products.ts`** plus a fixture,
-  not a new function per case.
+- **A new kind of product is an option of `api/products.ts`**
+  (`ProductOptions`), not a new function per case.
+- **A shape many cases use gets a named fixture; the rest come from
+  `catalog`.** `category`, `product` and `saleProduct` are named, since most
+  cases need just those. Anything else - a variable or grouped product, a
+  subcategory, a set of products - the test creates through
+  `catalog.createCategory()` / `catalog.createProduct()`, which deletes it
+  after the test, newest first. A shape earns a named fixture once cases in
+  several suites need it (`saleProduct`: view_item, view_cart, begin_checkout,
+  purchase), not for one case.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.

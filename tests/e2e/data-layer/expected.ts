@@ -17,10 +17,14 @@ export const STORE_CURRENCY = 'USD';
 /** Values the store, not the plugin, picks per visitor. */
 const ANY_CART_ID = expect.any( String ) as unknown as string;
 
-/** One `ecommerce.items` entry for a product created by the `product` fixture. */
+/**
+ * One `ecommerce.items` entry for a product the fixtures created. `price` in
+ * `extra` replaces the product's own when the case pins it to another
+ * fixture's (a variable product's cheapest variation).
+ */
 export function expectedItem(
 	product: CreatedProduct,
-	extra: Pick< EcommerceItem, 'quantity' | 'index' > = {}
+	extra: Pick< EcommerceItem, 'quantity' | 'index' | 'price' > = {}
 ): EcommerceItem {
 	return {
 		item_id: String( product.id ),
