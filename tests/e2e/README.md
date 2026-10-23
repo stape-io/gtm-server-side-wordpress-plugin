@@ -128,15 +128,19 @@ The rest is up to the author and the review.
 ### Waiting
 
 - **No fixed waits** (`waitForTimeout`, lint). The one exception is inside
-  `DataLayer.expectPushedOnce()`, which waits out a duplicate push that must
-  not come.
+  `DataLayer`, which waits out a push that must not come: a duplicate after
+  `expectPushedOnce()`, or any push before `expectNotPushed()`. When a case
+  gives that wait itself ("wait 5 more seconds"), pass it as `quietMs`
+  instead of the default.
 - Wait for a dataLayer event (`expectPushedOnce()`), a response
   (`waitForResponse()`) or a visible state (`expect( locator ).toBeVisible()`).
 - **A page object action waits for its own result** (`ProductPage.addToCart()`
   waits for WooCommerce's notice), so a spec never has to know how long it
   takes. The exception is an action whose result is the dataLayer event the
   spec waits for anyway: the grid pages' `ProductListing.addToCart()` only clicks, since the
-  grid's cart request differs by theme and the event is what the case checks.
+  grid's cart request differs by theme and the event is what the case checks,
+  and so does `ProductPage.clickAddToCart()`, whose result is what the
+  dataLayer gets or must not get.
 
 ### Assertions
 
@@ -151,7 +155,8 @@ The rest is up to the author and the review.
   its work (its grid shows products, say), then calls
   `dataLayer.expectNotPushed()`, which also fails on a page without the
   plugin's script. It is for events printed into the page, which are in the
-  dataLayer once the page has loaded; it doesn't wait for a JS push.
+  dataLayer once the page has loaded; it doesn't wait for a JS push unless
+  the case says how long to wait (`{ quietMs }`).
 - **On a page every test shares** (shop, home), a test's own products may be
   on another page of it. The spec checks what holds whatever else is in the
   store (the grid shows products), and looks for its own products on pages
@@ -183,6 +188,12 @@ The rest is up to the author and the review.
   ignored, as are requests cancelled by a navigation: they change with every
   release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
   The preflight check uses the base test and skips this fixture.
+- **PHP warnings in `debug.log`** are checked with the `phpErrors` fixture,
+  not by reading the log, which every test running at the same time writes
+  to: `await phpErrors.expectNone()` last, for a case that has the line. It
+  counts the warnings, notices and fatal errors PHP reported on this test's
+  browser requests only (`mu-plugins/record-php-errors.php`), from any
+  plugin, as the log would show them.
 
 ### Where new code goes
 
@@ -354,15 +365,14 @@ result. Cases tagged `known-defect` are not automated for now. The
 `/automate-suite <suite>` skill (`.claude/skills/automate-suite/`) runs the
 whole flow for one Testomat suite.
 
-## Known gaps
+## Classic markup
 
-- Only the block grid is automated. There, "Add to cart" goes through
-  `wc/store/v1/batch`, which jQuery's `ajaxComplete` never sees, so
-  `add-to-cart-ajax-click.spec.ts` exercises only the 1500 ms fallback in
-  `_pushWithStateCartData()`. The classic path (`wc-ajax=add_to_cart`, the
-  classic cart) doesn't need another theme: its Testomat cases use a page with
-  the `[products]` or `[woocommerce_cart]` shortcode in the same block theme,
-  which a test can create like any other content.
+The store runs a block theme. A case about WooCommerce's classic markup (the
+`[products]` loop, which adds over `wc-ajax=add_to_cart`, or the
+`[woocommerce_cart]` form) doesn't need another theme: the test creates a page
+holding the shortcode, with `catalog.createClassicLoopPage( category )` for
+the loop. Its `[products]` lists only the test's category, where the case's
+page lists the whole store, so other tests can't move the product.
 
 ## WebStorm
 

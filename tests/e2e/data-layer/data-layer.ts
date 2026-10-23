@@ -10,6 +10,13 @@ import type { PluginConfig } from '../types/plugin-config';
  */
 const LATE_PUSH_GRACE_MS = 500;
 
+/**
+ * How long a case watches for a push that must not come, when it says so
+ * ("wait 5 more seconds"). Leave it out to use LATE_PUSH_GRACE_MS (or, for
+ * expectNotPushed(), not to wait at all).
+ */
+type QuietOptions = { quietMs?: number };
+
 type Snapshot = {
 	/** `eventName` as the plugin names it on this page, suffix included. */
 	fullName: string;
@@ -44,8 +51,12 @@ export class DataLayer {
 	 * Waits rather than snapshotting: the plugin can defer add_to_cart behind
 	 * a 1500 ms fallback timer plus an admin-ajax round trip for `cart_state`
 	 * (_pushWithStateCartData() in assets/js/javascript.js).
+	 *
+	 * `quietMs` replaces the grace period after the first push, for a case
+	 * that waits longer for a duplicate. Called again after the event is in,
+	 * it returns at once and only watches for that long.
 	 */
-	async expectPushedOnce( eventName: string ): Promise< DataLayerEvent > {
+	async expectPushedOnce( eventName: string, { quietMs = LATE_PUSH_GRACE_MS }: QuietOptions = {} ): Promise< DataLayerEvent > {
 		const { fullName } = await this.snapshot( eventName );
 
 		// On timeout, the failure message lists what was pushed instead.
@@ -56,7 +67,7 @@ export class DataLayer {
 			.toContain( fullName );
 
 		// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
-		await this.page.waitForTimeout( LATE_PUSH_GRACE_MS );
+		await this.page.waitForTimeout( quietMs );
 
 		const { matches, beforeFirstMatch } = await this.snapshot( eventName );
 		expect( matches, `dataLayer event "${ fullName }" pushed more than once` ).toHaveLength( 1 );
@@ -72,13 +83,22 @@ export class DataLayer {
 	 * Asserts `eventName` was not pushed on this page. For events the plugin
 	 * prints into the page (view_item_list, view_cart, ...): their inline
 	 * scripts run before the load event page.goto() waits for, so nothing is
-	 * left to wait for. Not for JS-pushed events, which can come later.
+	 * left to wait for. Without `quietMs`, not for JS-pushed events, which can
+	 * come later.
 	 *
 	 * A page that never rendered pushes nothing either. This fails on a page
 	 * without the plugin's config, and the spec shows the page did its work
 	 * (its product grid, say) before calling it.
+	 *
+	 * With `quietMs`, it first watches for that long, for a JS push that must
+	 * not come within the time the case gives it (a click that holds its
+	 * add_to_cart, say).
 	 */
-	async expectNotPushed( eventName: string ): Promise< void > {
+	async expectNotPushed( eventName: string, { quietMs }: QuietOptions = {} ): Promise< void > {
+		if ( quietMs ) {
+			// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
+			await this.page.waitForTimeout( quietMs );
+		}
 		const { fullName, matches } = await this.snapshot( eventName );
 		expect( matches, `dataLayer event "${ fullName }" was pushed` ).toEqual( [] );
 	}

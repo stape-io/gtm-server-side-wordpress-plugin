@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import type { APIResponse, Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
+import { CART_STATE_ACTION, ClassicLoopPage } from '../pages/classic-loop-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
@@ -20,11 +22,12 @@ import {
 	type CreatedTag,
 	type ProductOptions,
 } from '../api/products';
+import { createClassicLoopPage, deletePage, type CreatedPage } from '../api/pages';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
-/** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
-const CART_STATE_ACTION = 'action=gtm_server_side_state_cart_data';
+/** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
+const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -38,7 +41,7 @@ function isPluginRequest( request: Request, dir: string ): boolean {
 	}
 	return (
 		request.url().includes( '/wp-admin/admin-ajax.php' ) &&
-		( request.postData() ?? '' ).includes( CART_STATE_ACTION )
+		( request.postData() ?? '' ).includes( `action=${ CART_STATE_ACTION }` )
 	);
 }
 
@@ -68,6 +71,17 @@ type Catalog = {
 	createTag: () => Promise< CreatedTag >;
 	/** A throwaway product in `category` only (see ProductOptions). */
 	createProduct: ( category: CreatedCategory, options?: ProductOptions ) => Promise< CreatedProduct >;
+	/** A throwaway page with the classic product loop (`[products]`) of `category`. */
+	createClassicLoopPage: ( category: CreatedCategory ) => Promise< CreatedPage >;
+};
+
+type PhpErrors = {
+	/**
+	 * Asserts PHP reported no warning, notice or fatal error while serving
+	 * this test's browser requests so far. Call it last, once the requests the
+	 * case checks have been answered.
+	 */
+	expectNone: () => Promise< void >;
 };
 
 type SameOriginProxy = {
@@ -86,6 +100,7 @@ type ShopFixtures = {
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
 	checkoutPage: CheckoutPage;
+	classicLoopPage: ClassicLoopPage;
 	shopPage: ShopPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
@@ -102,6 +117,12 @@ type ShopFixtures = {
 	 * what the proxy did, and anything but a 200 fails the test.
 	 */
 	sameOriginProxy: SameOriginProxy;
+	/**
+	 * What PHP reported while serving this test's browser requests, recorded
+	 * by mu-plugins/record-php-errors.php: debug.log is shared by every test
+	 * running at the same time. Starts recording before the first page load.
+	 */
+	phpErrors: PhpErrors;
 	/** Billing details for a guest checkout, unique to this test. */
 	guestBuyer: BillingDetails;
 	/**
@@ -212,6 +233,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	checkoutPage: async ( { page }, use ) => {
 		await use( new CheckoutPage( page ) );
 	},
+	classicLoopPage: async ( { page }, use ) => {
+		await use( new ClassicLoopPage( page ) );
+	},
 	shopPage: async ( { page }, use ) => {
 		await use( new ShopPage( page ) );
 	},
@@ -242,6 +266,26 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 		} );
 	},
+	phpErrors: async ( { page, baseURL, requestUtils }, use ) => {
+		const token = randomUUID();
+		const path = `/gtm-e2e/v1/php-errors/${ token }`;
+		await page.context().addCookies( [ { name: PHP_ERRORS_COOKIE, value: token, url: baseURL } ] );
+		const call = async ( method: 'GET' | 'DELETE' ): Promise< string[] > => {
+			try {
+				return await requestUtils.rest( { path, method } );
+			} catch ( error ) {
+				throw new Error(
+					`Cannot read the PHP errors this test recorded: is mu-plugins/record-php-errors.php loaded? After a branch switch, restart the store: npm run env:e2e:stop && npm run env:e2e:start. ${ String( error ) }`
+				);
+			}
+		};
+		await use( {
+			expectNone: async () => {
+				expect( await call( 'GET' ), "PHP warnings, notices or fatal errors on this test's requests" ).toEqual( [] );
+			},
+		} );
+		await call( 'DELETE' );
+	},
 	guestBuyer: async ( {}, use ) => {
 		await use( buildGuestBuyer() );
 	},
@@ -261,6 +305,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			createProduct: async ( category, options ) => {
 				const created = await createProduct( requestUtils, category, options );
 				deletions.push( () => deleteProduct( requestUtils, created.id ) );
+				return created;
+			},
+			createClassicLoopPage: async ( category ) => {
+				const created = await createClassicLoopPage( requestUtils, category );
+				deletions.push( () => deletePage( requestUtils, created.id ) );
 				return created;
 			},
 		} );
