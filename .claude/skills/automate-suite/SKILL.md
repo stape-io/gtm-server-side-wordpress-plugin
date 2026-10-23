@@ -55,8 +55,9 @@ whether the plan is approved, and wait.
 
 After the plan is approved, with any changes asked for:
 
-1. Write the specs (one file for the suite) and what they need, following the
-   answers. An answer that applies beyond its case goes into README.md too.
+1. Write the specs (one file for the suite, in the folder README.md names for
+   its Testomat folder) and what they need, following the answers. An answer
+   that applies beyond its case goes into README.md too.
 2. Run `npm run lint:e2e`, `npm run typecheck:e2e` and the whole suite
    (`npm run test:e2e`). An `eslint-disable` needs a reason after `--`, and
    only where README.md allows one.

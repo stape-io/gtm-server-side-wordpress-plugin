@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures';
+import { expect, test } from '../../fixtures';
 
 /**
  * get_data_layer_user_data() in includes/class-gtm-server-side-wc-helpers.php

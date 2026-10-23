@@ -53,8 +53,8 @@ export default tseslint.config(
 				'error',
 				{
 					paths: [
-						{ name: '@playwright/test', message: 'Import test and expect from ../fixtures.' },
-						{ name: '@wordpress/e2e-test-utils-playwright', message: 'Import test and expect from ../fixtures.' },
+						{ name: '@playwright/test', message: 'Import test and expect from tests/e2e/fixtures.' },
+						{ name: '@wordpress/e2e-test-utils-playwright', message: 'Import test and expect from tests/e2e/fixtures.' },
 					],
 				},
 			],

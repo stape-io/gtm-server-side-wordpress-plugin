@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures';
+import { expect, test } from '../../fixtures';
 
 /**
  * The store's same-origin proxy answers on /metrics, with no API key stored

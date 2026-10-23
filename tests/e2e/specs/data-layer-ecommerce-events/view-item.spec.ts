@@ -1,5 +1,5 @@
-import { expect, test } from '../fixtures';
-import { expectedEcommerce, expectedItem, withoutCartState } from '../data-layer/expected';
+import { expect, test } from '../../fixtures';
+import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
 
 /**
  * Unlike add_to_cart, this event is rendered server-side: the plugin prints it

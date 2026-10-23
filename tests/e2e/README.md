@@ -53,7 +53,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 
 | Path                         | What                                                                 |
 |------------------------------|----------------------------------------------------------------------|
-| `specs/`                     | One file per Testomat suite (see Writing specs)                      |
+| `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
 | `pages/`                     | Page objects                                                         |
@@ -95,6 +95,10 @@ The rest is up to the author and the review.
 - **One spec file per Testomat suite**, named after the suite: `view_item` →
   `view-item.spec.ts`, `add_to_cart - AJAX click` →
   `add-to-cart-ajax-click.spec.ts`.
+- **In a folder named after the suite's Testomat folder** under
+  `CMS / WordPress`, the same way: `Data layer - ecommerce events / view_item`
+  → `specs/data-layer-ecommerce-events/view-item.spec.ts`. Testomat matches
+  results by the `@T` tag, not the path, so the folders are for people.
 - **One `test()` per Testomat case**, in the suite's order. Its title is the
   case title followed by ` @T<case id>` (lint). See Testomat below.
 - **No `test.describe` by default**: the file already groups the suite. Use
@@ -103,8 +107,8 @@ The rest is up to the author and the review.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
 - **Tests are independent.** No serial mode, no state shared between tests,
   no order they rely on.
-- **Specs import `test` and `expect` from `../fixtures`** (lint), never from
-  `@playwright/test` directly.
+- **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
+  never from `@playwright/test` directly.
 
 ### Locators
 
