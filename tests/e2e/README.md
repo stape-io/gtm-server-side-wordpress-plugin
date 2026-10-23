@@ -236,6 +236,15 @@ decision of its own: name it in the plan before making it.
   after the test, newest first. A shape earns a named fixture once cases in
   several suites need it (`saleProduct`: view_item, view_cart, begin_checkout,
   purchase), not for one case.
+- **Coupons and tax rates are store-wide, so they come from `catalog` too.**
+  A coupon gets a generated code (`catalog.createCoupon( '10' )`), which only
+  the test applies. A tax rate goes into a tax class of its own
+  (`catalog.createTaxRate( { country: 'US', rate: '25' } )`), and only the
+  test's product uses that class (`{ tax_class: rate.taxClass }`), where the
+  case says "standard rate": no other product, and no other test running at
+  the same time, is ever taxed at it. Taxes are off on the baseline store; a
+  case with tax turns them on for its own browser
+  (`storeOptions( { calcTaxes: 'yes' } )`, plus `pricesIncludeTax`).
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.
