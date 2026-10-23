@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { CreatedProduct } from '../api/products';
 
 /** The part of jQuery the page's console steps use; the store loads jQuery on product pages. */
@@ -13,6 +13,12 @@ type JQueryWindow = {
 export class ProductPage {
 	constructor( private readonly page: Page ) {}
 
+	/** The add-to-cart form, not a grid button: related products on the same page have their own. */
+	private form() {
+		// eslint-disable-next-line playwright/no-raw-locators -- form.cart is WooCommerce core markup; the form has no accessible name.
+		return this.page.locator( 'form.cart' );
+	}
+
 	async goto( product: CreatedProduct ) {
 		await this.page.goto( product.permalink );
 	}
@@ -20,12 +26,12 @@ export class ProductPage {
 	/**
 	 * Submits the product form, which posts and reloads the page, and waits for
 	 * WooCommerce's "added to your cart" notice (an alert) on the reloaded
-	 * page. The form, not a grid button: related products on the same page
-	 * have their own.
+	 * page: "has been added" for one item, "have been added" for several (a
+	 * quantity above 1, a grouped product's children).
 	 */
 	async addToCart(): Promise< void > {
 		await this.clickAddToCart();
-		await this.page.getByRole( 'alert' ).filter( { hasText: /has been added to your cart/i } ).waitFor();
+		await this.page.getByRole( 'alert' ).filter( { hasText: /(has|have) been added to your cart/i } ).waitFor();
 	}
 
 	/**
@@ -34,13 +40,40 @@ export class ProductPage {
 	 * the click did is in the dataLayer, which the spec checks.
 	 */
 	async clickAddToCart(): Promise< void > {
-		// eslint-disable-next-line playwright/no-raw-locators -- form.cart is WooCommerce core markup; the form has no accessible name.
-		await this.page.locator( 'form.cart' ).getByRole( 'button', { name: /add to cart/i } ).click();
+		await this.form().getByRole( 'button', { name: /add to cart/i } ).click();
+	}
+
+	/**
+	 * Chooses a value for each of a variable product's attributes, by label,
+	 * and waits until WooCommerce lets the choice be added. Until then "Add to
+	 * cart" is styled disabled and only alerts that an option is missing, and
+	 * that lasts a moment after the variation is matched: the button is
+	 * enabled once the variation's details have been shown.
+	 */
+	async chooseOptions( options: Record< string, string > ): Promise< void > {
+		const form = this.form();
+		for ( const [ attribute, value ] of Object.entries( options ) ) {
+			await form.getByLabel( attribute ).selectOption( value );
+		}
+		// The class, not the disabled attribute: WooCommerce's variation script only toggles the class.
+		await expect( form.getByRole( 'button', { name: /add to cart/i } ) ).not.toHaveClass( /\bdisabled\b/ );
+	}
+
+	/**
+	 * Sets the quantity of one child of a grouped product. Every child's field
+	 * is named "Product quantity", so the row is found by the child's link.
+	 */
+	async setGroupedQuantity( child: CreatedProduct, quantity: number ): Promise< void > {
+		// eslint-disable-next-line playwright/no-raw-locators -- the children are rows of WooCommerce core's grouped table, which has role=presentation and so no rows to find by role.
+		const rows = this.form().locator( 'tr.woocommerce-grouped-product-list-item' );
+		await rows
+			.filter( { has: this.page.getByRole( 'link', { name: child.name, exact: true } ) } )
+			.getByRole( 'spinbutton', { name: 'Product quantity' } )
+			.fill( String( quantity ) );
 	}
 
 	async setQuantity( quantity: number ): Promise< void > {
-		// eslint-disable-next-line playwright/no-raw-locators -- form.cart is WooCommerce core markup; the form has no accessible name.
-		await this.page.locator( 'form.cart' ).getByLabel( 'Product quantity' ).fill( String( quantity ) );
+		await this.form().getByLabel( 'Product quantity' ).fill( String( quantity ) );
 	}
 
 	/**

@@ -38,6 +38,20 @@ type StoreOptionValues = {
 	 */
 	catalogColumns: string;
 	catalogRows: string;
+	/**
+	 * WooCommerce's "Enable AJAX add to cart buttons on archives". On (`yes`)
+	 * on the baseline store; off, a grid's "Add to cart" is a plain
+	 * `?add-to-cart=` link that loads a page. Nothing runs when it is saved,
+	 * and WooCommerce reads it on every page that renders a grid.
+	 */
+	ajaxAddToCart: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Redirect to the cart page after successful addition". Off
+	 * on the baseline store; on, an `?add-to-cart=` request answers with a
+	 * redirect and renders no page. Nothing runs when it is saved, and
+	 * WC_Form_Handler reads it on the add-to-cart request itself.
+	 */
+	cartRedirectAfterAdd: 'yes' | 'no';
 };
 
 export const STORE_OPTIONS = {
@@ -45,6 +59,8 @@ export const STORE_OPTIONS = {
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
 	catalogColumns: 'woocommerce_catalog_columns',
 	catalogRows: 'woocommerce_catalog_rows',
+	ajaxAddToCart: 'woocommerce_enable_ajax_add_to_cart',
+	cartRedirectAfterAdd: 'woocommerce_cart_redirect_after_add',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;
