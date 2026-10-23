@@ -41,6 +41,8 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'gtm_server_side_same_origin_api_key',
 	'woocommerce_catalog_columns',
 	'woocommerce_catalog_rows',
+	'woocommerce_enable_ajax_add_to_cart',
+	'woocommerce_cart_redirect_after_add',
 );
 
 /**

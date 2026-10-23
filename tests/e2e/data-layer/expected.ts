@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import type { CreatedCategory, CreatedProduct } from '../api/products';
+import type { CreatedCategory, CreatedProduct, CreatedVariation } from '../api/products';
 import type { CartState, CartStateLine, DataLayerEvent, Ecommerce, EcommerceItem } from './types';
 
 /**
@@ -36,6 +36,29 @@ export function expectedItem(
 		item_brand: '',
 		item_category: product.category.name,
 		price: product.price,
+		imageUrl: '',
+		...extra,
+	};
+}
+
+/**
+ * One `ecommerce.items` entry for a variation of a variable product the
+ * fixtures created: the variation's own id, SKU and regular price (the
+ * fixture puts no variation on sale), and the parent's category. Its name
+ * and `item_variant` are what WooCommerce and the plugin made of the chosen
+ * attributes, so the spec passes them in.
+ */
+export function expectedVariationItem(
+	product: CreatedProduct,
+	variation: CreatedVariation,
+	extra: Required< Pick< EcommerceItem, 'item_name' | 'item_variant' > > & Pick< EcommerceItem, 'quantity' | 'index' >
+): EcommerceItem {
+	return {
+		item_id: String( variation.id ),
+		item_sku: variation.sku,
+		item_brand: '',
+		item_category: product.category.name,
+		price: variation.regular_price,
 		imageUrl: '',
 		...extra,
 	};

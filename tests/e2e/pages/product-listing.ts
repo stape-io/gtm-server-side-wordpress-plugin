@@ -32,6 +32,25 @@ export class ProductListing {
 	}
 
 	/**
+	 * Clicks "Add to cart" and waits until the card shows the product was
+	 * added: its "View cart" link, which the block grid adds once the cart
+	 * request has landed.
+	 */
+	async addToCartUntilAdded( productName: string ): Promise< void > {
+		await this.addToCart( productName );
+		await this.productCard( productName ).getByRole( 'link', { name: 'View cart' } ).waitFor();
+	}
+
+	/**
+	 * Follows a product's "Add to cart" when it is a plain `?add-to-cart=`
+	 * link (AJAX add to cart off), and waits for the page it loads.
+	 */
+	async followAddToCartLink( productName: string ): Promise< void > {
+		await this.productCard( productName ).getByRole( 'link', { name: /add to cart/i } ).click();
+		await this.page.waitForURL( /[?&]add-to-cart=\d+/ );
+	}
+
+	/**
 	 * The names of the products in the grid, in the order it shows them. The
 	 * grid is rendered server-side, so it is complete once goto() returns.
 	 */
