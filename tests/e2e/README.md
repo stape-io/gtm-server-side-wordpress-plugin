@@ -371,8 +371,11 @@ The store runs a block theme. A case about WooCommerce's classic markup (the
 `[products]` loop, which adds over `wc-ajax=add_to_cart`, or the
 `[woocommerce_cart]` form) doesn't need another theme: the test creates a page
 holding the shortcode, with `catalog.createClassicLoopPage( category )` for
-the loop. Its `[products]` lists only the test's category, where the case's
-page lists the whole store, so other tests can't move the product.
+the loop and `catalog.createClassicCartPage()` for the cart. The loop page's
+`[products]` lists only the test's category, where the case's page lists the
+whole store, so other tests can't move the product. The cart page stands in
+for the case's shared "Classic cart page": the cart belongs to the test's
+browser either way.
 
 ## WebStorm
 

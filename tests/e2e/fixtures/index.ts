@@ -4,6 +4,8 @@ import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
+import { ClassicCartPage } from '../pages/classic-cart-page';
+import { HomePage } from '../pages/home-page';
 import { CART_STATE_ACTION, ClassicLoopPage } from '../pages/classic-loop-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
@@ -22,7 +24,7 @@ import {
 	type CreatedTag,
 	type ProductOptions,
 } from '../api/products';
-import { createClassicLoopPage, deletePage, type CreatedPage } from '../api/pages';
+import { createClassicCartPage, createClassicLoopPage, deletePage, type CreatedPage } from '../api/pages';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
@@ -73,6 +75,8 @@ type Catalog = {
 	createProduct: ( category: CreatedCategory, options?: ProductOptions ) => Promise< CreatedProduct >;
 	/** A throwaway page with the classic product loop (`[products]`) of `category`. */
 	createClassicLoopPage: ( category: CreatedCategory ) => Promise< CreatedPage >;
+	/** A throwaway page with the classic cart (`[woocommerce_cart]`). */
+	createClassicCartPage: () => Promise< CreatedPage >;
 };
 
 type PhpErrors = {
@@ -101,6 +105,8 @@ type ShopFixtures = {
 	productPage: ProductPage;
 	checkoutPage: CheckoutPage;
 	classicLoopPage: ClassicLoopPage;
+	classicCartPage: ClassicCartPage;
+	homePage: HomePage;
 	shopPage: ShopPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
@@ -236,6 +242,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	classicLoopPage: async ( { page }, use ) => {
 		await use( new ClassicLoopPage( page ) );
 	},
+	classicCartPage: async ( { page }, use ) => {
+		await use( new ClassicCartPage( page ) );
+	},
+	homePage: async ( { page }, use ) => {
+		await use( new HomePage( page ) );
+	},
 	shopPage: async ( { page }, use ) => {
 		await use( new ShopPage( page ) );
 	},
@@ -309,6 +321,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 			createClassicLoopPage: async ( category ) => {
 				const created = await createClassicLoopPage( requestUtils, category );
+				deletions.push( () => deletePage( requestUtils, created.id ) );
+				return created;
+			},
+			createClassicCartPage: async () => {
+				const created = await createClassicCartPage( requestUtils );
 				deletions.push( () => deletePage( requestUtils, created.id ) );
 				return created;
 			},
