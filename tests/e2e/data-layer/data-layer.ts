@@ -69,6 +69,21 @@ export class DataLayer {
 	}
 
 	/**
+	 * Asserts `eventName` was not pushed on this page. For events the plugin
+	 * prints into the page (view_item_list, view_cart, ...): their inline
+	 * scripts run before the load event page.goto() waits for, so nothing is
+	 * left to wait for. Not for JS-pushed events, which can come later.
+	 *
+	 * A page that never rendered pushes nothing either. This fails on a page
+	 * without the plugin's config, and the spec shows the page did its work
+	 * (its product grid, say) before calling it.
+	 */
+	async expectNotPushed( eventName: string ): Promise< void > {
+		const { fullName, matches } = await this.snapshot( eventName );
+		expect( matches, `dataLayer event "${ fullName }" was pushed` ).toEqual( [] );
+	}
+
+	/**
 	 * The `varGtmServerSide` config the plugin localized into the page: the
 	 * settings it rendered with, which the frontend script pushes from.
 	 */

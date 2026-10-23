@@ -18,10 +18,15 @@ const NAME_PREFIX = 'E2E ';
 
 let sequence = 0;
 
-/** Unique per call, so parallel workers never collide on a name, slug, SKU or email. */
+/**
+ * Unique per call, so parallel workers never collide on a name, slug, SKU or
+ * email. Within one worker a later call also sorts later as text (the
+ * timestamp has a fixed width, the counter is zero-padded), so names created
+ * one after another come back in the same order from an ORDER BY title.
+ */
 export function uniqueSuffix(): string {
 	sequence += 1;
-	return `${ Date.now() }-${ process.pid }-${ sequence }`;
+	return `${ Date.now() }-${ process.pid }-${ String( sequence ).padStart( 6, '0' ) }`;
 }
 
 export type CreatedCategory = {
@@ -49,6 +54,32 @@ export async function createCategory(
 	return { id: created.id, name: created.name, slug: created.slug, link: created.link };
 }
 
+export type CreatedTag = {
+	id: number;
+	name: string;
+	/** Absolute URL of the tag archive. */
+	link: string;
+};
+
+/** A product tag for this test. */
+export async function createTag( requestUtils: RequestUtils ): Promise< CreatedTag > {
+	// wp/v2 rather than wc/v3, as for categories: only the core endpoint returns the archive link.
+	const created = await requestUtils.rest( {
+		path: '/wp/v2/product_tag',
+		method: 'POST',
+		data: { name: `${ NAME_PREFIX }Tag ${ uniqueSuffix() }` },
+	} );
+	return { id: created.id, name: created.name, link: created.link };
+}
+
+export async function deleteTag( requestUtils: RequestUtils, id: number ): Promise< void > {
+	await requestUtils.rest( {
+		path: `/wp/v2/product_tag/${ id }`,
+		method: 'DELETE',
+		params: { force: 'true' },
+	} );
+}
+
 export async function deleteCategory( requestUtils: RequestUtils, id: number ): Promise< void > {
 	await requestUtils.rest( {
 		path: `/wp/v2/product_cat/${ id }`,
@@ -59,11 +90,18 @@ export async function deleteCategory( requestUtils: RequestUtils, id: number ): 
 
 /**
  * What createProduct() makes. Simple by default, at 20.00; a sale price puts
- * it on sale. A variable product always has the same two variations, and a
- * grouped one links the given products.
+ * it on sale, `tags` tags it, and `description` gives a search something to
+ * find besides the generated name. A variable product always has the same two
+ * variations, and a grouped one links the given products.
  */
 export type ProductOptions =
-	| { type?: 'simple'; regular_price?: string; sale_price?: string }
+	| {
+			type?: 'simple';
+			regular_price?: string;
+			sale_price?: string;
+			tags?: CreatedTag[];
+			description?: string;
+	  }
 	| { type: 'variable' }
 	| { type: 'grouped'; children: CreatedProduct[] };
 
@@ -124,6 +162,8 @@ function typeFields( options: ProductOptions ): Record< string, unknown > {
 			return {
 				regular_price: options.regular_price ?? '20.00',
 				...( options.sale_price ? { sale_price: options.sale_price } : {} ),
+				...( options.tags ? { tags: options.tags.map( ( tag ) => ( { id: tag.id } ) ) } : {} ),
+				...( options.description ? { description: options.description } : {} ),
 				manage_stock: true,
 				stock_quantity: 100,
 			};
@@ -201,7 +241,7 @@ export async function deleteProduct( requestUtils: RequestUtils, id: number ): P
 }
 
 /**
- * Deletes every product and category a previous run left behind. Fixtures
+ * Deletes every product, category and tag a previous run left behind. Fixtures
  * clean up after themselves, but a killed run (Ctrl+C, CI timeout) skips
  * fixture teardown.
  */
@@ -219,5 +259,8 @@ export async function purgeTestCatalog( requestUtils: RequestUtils ): Promise< v
 	}
 	for ( let ids = await leftovers( '/wp/v2/product_cat' ); ids.length; ids = await leftovers( '/wp/v2/product_cat' ) ) {
 		await Promise.all( ids.map( ( id ) => deleteCategory( requestUtils, id ) ) );
+	}
+	for ( let ids = await leftovers( '/wp/v2/product_tag' ); ids.length; ids = await leftovers( '/wp/v2/product_tag' ) ) {
+		await Promise.all( ids.map( ( id ) => deleteTag( requestUtils, id ) ) );
 	}
 }

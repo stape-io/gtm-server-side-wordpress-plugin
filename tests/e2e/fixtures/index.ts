@@ -4,14 +4,20 @@ import { DataLayer } from '../data-layer/data-layer';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
 import { ProductPage } from '../pages/product-page';
+import { ProductSearchPage } from '../pages/product-search-page';
+import { ProductTagPage } from '../pages/product-tag-page';
+import { ShopPage } from '../pages/shop-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
 	createProduct,
+	createTag,
 	deleteCategory,
 	deleteProduct,
+	deleteTag,
 	type CreatedCategory,
 	type CreatedProduct,
+	type CreatedTag,
 	type ProductOptions,
 } from '../api/products';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
@@ -53,11 +59,13 @@ function stackUrls( stack: string | undefined ): string[] {
 /**
  * Creates content for one test, and deletes it after the test, newest first:
  * a grouped product before the products it links, a subcategory before its
- * parent.
+ * parent, a product before its tag.
  */
 type Catalog = {
 	/** A throwaway category; with `parent`, a subcategory of it. */
 	createCategory: ( parent?: CreatedCategory ) => Promise< CreatedCategory >;
+	/** A throwaway product tag. */
+	createTag: () => Promise< CreatedTag >;
 	/** A throwaway product in `category` only (see ProductOptions). */
 	createProduct: ( category: CreatedCategory, options?: ProductOptions ) => Promise< CreatedProduct >;
 };
@@ -78,6 +86,9 @@ type ShopFixtures = {
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
 	checkoutPage: CheckoutPage;
+	shopPage: ShopPage;
+	productTagPage: ProductTagPage;
+	productSearchPage: ProductSearchPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
@@ -95,7 +106,7 @@ type ShopFixtures = {
 	guestBuyer: BillingDetails;
 	/**
 	 * Content the named fixtures below don't cover: variable and grouped
-	 * products, subcategories, sets of products. Deleted after the test.
+	 * products, subcategories, tags, sets of products. Deleted after the test.
 	 */
 	catalog: Catalog;
 	/** A throwaway product category, created before the test and deleted after. */
@@ -201,6 +212,15 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	checkoutPage: async ( { page }, use ) => {
 		await use( new CheckoutPage( page ) );
 	},
+	shopPage: async ( { page }, use ) => {
+		await use( new ShopPage( page ) );
+	},
+	productTagPage: async ( { page }, use ) => {
+		await use( new ProductTagPage( page ) );
+	},
+	productSearchPage: async ( { page }, use ) => {
+		await use( new ProductSearchPage( page ) );
+	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
 		await use( async ( more ) => {
@@ -231,6 +251,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			createCategory: async ( parent ) => {
 				const created = await createCategory( requestUtils, parent );
 				deletions.push( () => deleteCategory( requestUtils, created.id ) );
+				return created;
+			},
+			createTag: async () => {
+				const created = await createTag( requestUtils );
+				deletions.push( () => deleteTag( requestUtils, created.id ) );
 				return created;
 			},
 			createProduct: async ( category, options ) => {

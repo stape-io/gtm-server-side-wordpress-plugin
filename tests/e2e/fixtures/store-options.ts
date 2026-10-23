@@ -29,11 +29,22 @@ type StoreOptionValues = {
 	 * no live store has - so elsewhere it renders as without the key.
 	 */
 	sameOriginApiKey: string;
+	/**
+	 * WooCommerce's product grid ("Products per row" and "Rows per page" in
+	 * the Customizer); a page holds columns x rows products. Not set on the
+	 * baseline store, so 4 x 4 unless something set them by hand: a spec that
+	 * counts the products on a page sets both. Nothing runs when they are
+	 * saved, and WooCommerce reads them on every page that renders a grid.
+	 */
+	catalogColumns: string;
+	catalogRows: string;
 };
 
 export const STORE_OPTIONS = {
 	userData: 'gtm_server_side_data_layer_user_data',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
+	catalogColumns: 'woocommerce_catalog_columns',
+	catalogRows: 'woocommerce_catalog_rows',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;

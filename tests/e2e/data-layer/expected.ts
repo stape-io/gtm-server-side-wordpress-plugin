@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import type { CreatedProduct } from '../api/products';
+import type { CreatedCategory, CreatedProduct } from '../api/products';
 import type { CartState, CartStateLine, DataLayerEvent, Ecommerce, EcommerceItem } from './types';
 
 /**
@@ -20,11 +20,13 @@ const ANY_CART_ID = expect.any( String ) as unknown as string;
 /**
  * One `ecommerce.items` entry for a product the fixtures created. `price` in
  * `extra` replaces the product's own when the case pins it to another
- * fixture's (a variable product's cheapest variation).
+ * fixture's (a variable product's cheapest variation), and the category
+ * fields replace the product's own category when it is a subcategory, whose
+ * chain the plugin reports from the top.
  */
 export function expectedItem(
 	product: CreatedProduct,
-	extra: Pick< EcommerceItem, 'quantity' | 'index' | 'price' > = {}
+	extra: Pick< EcommerceItem, 'quantity' | 'index' | 'price' | 'item_category' | 'item_category2' > = {}
 ): EcommerceItem {
 	return {
 		item_id: String( product.id ),
@@ -46,6 +48,23 @@ export function expectedEcommerce( items: EcommerceItem[] ): Ecommerce {
 		0
 	);
 	return { currency: STORE_CURRENCY, value: value.toFixed( 2 ), items };
+}
+
+/**
+ * One view_item_list item: the product, plus the list it was shown in.
+ * `extra` as for expectedItem().
+ */
+export function expectedListItem(
+	product: CreatedProduct,
+	list: CreatedCategory,
+	extra: Parameters< typeof expectedItem >[ 1 ] = {}
+): EcommerceItem {
+	return { ...expectedItem( product, extra ), item_list_id: list.id, item_list_name: list.name };
+}
+
+/** view_item_list's `ecommerce`: a list has no `value`. */
+export function expectedItemListEcommerce( items: EcommerceItem[] ): Ecommerce {
+	return { currency: STORE_CURRENCY, items };
 }
 
 /**
