@@ -14,10 +14,15 @@ export type EcommerceItem = {
 	item_sku?: string;
 	item_brand?: string;
 	item_category?: string;
+	/** The next level of the category chain under item_category (the plugin goes up to item_category5). */
+	item_category2?: string;
 	item_variant?: string;
 	price?: string;
 	quantity?: number;
 	index?: number;
+	/** view_item_list: the listed category's term ID, a number rather than GA4's string. */
+	item_list_id?: number;
+	item_list_name?: string;
 	/** camelCase: derived from the data-gtm_image-url attribute. */
 	imageUrl?: string;
 };

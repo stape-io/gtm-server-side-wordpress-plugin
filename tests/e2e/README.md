@@ -56,7 +56,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
-| `pages/`                     | Page objects                                                         |
+| `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
@@ -147,9 +147,21 @@ The rest is up to the author and the review.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
-- **A case about one field asserts that field only** (`user_data`,
-  `cart_state`): the rest of the event belongs to the cases about the event,
-  so one defect fails a few cases, not every case that reads the event.
+- **A case checking that an event is *not* pushed** first shows the page did
+  its work (its grid shows products, say), then calls
+  `dataLayer.expectNotPushed()`, which also fails on a page without the
+  plugin's script. It is for events printed into the page, which are in the
+  dataLayer once the page has loaded; it doesn't wait for a JS push.
+- **On a page every test shares** (shop, home), a test's own products may be
+  on another page of it. The spec checks what holds whatever else is in the
+  store (the grid shows products), and looks for its own products on pages
+  only it creates (its category, tag or search keyword).
+- **A case about some fields asserts those fields only** (`user_data`,
+  `cart_state`, which products a list holds and in what order): the rest of
+  the event belongs to the cases about the whole event, so one defect fails a
+  few cases, not every case that reads the event. It still spells out `event`
+  when the case names it, and compares its items with
+  `expect.objectContaining()` holding the fields the case lists.
 - **Builders map fixture data and nothing more.** What the plugin computes
   (`index`, `quantity`, a discounted `value`) is passed in by the spec, so a
   builder can never share a bug with the code it checks.
@@ -196,6 +208,9 @@ decision of its own: name it in the plan before making it.
 - **Names are generated** (`E2E …` plus a unique suffix), and so are emails
   (`guestBuyer`). Don't reuse the names from the case text (`Cap Mug`) or
   hard-code IDs.
+- **Names sort in the order they were created** within a test
+  (`uniqueSuffix()`), so a case about title order creates its products in the
+  order it expects them back.
 - **A new kind of product is an option of `api/products.ts`**
   (`ProductOptions`), not a new function per case.
 - **A shape many cases use gets a named fixture; the rest come from

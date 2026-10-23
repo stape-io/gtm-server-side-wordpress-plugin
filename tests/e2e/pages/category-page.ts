@@ -1,20 +1,22 @@
-import type { Page } from '@playwright/test';
 import type { CreatedCategory } from '../api/products';
+import { ProductListing } from './product-listing';
 
-/**
- * Storefront category archive. Locators are keyed by product name (not SKU or
- * CSS class) so specs read the way a shopper would describe the page and stay
- * resilient to markup/theme changes.
- */
-export class CategoryPage {
-	constructor( private readonly page: Page ) {}
+/** The shop's sort options, as the sort select sends them. */
+type CatalogOrderby = 'menu_order' | 'popularity' | 'rating' | 'date' | 'price' | 'price-desc';
 
-	async goto( category: CreatedCategory ) {
-		await this.page.goto( category.link );
-	}
-
-	productCard( productName: string ) {
-		return this.page.getByRole( 'listitem' ).filter( { hasText: productName } );
+/** Storefront category archive. */
+export class CategoryPage extends ProductListing {
+	/**
+	 * `orderby` is the shop's sort (`price-desc`, …), `pageNumber` a page of
+	 * the paginated grid, the way a shopper reaches them from the sort select
+	 * and the pagination links.
+	 */
+	async goto( category: CreatedCategory, { orderby, pageNumber }: { orderby?: CatalogOrderby; pageNumber?: number } = {} ) {
+		const url = new URL( pageNumber && pageNumber > 1 ? `page/${ pageNumber }/` : '', category.link );
+		if ( orderby ) {
+			url.searchParams.set( 'orderby', orderby );
+		}
+		await this.page.goto( url.toString() );
 	}
 
 	addToCartButton( productName: string ) {
