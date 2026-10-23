@@ -135,7 +135,7 @@ The rest is up to the author and the review.
 - **A page object action waits for its own result** (`ProductPage.addToCart()`
   waits for WooCommerce's notice), so a spec never has to know how long it
   takes. The exception is an action whose result is the dataLayer event the
-  spec waits for anyway: `CategoryPage.addToCart()` only clicks, since the
+  spec waits for anyway: the grid pages' `ProductListing.addToCart()` only clicks, since the
   grid's cart request differs by theme and the event is what the case checks.
 
 ### Assertions
@@ -155,7 +155,11 @@ The rest is up to the author and the review.
 - **On a page every test shares** (shop, home), a test's own products may be
   on another page of it. The spec checks what holds whatever else is in the
   store (the grid shows products), and looks for its own products on pages
-  only it creates (its category, tag or search keyword).
+  only it creates (its category, tag or search keyword). A case that has to
+  click its own product in the shop opens it newest first
+  (`shopPage.goto( { orderby: 'date' } )`) with 100 products to a page
+  (`storeOptions( { catalogColumns: '4', catalogRows: '25' } )`), so what the
+  tests next to it create can't push the product off page 1.
 - **A case about some fields asserts those fields only** (`user_data`,
   `cart_state`, which products a list holds and in what order): the rest of
   the event belongs to the cases about the whole event, so one defect fails a

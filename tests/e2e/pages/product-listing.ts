@@ -1,5 +1,8 @@
 import type { Page } from '@playwright/test';
 
+/** The shop's sort options, as the sort select sends them. */
+export type CatalogOrderby = 'menu_order' | 'popularity' | 'rating' | 'date' | 'price' | 'price-desc';
+
 /**
  * What every storefront page with a product grid has in common: category and
  * tag archives, the shop, search results. Locators are keyed by product name
@@ -11,6 +14,21 @@ export class ProductListing {
 
 	productCard( productName: string ) {
 		return this.page.getByRole( 'main' ).getByRole( 'listitem' ).filter( { hasText: productName } );
+	}
+
+	addToCartButton( productName: string ) {
+		return this.productCard( productName ).getByRole( 'button', { name: /add to cart/i } );
+	}
+
+	/**
+	 * Clicks "Add to cart", and nothing more. Deliberately waits on no specific
+	 * endpoint: the block Product Collection grid sends the cart mutation to
+	 * POST wc/store/v1/batch, classic themes to wc-ajax=add_to_cart, and the
+	 * page object is what absorbs a theme change. Specs wait on the dataLayer
+	 * event instead (DataLayer.expectPushedOnce()).
+	 */
+	async addToCart( productName: string ): Promise< void > {
+		await this.addToCartButton( productName ).click();
 	}
 
 	/**

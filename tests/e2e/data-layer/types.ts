@@ -31,6 +31,13 @@ export type Ecommerce = {
 	currency?: string;
 	value?: string;
 	items?: EcommerceItem[];
+	/**
+	 * select_item: the listed category's or tag's term ID, as a string (it is
+	 * read from a data attribute), and `''` on the shop and search pages.
+	 */
+	collection_id?: string;
+	/** select_item: the listed term's name, `''` on the shop and search pages. */
+	item_list_name?: string;
 };
 
 /** One entry in `cart_state.lines`. */
