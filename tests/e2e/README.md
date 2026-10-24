@@ -153,15 +153,22 @@ The rest is up to the author and the review.
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
   An event with no fixture data to map (sign_up: `{ event: 'sign_up_stape' }`)
   is spelled out in the spec, with no builder.
+- **An entry pushed without an event** (home's `{ ecomm_pagetype: 'home' }`)
+  is selected by its page type: `dataLayer.expectPushedOnce( { ecomm_pagetype:
+  'home' } )`, and the same for `expectNotPushed()`. The checks are the same
+  as for an event. It matches every entry with that page type, events
+  included, so it is only for a page type no event carries (`home`, not
+  `product` or `basket`).
 - **A case checking that an event is *not* pushed** first shows the page did
   its work (its grid shows products, say), then calls
   `dataLayer.expectNotPushed()`, which also fails on a page without the
   plugin's script. It is for events printed into the page, which are in the
   dataLayer once the page has loaded; it doesn't wait for a JS push unless
   the case says how long to wait (`{ quietMs }`).
-  An event printed in `wp_footer` on every page (sign_up) needs no other
-  proof: `varGtmServerSide`, which the check requires, comes with the footer
-  scripts after it, so the page's footer rendered whatever else it shows.
+  An entry the plugin decides on in `wp_footer` (sign_up on every page, home
+  on `/` only) needs no other proof: `varGtmServerSide`, which the check
+  requires, comes with the footer scripts after it, so the page's footer
+  rendered whatever else it shows.
 - **On a page every test shares** (shop, home), a test's own products may be
   on another page of it. The spec checks what holds whatever else is in the
   store (the grid shows products), and looks for its own products on pages
