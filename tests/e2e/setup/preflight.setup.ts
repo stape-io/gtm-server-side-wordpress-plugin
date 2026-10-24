@@ -133,6 +133,16 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	const cod: { enabled: boolean } = await requestUtils.rest( { path: '/wc/v3/payment_gateways/cod' } );
 	expect( cod.enabled, `Cash on delivery is disabled. ${ FIX }` ).toBe( true );
 
+	// The wp-admin order specs create orders on the HPOS screen; without HPOS
+	// WooCommerce doesn't register it.
+	const newOrderScreen = await requestUtils.request.get( '/wp-admin/admin.php?page=wc-orders&action=new', {
+		maxRedirects: 0,
+	} );
+	expect(
+		newOrderScreen.status(),
+		`WooCommerce's HPOS order screen doesn't answer: orders are not in WooCommerce's own tables (wp wc hpos enable). ${ FIX }`
+	).toBe( 200 );
+
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',
 		params: { status: 'active' },

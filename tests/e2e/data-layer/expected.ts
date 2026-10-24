@@ -26,7 +26,7 @@ const ANY_CART_ID = expect.any( String ) as unknown as string;
  */
 export function expectedItem(
 	product: CreatedProduct,
-	extra: Pick< EcommerceItem, 'quantity' | 'index' | 'price' | 'item_category' | 'item_category2' > = {}
+	extra: Pick< EcommerceItem, 'quantity' | 'index' | 'price' | 'item_category' | 'item_category2' | 'discount' > = {}
 ): EcommerceItem {
 	return {
 		item_id: String( product.id ),

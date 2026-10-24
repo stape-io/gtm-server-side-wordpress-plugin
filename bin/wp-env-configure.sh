@@ -52,6 +52,12 @@ wp option update woocommerce_tax_based_on 'shipping'
 wp option update woocommerce_tax_display_cart 'excl'
 wp option update woocommerce_tax_total_display 'itemized'
 
+# WooCommerce's default for a new store, pinned: the wp-admin order specs
+# create orders on the HPOS screen (admin.php?page=wc-orders). Only warns when
+# it is on already.
+echo "==> Orders in WooCommerce's own tables (HPOS)"
+wp wc hpos enable
+
 echo "==> Enabling Cash on Delivery (lets e2e tests complete checkout without a real processor)"
 wp option update woocommerce_cod_settings '{"enabled":"yes","title":"Cash on delivery","instructions":"Pay on delivery."}' --format=json
 

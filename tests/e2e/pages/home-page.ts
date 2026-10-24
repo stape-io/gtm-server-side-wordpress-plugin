@@ -5,6 +5,10 @@ import type { CreatedProduct } from '../api/products';
 export class HomePage {
 	constructor( private readonly page: Page ) {}
 
+	async goto(): Promise< void > {
+		await this.page.goto( '/' );
+	}
+
 	/**
 	 * Opens the front page through an `?add-to-cart=` link, which adds
 	 * `quantity` of `product` (one without it) on the way, the way the cases

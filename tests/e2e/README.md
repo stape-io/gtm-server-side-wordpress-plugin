@@ -257,6 +257,27 @@ decision of its own: name it in the plan before making it.
   creates the order, so `catalog` doesn't know it: the `guestBuyer` fixture
   deletes every order with its email after the test, and the preflight
   deletes the guest orders killed runs left behind (`api/orders.ts`).
+- **A case that places the order with curl** (no page rendered in between)
+  places it from the test's browser instead: `homePage.addToCart()`, then
+  `checkoutPage.placeOrderThroughStoreApi( guestBuyer )`, which posts to the
+  Store API endpoint the Checkout block uses with the browser's cookies and
+  returns the order's ID and order-received URL. The case's later curl
+  requests are pages the browser opens, and its `grep -c` is
+  `expectPushedOnce()` or `expectNotPushed()`.
+- **A new private window, or a deleted cookie jar, is `newSession()`**: the
+  test's browser forgets its cookies, the `storeOptions()` and `testPlugins`
+  ones included, so set those again after it.
+- **What a case does as the store admin over WP-CLI** to its own content
+  (a product's price, an order's status) goes through REST: `catalog.updateProduct()`,
+  `orders.setStatus()`. A case in wp-admin logs the test's browser in with
+  `loginAsAdmin()`; an order it creates there has no guest's email, so the
+  spec hands its ID to `orders.deleteAfterTest()`.
+- **Shipping is off for everyone but the test that asks.** The baseline store
+  has no shipping method, and adding one to the database makes every cart
+  need a shipping option: the checkouts of the tests next to it fail. A case
+  with shipping gets a flat rate for its own browser,
+  `testPlugins.flatRateShipping( '5.00' )` (not taxed). The checkout labels
+  its line with the method's title, `Flat rate`.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.
@@ -287,6 +308,12 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
 - **Local only, when a visitor could trigger it.** Anyone can set a cookie,
   so a plugin that acts on one does so only where `wp_get_environment_type()`
   is `local`, and only for what it lists.
+- **A test plugin a spec turns on** has a method on the `testPlugins`
+  fixture, which sets its cookie: `flatRateShipping()`
+  (`flat-rate-shipping.php`), `markOrderConfirmationPage()` for a shop's own
+  thank-you page (`order-confirmation-page.php`, in place of a case's
+  store-wide filter), and `endEmailVerificationGrace()`, for a guest order
+  link opened more than 10 minutes later (`email-verification-grace.php`).
 - **A third-party plugin under test** (GTM4WP, say) is installed through
   `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 

@@ -1,6 +1,13 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import type { BillingDetails } from '../api/customers';
 
+/** An order placed without the browser rendering a page (see placeOrderThroughStoreApi()). */
+export type PlacedOrder = {
+	id: number;
+	/** The order-received URL the checkout would send the browser to, order key included. */
+	receivedUrl: string;
+};
+
 /** The Checkout block page. */
 export class CheckoutPage {
 	constructor( private readonly page: Page ) {}
@@ -60,6 +67,45 @@ export class CheckoutPage {
 		await this.form.getByLabel( 'Cash on delivery' ).check();
 		await this.form.getByRole( 'button', { name: 'Place order' } ).click();
 		await this.page.waitForURL( /\/checkout\/order-received\// );
+	}
+
+	/**
+	 * Places an order for what is in the cart with Cash on delivery, through
+	 * the Store API endpoint the Checkout block posts to, and renders no page:
+	 * the order-received page is left for the spec to open. The requests carry
+	 * the test's cookies, so the order comes from the browser's own session.
+	 * The buyer is in the store's own country and state, as on the checkout.
+	 */
+	async placeOrderThroughStoreApi( details: BillingDetails ): Promise< PlacedOrder > {
+		// The Store API takes a write only with the nonce it hands out with the cart.
+		const cart = await this.page.request.get( '/wp-json/wc/store/v1/cart' );
+		expect( cart.ok(), 'Reading the cart over the Store API' ).toBe( true );
+		const nonce = cart.headers().nonce;
+
+		const address = {
+			first_name: details.firstName,
+			last_name: details.lastName,
+			address_1: details.address,
+			city: details.city,
+			state: 'CA',
+			postcode: details.postcode,
+			country: 'US',
+		};
+		const response = await this.page.request.post( '/wp-json/wc/store/v1/checkout', {
+			headers: { Nonce: nonce },
+			data: {
+				billing_address: { ...address, email: details.email },
+				shipping_address: address,
+				payment_method: 'cod',
+			},
+		} );
+		const body = ( await response.json() ) as {
+			order_id?: number;
+			payment_result?: { redirect_url?: string };
+			message?: string;
+		};
+		expect( response.ok(), `Placing the order over the Store API: ${ body.message ?? '' }` ).toBe( true );
+		return { id: Number( body.order_id ), receivedUrl: String( body.payment_result?.redirect_url ) };
 	}
 
 	/**
