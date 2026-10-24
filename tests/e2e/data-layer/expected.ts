@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import type { CreatedCustomer } from '../api/customers';
 import type { CreatedCategory, CreatedProduct, CreatedVariation } from '../api/products';
 import type { CartState, CartStateLine, DataLayerEvent, Ecommerce, EcommerceItem } from './types';
 
@@ -124,5 +125,66 @@ export function expectedCartState( lines: CartStateLine[] ): CartState {
 			.toFixed( 2 ),
 		currency: STORE_CURRENCY,
 		lines,
+	};
+}
+
+/**
+ * `user_data` of a logged-in customer's non-purchase events: the account's
+ * profile and billing fields, every value a string. The fixture stores no
+ * company, second address line or shipping address, which the plugin leaves
+ * out as empty.
+ */
+export function expectedUserData( customer: CreatedCustomer ): Record< string, string > {
+	return {
+		customer_id: String( customer.id ),
+		email: customer.email,
+		first_name: customer.firstName,
+		last_name: customer.lastName,
+		billing_first_name: customer.firstName,
+		billing_last_name: customer.lastName,
+		billing_address: customer.billing.address,
+		billing_postcode: customer.billing.postcode,
+		billing_country: customer.billing.country,
+		billing_state: customer.billing.state,
+		billing_city: customer.billing.city,
+		billing_email: customer.email,
+		billing_phone: customer.billing.phone,
+	};
+}
+
+/**
+ * `user_data` of the purchase a logged-in customer placed with the address
+ * the checkout filled in from the account, for both billing and shipping,
+ * and `billingEmail` as the contact email. `newCustomer` is what the plugin
+ * decides from the customer's order count, so the spec passes it in.
+ */
+export function expectedOrderUserData(
+	customer: CreatedCustomer,
+	{ billingEmail, newCustomer }: { billingEmail: string; newCustomer: 'true' | 'false' }
+): Record< string, string > {
+	const { address, postcode, country, state, city, phone } = customer.billing;
+	return {
+		customer_id: String( customer.id ),
+		billing_first_name: customer.firstName,
+		billing_last_name: customer.lastName,
+		billing_address: address,
+		billing_postcode: postcode,
+		billing_country: country,
+		billing_state: state,
+		billing_city: city,
+		billing_email: billingEmail,
+		billing_phone: phone,
+		shipping_first_name: customer.firstName,
+		shipping_last_name: customer.lastName,
+		shipping_address: address,
+		shipping_postcode: postcode,
+		shipping_country: country,
+		shipping_state: state,
+		shipping_city: city,
+		shipping_phone: phone,
+		email: customer.email,
+		first_name: customer.firstName,
+		last_name: customer.lastName,
+		new_customer: newCustomer,
 	};
 }

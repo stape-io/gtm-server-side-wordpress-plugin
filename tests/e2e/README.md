@@ -177,6 +177,10 @@ The rest is up to the author and the review.
   (`shopPage.goto( { orderby: 'date' } )`) with 100 products to a page
   (`storeOptions( { catalogColumns: '4', catalogRows: '25' } )`), so what the
   tests next to it create can't push the product off page 1.
+- **A field no entry may carry** (`user_data` with user data off) is read
+  with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
+  holding it, events or not, and compared with `[]`. It is a snapshot: the
+  spec first waits for the events the page pushes (`expectPushedOnce()`).
 - **A case about some fields asserts those fields only** (`user_data`,
   `cart_state`, which products a list holds and in what order): the rest of
   the event belongs to the cases about the whole event, so one defect fails a
@@ -284,6 +288,20 @@ decision of its own: name it in the plan before making it.
   ones killed runs left behind (`purgeTestAccounts()`). Registration is off
   on the baseline store; the case turns it on for its own browser
   (`storeOptions( { myAccountRegistration: 'yes' } )` or `checkoutSignup`).
+- **A case that starts logged in as a customer** creates the account with
+  `catalog.createCustomer()` (generated email, names and password; the
+  case's address and phone as billing, no shipping address) and logs the
+  test's browser in through My Account, `myAccountPage.logIn( customer )`.
+  `catalog` deletes the account after the test, with every order it placed,
+  whatever contact email the checkout gave them.
+  - It does so before the browser closes, so a case that ends right after a
+    JS push that fetches `cart_state` (a grid's "Add to cart", say) waits for
+    that request first, as `addToCartUntilCartState()` does: still on its
+    way, it would answer 403 for the deleted account.
+  - A case that needs a contact email other than the account's gives the
+    checkout `guestBuyer.email` (`checkoutPage.fillContactEmail()`): it is
+    unique, and the preflight deletes the orders killed runs left behind
+    with a guest's or a test customer's email (`purgeTestOrders()`).
 - **A new private window, or a deleted cookie jar, is `newSession()`**: the
   test's browser forgets its cookies, the `storeOptions()` and `testPlugins`
   ones included, so set those again after it.

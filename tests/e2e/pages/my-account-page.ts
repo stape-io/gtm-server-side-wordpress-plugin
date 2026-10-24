@@ -1,4 +1,5 @@
 import { expect, type Page, type Response } from '@playwright/test';
+import type { CreatedCustomer } from '../api/customers';
 
 /** The My Account page: login and, with `myAccountRegistration` on, the Register form. */
 export class MyAccountPage {
@@ -9,6 +10,18 @@ export class MyAccountPage {
 
 	async goto(): Promise< void > {
 		await this.page.goto( '/my-account/' );
+	}
+
+	/**
+	 * Logs `customer` in through the login form, which posts and redirects to
+	 * My Account; waits until it shows the customer's account pages.
+	 */
+	async logIn( customer: CreatedCustomer ): Promise< void > {
+		await this.page.getByRole( 'textbox', { name: /^Username or email address/ } ).fill( customer.email );
+		// A password field has no role; its label carries the "Required" mark.
+		await this.page.getByLabel( /^Password/ ).fill( customer.password );
+		await this.page.getByRole( 'button', { name: 'Log in' } ).click();
+		await expect( this.page.getByRole( 'navigation', { name: 'Account pages' } ) ).toBeVisible();
 	}
 
 	/**

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Response } from '@playwright/test';
 import type { BillingDetails } from '../api/customers';
 
 /** An order placed without the browser rendering a page (see placeOrderThroughStoreApi()). */
@@ -49,13 +49,41 @@ export class CheckoutPage {
 		await this.form.getByLabel( 'ZIP Code' ).fill( details.postcode );
 		await this.form.getByLabel( 'ZIP Code' ).blur();
 
-		// The batch itself always answers 207 Multi-Status; each request in it
-		// carries its own status in the body. Checked after the wait, not in it,
-		// so a rejected save fails with its status instead of a timeout.
-		const { responses } = ( await ( await saved ).json() ) as { responses: Array< { status: number } > };
+		await this.expectSaved( await saved, 'Saving the billing details' );
+	}
+
+	/**
+	 * Replaces the contact email only, for a logged-in customer whose billing
+	 * address the checkout already shows from the account, and waits until the
+	 * Store API batch carrying it has saved it to the customer session. After
+	 * an order, the checkout shows that order's email, and then there is
+	 * nothing to save.
+	 */
+	async fillContactEmail( email: string ): Promise< void > {
+		const field = this.form.getByLabel( 'Email address' );
+		if ( ( await field.inputValue() ) === email ) {
+			return;
+		}
+		const saved = this.page.waitForResponse(
+			( response ) =>
+				response.url().includes( '/wc/store/v1/batch' ) &&
+				( response.request().postData() ?? '' ).includes( `"email":"${ email }"` )
+		);
+		await field.fill( email );
+		await field.blur();
+		await this.expectSaved( await saved, 'Saving the contact email' );
+	}
+
+	/**
+	 * The batch itself always answers 207 Multi-Status; each request in it
+	 * carries its own status in the body. Checked after the wait, not in it,
+	 * so a rejected save fails with its status instead of a timeout.
+	 */
+	private async expectSaved( batch: Response, what: string ): Promise< void > {
+		const { responses } = ( await batch.json() ) as { responses: Array< { status: number } > };
 		expect(
 			responses.map( ( { status } ) => status ),
-			'Saving the billing details: statuses of the Store API batch requests'
+			`${ what }: statuses of the Store API batch requests`
 		).toEqual( responses.map( () => 200 ) );
 	}
 

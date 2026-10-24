@@ -115,6 +115,21 @@ export class DataLayer {
 	}
 
 	/**
+	 * Every entry pushed so far that has `field`, event or not, in order: for
+	 * a case about a field no entry may carry (`user_data` with user data off).
+	 * A snapshot, so the spec first waits for what the page pushes.
+	 */
+	async entriesWith( field: string ): Promise< DataLayerEvent[] > {
+		return this.page.evaluate(
+			( name ) =>
+				( ( window as unknown as { dataLayer?: DataLayerEvent[] } ).dataLayer ?? [] ).filter(
+					( entry ) => name in entry
+				),
+			field
+		);
+	}
+
+	/**
 	 * The `varGtmServerSide` config the plugin localized into the page: the
 	 * settings it rendered with, which the frontend script pushes from.
 	 */
