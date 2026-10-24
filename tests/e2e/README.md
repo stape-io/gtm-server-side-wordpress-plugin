@@ -245,6 +245,18 @@ decision of its own: name it in the plan before making it.
   the same time, is ever taxed at it. Taxes are off on the baseline store; a
   case with tax turns them on for its own browser
   (`storeOptions( { calcTaxes: 'yes' } )`, plus `pricesIncludeTax`).
+- **A product the case only needs in the cart goes there with
+  `homePage.addToCart()`**, which requests the case's `?add-to-cart=` link
+  with the test's cookies but renders no page. The rendered front page
+  (`homePage.gotoAddingToCart()`) fetches the cart over the Store API, and an
+  add that starts while that request is still saving the session can be lost.
+  `gotoAddingToCart()` is for a case about the page the add lands on.
+- **An order is placed by the browser, so `guestBuyer` cleans it up.** A case
+  that places one checks out as `guestBuyer`
+  (`checkoutPage.fillBillingDetails()`, then `placeOrder()`). REST never
+  creates the order, so `catalog` doesn't know it: the `guestBuyer` fixture
+  deletes every order with its email after the test, and the preflight
+  deletes the guest orders killed runs left behind (`api/orders.ts`).
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.

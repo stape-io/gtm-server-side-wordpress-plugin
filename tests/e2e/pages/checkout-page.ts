@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import type { BillingDetails } from '../api/customers';
 
 /** The Checkout block page. */
@@ -50,5 +50,28 @@ export class CheckoutPage {
 			responses.map( ( { status } ) => status ),
 			'Saving the billing details: statuses of the Store API batch requests'
 		).toEqual( responses.map( () => 200 ) );
+	}
+
+	/**
+	 * Pays with Cash on delivery and places the order, then waits until the
+	 * checkout has sent the browser to the order-received page.
+	 */
+	async placeOrder(): Promise< void > {
+		await this.form.getByLabel( 'Cash on delivery' ).check();
+		await this.form.getByRole( 'button', { name: 'Place order' } ).click();
+		await this.page.waitForURL( /\/checkout\/order-received\// );
+	}
+
+	/**
+	 * The amount on the order summary line labelled `label`: "Total", or a
+	 * tax rate's name for its tax line.
+	 */
+	totalsAmount( label: string ): Locator {
+		// eslint-disable-next-line playwright/no-raw-locators -- the Checkout block's totals lines have no role or label; this is WooCommerce's own class for one.
+		const line = this.page.locator( '.wc-block-components-totals-item' ).filter( {
+			has: this.page.getByText( label, { exact: true } ),
+		} );
+		// eslint-disable-next-line playwright/no-raw-locators -- the amount has no role or label of its own either.
+		return line.locator( '.wc-block-components-totals-item__value' );
 	}
 }

@@ -1,6 +1,7 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCoupons } from '../api/coupons';
+import { purgeTestOrders } from '../api/orders';
 import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
 import { purgeTestTaxRates } from '../api/taxes';
@@ -25,9 +26,9 @@ import {
  * and pluginDir fixtures first, which would fail before any of the checks below
  * ran and hide what they would have said.
  *
- * Also removes the products, pages, coupons and tax rates killed runs left
- * behind, and records the WordPress, WooCommerce and theme versions on the
- * test, so a report says what it ran against.
+ * Also removes the products, pages, coupons, tax rates and guest orders
+ * killed runs left behind, and records the WordPress, WooCommerce and theme
+ * versions on the test, so a report says what it ran against.
  */
 
 const THEME = 'twentytwentyfive';
@@ -42,6 +43,7 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	await purgeTestPages( requestUtils );
 	await purgeTestCoupons( requestUtils );
 	await purgeTestTaxRates( requestUtils );
+	await purgeTestOrders( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -126,6 +128,10 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	for ( const [ group, id, value ] of taxedCart ) {
 		expect( await wooSetting( group, id ), `${ id } is not "${ value }". ${ FIX }` ).toBe( value );
 	}
+
+	// The order specs pay with it: the one gateway that needs no processor.
+	const cod: { enabled: boolean } = await requestUtils.rest( { path: '/wc/v3/payment_gateways/cod' } );
+	expect( cod.enabled, `Cash on delivery is disabled. ${ FIX }` ).toBe( true );
 
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',
