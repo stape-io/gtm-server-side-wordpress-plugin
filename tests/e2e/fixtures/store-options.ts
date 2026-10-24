@@ -15,6 +15,13 @@
  */
 /** The value each setting takes, as WordPress stores it. */
 type StoreOptionValues = {
+	/**
+	 * "Add ecommerce Data Layer events". On (`yes`) on the baseline store; off,
+	 * the plugin registers none of its events and doesn't enqueue its frontend
+	 * script. Nothing runs when it is saved, and the plugin reads it on every
+	 * request, when it loads (GTM_Server_Side_Helpers::is_enable_data_layer_ecommerce()).
+	 */
+	dataLayerEcommerce: 'yes' | 'no';
 	/** "Add user data to Data Layer events". Not set on the baseline store. */
 	userData: 'yes' | 'no';
 	/**
@@ -83,6 +90,7 @@ type StoreOptionValues = {
 };
 
 export const STORE_OPTIONS = {
+	dataLayerEcommerce: 'gtm_server_side_data_layer_ecommerce',
 	userData: 'gtm_server_side_data_layer_user_data',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
 	catalogColumns: 'woocommerce_catalog_columns',

@@ -37,6 +37,7 @@ const GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE = 'gtm_e2e_options';
  * tests/e2e/fixtures/store-options.ts.
  */
 const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
+	'gtm_server_side_data_layer_ecommerce',
 	'gtm_server_side_data_layer_user_data',
 	'gtm_server_side_same_origin_api_key',
 	'woocommerce_catalog_columns',

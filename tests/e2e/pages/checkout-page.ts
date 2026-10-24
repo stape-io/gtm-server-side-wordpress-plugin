@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page, type Response } from '@playwright/test';
 import type { BillingDetails } from '../api/customers';
+import type { CreatedProduct } from '../api/products';
 
 /** An order placed without the browser rendering a page (see placeOrderThroughStoreApi()). */
 export type PlacedOrder = {
@@ -142,6 +143,11 @@ export class CheckoutPage {
 		};
 		expect( response.ok(), `Placing the order over the Store API: ${ body.message ?? '' }` ).toBe( true );
 		return { id: Number( body.order_id ), receivedUrl: String( body.payment_result?.redirect_url ) };
+	}
+
+	/** The order summary line of `product`, by its name. */
+	summaryItem( product: CreatedProduct ): Locator {
+		return this.page.getByRole( 'main' ).getByText( product.name, { exact: true } );
 	}
 
 	/**

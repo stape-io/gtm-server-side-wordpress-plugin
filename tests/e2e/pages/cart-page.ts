@@ -1,4 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
+import type { CreatedProduct } from '../api/products';
 
 /**
  * The store's cart page, `/cart/`: the Cart block. It prices the cart over the
@@ -19,6 +20,11 @@ export class CartPage {
 	/** The Cart block's message for a cart with nothing in it. */
 	get emptyCartNotice(): Locator {
 		return this.page.getByRole( 'heading', { name: 'Your cart is currently empty!' } );
+	}
+
+	/** The cart line of `product`, by the link to it the line shows. */
+	item( product: CreatedProduct ): Locator {
+		return this.page.getByRole( 'main' ).getByRole( 'link', { name: product.name, exact: true } );
 	}
 
 	/**
