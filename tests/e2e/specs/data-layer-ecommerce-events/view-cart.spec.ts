@@ -8,8 +8,8 @@ test( 'view_cart cart_quantity is the number of lines, not units @T2c541fc7', as
 	saleProduct,
 } ) => {
 	// 2 lines, 6 units.
-	await homePage.gotoAddingToCart( saleProduct, 4 );
-	await homePage.gotoAddingToCart( product, 2 );
+	await homePage.addToCart( saleProduct, 4 );
+	await homePage.addToCart( product, 2 );
 
 	await cartPage.goto();
 	const viewCart = await dataLayer.expectPushedOnce( 'view_cart' );
@@ -38,8 +38,8 @@ test( 'view_cart cart_total is the total after a coupon discount @T36e192bf', as
 } ) => {
 	const coupon = await catalog.createCoupon( '10' );
 	// 4 x 35.00 + 2 x 20.00 = 180.00 before the coupon.
-	await homePage.gotoAddingToCart( saleProduct, 4 );
-	await homePage.gotoAddingToCart( product, 2 );
+	await homePage.addToCart( saleProduct, 4 );
+	await homePage.addToCart( product, 2 );
 
 	await cartPage.goto();
 	await cartPage.applyCoupon( coupon.code );
@@ -70,7 +70,7 @@ test( 'view_cart cart_total includes tax when prices are entered inclusive of ta
 	const tax = await catalog.createTaxRate( { country: 'US', rate: '25' } );
 	// 20.00 inclusive of tax: 16.00 net + 4.00 tax.
 	const product = await catalog.createProduct( category, { tax_class: tax.taxClass } );
-	await homePage.gotoAddingToCart( product );
+	await homePage.addToCart( product );
 
 	await cartPage.goto();
 	// The case's step 1: the cart itself is taxed the way the case expects.

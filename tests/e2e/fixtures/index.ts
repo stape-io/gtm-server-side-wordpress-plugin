@@ -8,6 +8,7 @@ import { CheckoutPage } from '../pages/checkout-page';
 import { ClassicCartPage } from '../pages/classic-cart-page';
 import { HomePage } from '../pages/home-page';
 import { CART_STATE_ACTION, ClassicLoopPage } from '../pages/classic-loop-page';
+import { OrderReceivedPage } from '../pages/order-received-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
@@ -27,6 +28,7 @@ import {
 } from '../api/products';
 import { createClassicCartPage, createClassicLoopPage, deletePage, type CreatedPage } from '../api/pages';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
+import { deleteOrdersOf } from '../api/orders';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -115,6 +117,7 @@ type ShopFixtures = {
 	categoryPage: CategoryPage;
 	productPage: ProductPage;
 	checkoutPage: CheckoutPage;
+	orderReceivedPage: OrderReceivedPage;
 	classicLoopPage: ClassicLoopPage;
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
@@ -140,7 +143,10 @@ type ShopFixtures = {
 	 * running at the same time. Starts recording before the first page load.
 	 */
 	phpErrors: PhpErrors;
-	/** Billing details for a guest checkout, unique to this test. */
+	/**
+	 * Billing details for a guest checkout, unique to this test. The orders
+	 * placed with them are deleted after the test.
+	 */
 	guestBuyer: BillingDetails;
 	/**
 	 * Content the named fixtures below don't cover: variable and grouped
@@ -254,6 +260,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	checkoutPage: async ( { page }, use ) => {
 		await use( new CheckoutPage( page ) );
 	},
+	orderReceivedPage: async ( { page }, use ) => {
+		await use( new OrderReceivedPage( page ) );
+	},
 	classicLoopPage: async ( { page }, use ) => {
 		await use( new ClassicLoopPage( page ) );
 	},
@@ -313,8 +322,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		} );
 		await call( 'DELETE' );
 	},
-	guestBuyer: async ( {}, use ) => {
-		await use( buildGuestBuyer() );
+	guestBuyer: async ( { requestUtils }, use ) => {
+		const buyer = buildGuestBuyer();
+		await use( buyer );
+		// The checkout creates a guest's orders, not REST, so catalog never
+		// hears of them: they are found by the buyer's email.
+		await deleteOrdersOf( requestUtils, buyer.email );
 	},
 	catalog: async ( { requestUtils }, use ) => {
 		const deletions: Array< () => Promise< void > > = [];

@@ -5,6 +5,9 @@ import { uniqueSuffix } from './products';
  * a guest exists only in the WooCommerce session of the test's browser.
  */
 
+/** Every guest email starts with this, which is what purgeTestOrders() looks for. */
+export const GUEST_EMAIL_PREFIX = 'e2e-guest-';
+
 export type BillingDetails = {
 	email: string;
 	firstName: string;
@@ -23,7 +26,7 @@ export type BillingDetails = {
 export function buildGuestBuyer(): BillingDetails {
 	const unique = uniqueSuffix();
 	return {
-		email: `e2e-guest-${ unique }@example.test`,
+		email: `${ GUEST_EMAIL_PREFIX }${ unique }@example.test`,
 		firstName: 'E2E Guest',
 		lastName: `Buyer ${ unique }`,
 		address: '1 Market St',
