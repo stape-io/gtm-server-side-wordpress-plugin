@@ -5,8 +5,9 @@ import type { CreatedProduct } from '../api/products';
 export class HomePage {
 	constructor( private readonly page: Page ) {}
 
-	async goto(): Promise< void > {
-		await this.page.goto( '/' );
+	/** Opens `/`, or `/?<query>` with `query` (a UTM link, say). */
+	async goto( query?: Record< string, string > ): Promise< void > {
+		await this.page.goto( query ? `/?${ new URLSearchParams( query ).toString() }` : '/' );
 	}
 
 	/**

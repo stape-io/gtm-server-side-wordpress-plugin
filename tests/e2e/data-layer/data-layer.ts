@@ -17,10 +17,20 @@ const LATE_PUSH_GRACE_MS = 500;
  */
 type QuietOptions = { quietMs?: number };
 
+/**
+ * What to look for: a bare event name (`add_to_cart`), or, for an entry the
+ * plugin pushes without an event (home's `{ ecomm_pagetype: 'home' }`), its
+ * `ecomm_pagetype`, which matches every entry with that value, events
+ * included: only for a page type no event carries.
+ */
+type EntrySelector = string | { ecomm_pagetype: string };
+
 type Snapshot = {
-	/** `eventName` as the plugin names it on this page, suffix included. */
-	fullName: string;
-	/** Every named event pushed so far, in order. */
+	/** The selector as failure messages name it, the event's suffix included. */
+	label: string;
+	/** The value looked for: the event name with its suffix, or the `ecomm_pagetype`. */
+	value: string;
+	/** That field of every entry pushed so far that has it, in order. */
 	pushed: string[];
 	matches: DataLayerEvent[];
 	/** The entry pushed right before the first match, if any. */
@@ -35,13 +45,14 @@ type Snapshot = {
  * getDataLayerEventName() in assets/js/javascript.js does it, from the
  * `varGtmServerSide` config the plugin localizes into the page. Matching is
  * exact, not by prefix, so `view_item` never picks up `view_item_list`.
+ * An entry pushed without an event (home) is selected by its `ecomm_pagetype`.
  */
 export class DataLayer {
 	constructor( private readonly page: Page ) {}
 
 	/**
-	 * Waits for `eventName` to be pushed, then asserts it was pushed exactly
-	 * once and returns it. Duplicate pushes are the most common tracking bug,
+	 * Waits for the entry `selector` names to be pushed, then asserts it was
+	 * pushed exactly once and returns it. Duplicate pushes are the most common tracking bug,
 	 * so "exactly once" is part of every event assertion rather than opt-in.
 	 *
 	 * Also asserts the entry right before it is `{ ecommerce: null }`, which
@@ -56,32 +67,32 @@ export class DataLayer {
 	 * that waits longer for a duplicate. Called again after the event is in,
 	 * it returns at once and only watches for that long.
 	 */
-	async expectPushedOnce( eventName: string, { quietMs = LATE_PUSH_GRACE_MS }: QuietOptions = {} ): Promise< DataLayerEvent > {
-		const { fullName } = await this.snapshot( eventName );
+	async expectPushedOnce( selector: EntrySelector, { quietMs = LATE_PUSH_GRACE_MS }: QuietOptions = {} ): Promise< DataLayerEvent > {
+		const { label, value } = await this.snapshot( selector );
 
 		// On timeout, the failure message lists what was pushed instead.
 		await expect
-			.poll( async () => ( await this.snapshot( eventName ) ).pushed, {
-				message: `dataLayer event "${ fullName }" was never pushed`,
+			.poll( async () => ( await this.snapshot( selector ) ).pushed, {
+				message: `dataLayer ${ label } was never pushed`,
 			} )
-			.toContain( fullName );
+			.toContain( value );
 
 		// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
 		await this.page.waitForTimeout( quietMs );
 
-		const { matches, beforeFirstMatch } = await this.snapshot( eventName );
-		expect( matches, `dataLayer event "${ fullName }" pushed more than once` ).toHaveLength( 1 );
+		const { matches, beforeFirstMatch } = await this.snapshot( selector );
+		expect( matches, `dataLayer ${ label } pushed more than once` ).toHaveLength( 1 );
 		expect(
 			beforeFirstMatch,
-			`dataLayer event "${ fullName }" is not preceded by { ecommerce: null }`
+			`dataLayer ${ label } is not preceded by { ecommerce: null }`
 		).toEqual( { ecommerce: null } );
 
 		return matches[ 0 ];
 	}
 
 	/**
-	 * Asserts `eventName` was not pushed on this page. For events the plugin
-	 * prints into the page (view_item_list, view_cart, ...): their inline
+	 * Asserts the entry `selector` names was not pushed on this page. For
+	 * events the plugin prints into the page (view_item_list, view_cart, ...): their inline
 	 * scripts run before the load event page.goto() waits for, so nothing is
 	 * left to wait for. Without `quietMs`, not for JS-pushed events, which can
 	 * come later.
@@ -94,13 +105,13 @@ export class DataLayer {
 	 * not come within the time the case gives it (a click that holds its
 	 * add_to_cart, say).
 	 */
-	async expectNotPushed( eventName: string, { quietMs }: QuietOptions = {} ): Promise< void > {
+	async expectNotPushed( selector: EntrySelector, { quietMs }: QuietOptions = {} ): Promise< void > {
 		if ( quietMs ) {
 			// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
 			await this.page.waitForTimeout( quietMs );
 		}
-		const { fullName, matches } = await this.snapshot( eventName );
-		expect( matches, `dataLayer event "${ fullName }" was pushed` ).toEqual( [] );
+		const { label, matches } = await this.snapshot( selector );
+		expect( matches, `dataLayer ${ label } was pushed` ).toEqual( [] );
 	}
 
 	/**
@@ -117,8 +128,8 @@ export class DataLayer {
 		return config;
 	}
 
-	private async snapshot( eventName: string ): Promise< Snapshot > {
-		const snapshot = await this.page.evaluate( ( name ) => {
+	private async snapshot( selector: EntrySelector ): Promise< Snapshot > {
+		const snapshot = await this.page.evaluate( ( sel ) => {
 			const w = window as unknown as {
 				dataLayer?: DataLayerEvent[];
 				varGtmServerSide?: PluginConfig;
@@ -128,25 +139,35 @@ export class DataLayer {
 			}
 
 			const { is_custom_event_name, DATA_LAYER_CUSTOM_EVENT_NAME } = w.varGtmServerSide;
-			const fullName = is_custom_event_name === 'yes' ? name + DATA_LAYER_CUSTOM_EVENT_NAME : name;
+			let field: 'event' | 'ecomm_pagetype', value: string, label: string;
+			if ( typeof sel === 'string' ) {
+				field = 'event';
+				value = is_custom_event_name === 'yes' ? sel + DATA_LAYER_CUSTOM_EVENT_NAME : sel;
+				label = `event "${ value }"`;
+			} else {
+				field = 'ecomm_pagetype';
+				value = sel.ecomm_pagetype;
+				label = `entry with ecomm_pagetype "${ value }"`;
+			}
 			const events = w.dataLayer ?? [];
 
-			const matches = events.filter( ( entry ) => entry.event === fullName );
-			const first = events.findIndex( ( entry ) => entry.event === fullName );
+			const matches = events.filter( ( entry ) => entry[ field ] === value );
+			const first = events.findIndex( ( entry ) => entry[ field ] === value );
 
 			return {
-				fullName,
+				label,
+				value,
 				pushed: events
-					.map( ( entry ) => entry.event )
-					.filter( ( event ): event is string => typeof event === 'string' ),
+					.map( ( entry ) => entry[ field ] )
+					.filter( ( pushed ): pushed is string => typeof pushed === 'string' ),
 				matches,
 				beforeFirstMatch: first > 0 ? events[ first - 1 ] : undefined,
 			};
-		}, eventName );
+		}, selector );
 
 		if ( ! snapshot ) {
 			throw new Error(
-				`Cannot resolve the dataLayer event "${ eventName }": this page has no varGtmServerSide, so the plugin's frontend script did not load here.`
+				`Cannot resolve the dataLayer selector ${ JSON.stringify( selector ) }: this page has no varGtmServerSide, so the plugin's frontend script did not load here.`
 			);
 		}
 

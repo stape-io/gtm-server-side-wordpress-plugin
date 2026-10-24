@@ -33,6 +33,12 @@ export default tseslint.config(
 			'playwright/no-element-handle': 'error',
 			'playwright/no-eval': 'error',
 			'playwright/no-page-pause': 'error',
+			// DataLayer's checks assert on their own: a case about a push that
+			// must not come has nothing else to expect.
+			'playwright/expect-expect': [
+				'warn',
+				{ assertFunctionNames: [ 'expectPushedOnce', 'expectNotPushed' ] },
+			],
 
 			// Locator priority: role, label, text. CSS only for a stable
 			// WooCommerce core hook, with an eslint-disable comment saying why.
