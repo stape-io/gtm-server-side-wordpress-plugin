@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { APIResponse, Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
+import { AdminNewOrderPage } from '../pages/admin-new-order-page';
 import { CartPage } from '../pages/cart-page';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
 import { ClassicCartPage } from '../pages/classic-cart-page';
+import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
 import { CART_STATE_ACTION, ClassicLoopPage } from '../pages/classic-loop-page';
 import { OrderReceivedPage } from '../pages/order-received-page';
@@ -21,20 +23,27 @@ import {
 	deleteCategory,
 	deleteProduct,
 	deleteTag,
+	updateProduct,
 	type CreatedCategory,
 	type CreatedProduct,
 	type CreatedTag,
+	type ProductChanges,
 	type ProductOptions,
 } from '../api/products';
-import { createClassicCartPage, createClassicLoopPage, deletePage, type CreatedPage } from '../api/pages';
+import { createClassicCartPage, createClassicLoopPage, createPage, deletePage, type CreatedPage } from '../api/pages';
 import { buildGuestBuyer, type BillingDetails } from '../api/customers';
-import { deleteOrdersOf } from '../api/orders';
+import { deleteOrder, deleteOrdersOf, setOrderStatus } from '../api/orders';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
 const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
+
+/** Read by the test plugins in mu-plugins/ behind the testPlugins fixture; each names its own on the PHP side. */
+const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
+const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
+const NO_EMAIL_VERIFICATION_GRACE_COOKIE = 'gtm_e2e_no_email_verification_grace';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -82,6 +91,10 @@ type Catalog = {
 	createClassicLoopPage: ( category: CreatedCategory ) => Promise< CreatedPage >;
 	/** A throwaway page with the classic cart (`[woocommerce_cart]`). */
 	createClassicCartPage: () => Promise< CreatedPage >;
+	/** A throwaway page holding `content`, such as a shop's own thank-you page. */
+	createPage: ( content: string ) => Promise< CreatedPage >;
+	/** Changes a product this test created, the way the store admin would. */
+	updateProduct: ( product: CreatedProduct, changes: ProductChanges ) => Promise< void >;
 	/** A throwaway coupon taking `percent` % off the cart. */
 	createCoupon: ( percent: string ) => Promise< CreatedCoupon >;
 	/**
@@ -98,6 +111,38 @@ type PhpErrors = {
 	 * case checks have been answered.
 	 */
 	expectNone: () => Promise< void >;
+};
+
+/**
+ * The test plugins in mu-plugins/ that change the store for this test's
+ * browser only, each through a cookie. Call them before the page they change.
+ */
+type TestPlugins = {
+	/**
+	 * Offers a flat rate shipping method at `cost` (`'5.00'`), not taxed
+	 * (flat-rate-shipping.php). The baseline store has none, and a real one
+	 * would make every other test's cart need shipping.
+	 */
+	flatRateShipping: ( cost: string ) => Promise< void >;
+	/**
+	 * Marks `page` as an order confirmation page through the plugin's
+	 * `gtm_server_side_is_order_confirmation_page` filter, the way a shop with
+	 * its own thank-you page does (order-confirmation-page.php).
+	 */
+	markOrderConfirmationPage: ( page: CreatedPage ) => Promise< void >;
+	/**
+	 * Ends WooCommerce's 10-minute grace period for guest orders, so a new
+	 * session asks for the order's email at once, as it does for the link in
+	 * the order email opened later (email-verification-grace.php).
+	 */
+	endEmailVerificationGrace: () => Promise< void >;
+};
+
+/** Orders the guestBuyer fixture doesn't clean up, and what a case does to them as the store admin. */
+type Orders = {
+	setStatus: ( id: number, status: 'failed' | 'cancelled' ) => Promise< void >;
+	/** Deletes an order with no guest buyer's email (one created in wp-admin) after the test. */
+	deleteAfterTest: ( id: number ) => void;
 };
 
 type SameOriginProxy = {
@@ -122,6 +167,8 @@ type ShopFixtures = {
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
 	shopPage: ShopPage;
+	contentPage: ContentPage;
+	adminNewOrderPage: AdminNewOrderPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
 	/**
@@ -137,6 +184,24 @@ type ShopFixtures = {
 	 * what the proxy did, and anything but a 200 fails the test.
 	 */
 	sameOriginProxy: SameOriginProxy;
+	/** See TestPlugins. */
+	testPlugins: TestPlugins;
+	/**
+	 * Starts a new session in this test's browser, as a new private window
+	 * would: the browser forgets its cookies, and with them the WooCommerce
+	 * session and the storeOptions() and testPlugins cookies set so far. It
+	 * keeps the phpErrors one, which a spec can't set again.
+	 */
+	newSession: () => Promise< void >;
+	/**
+	 * Logs this test's browser in as the admin, with the cookies requestUtils
+	 * already logged in with. The admin's WooCommerce session belongs to the
+	 * user, not the browser, so it is shared with any other browser logged in
+	 * as the admin.
+	 */
+	loginAsAdmin: () => Promise< void >;
+	/** See Orders. */
+	orders: Orders;
 	/**
 	 * What PHP reported while serving this test's browser requests, recorded
 	 * by mu-plugins/record-php-errors.php: debug.log is shared by every test
@@ -275,6 +340,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	shopPage: async ( { page }, use ) => {
 		await use( new ShopPage( page ) );
 	},
+	contentPage: async ( { page }, use ) => {
+		await use( new ContentPage( page ) );
+	},
+	adminNewOrderPage: async ( { page }, use ) => {
+		await use( new AdminNewOrderPage( page ) );
+	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );
 	},
@@ -289,6 +360,41 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				{ name: STORE_OPTIONS_COOKIE, value: storeOptionsCookieValue( options ), url: baseURL },
 			] );
 		} );
+	},
+	testPlugins: async ( { page, baseURL }, use ) => {
+		const setCookie = ( name: string, value: string ) =>
+			page.context().addCookies( [ { name, value, url: baseURL } ] );
+		await use( {
+			flatRateShipping: ( cost ) => setCookie( FLAT_RATE_COOKIE, cost ),
+			markOrderConfirmationPage: ( created ) => setCookie( CONFIRMATION_PAGE_COOKIE, String( created.id ) ),
+			endEmailVerificationGrace: () => setCookie( NO_EMAIL_VERIFICATION_GRACE_COOKIE, '1' ),
+		} );
+	},
+	newSession: async ( { page }, use ) => {
+		await use( async () => {
+			const context = page.context();
+			const kept = ( await context.cookies() ).filter( ( cookie ) => cookie.name === PHP_ERRORS_COOKIE );
+			await context.clearCookies();
+			await context.addCookies( kept );
+		} );
+	},
+	loginAsAdmin: async ( { page, requestUtils }, use ) => {
+		await use( async () => {
+			if ( ! requestUtils.storageState?.nonce ) {
+				await requestUtils.setupRest();
+			}
+			await page.context().addCookies( ( await requestUtils.request.storageState() ).cookies );
+		} );
+	},
+	orders: async ( { requestUtils }, use ) => {
+		const created: number[] = [];
+		await use( {
+			setStatus: ( id, status ) => setOrderStatus( requestUtils, id, status ),
+			deleteAfterTest: ( id ) => {
+				created.push( id );
+			},
+		} );
+		await Promise.all( created.map( ( id ) => deleteOrder( requestUtils, id ) ) );
 	},
 	sameOriginProxy: async ( { page }, use ) => {
 		await use( {
@@ -357,6 +463,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				deletions.push( () => deletePage( requestUtils, created.id ) );
 				return created;
 			},
+			createPage: async ( content ) => {
+				const created = await createPage( requestUtils, content );
+				deletions.push( () => deletePage( requestUtils, created.id ) );
+				return created;
+			},
+			updateProduct: ( product, changes ) => updateProduct( requestUtils, product, changes ),
 			createCoupon: async ( percent ) => {
 				const created = await createCoupon( requestUtils, percent );
 				deletions.push( () => deleteCoupon( requestUtils, created.id ) );

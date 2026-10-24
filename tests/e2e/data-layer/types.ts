@@ -25,9 +25,23 @@ export type EcommerceItem = {
 	item_list_name?: string;
 	/** camelCase: derived from the data-gtm_image-url attribute. */
 	imageUrl?: string;
+	/** purchase: the whole line's discount, not the unit's. */
+	discount?: string;
 };
 
 export type Ecommerce = {
+	/** purchase: the order number. */
+	transaction_id?: string;
+	/** purchase: always `''`. */
+	affiliation?: string;
+	/** purchase: the order's tax total, which `value` includes. */
+	tax?: string;
+	/** purchase: the order's shipping total, which `value` includes. */
+	shipping?: string;
+	/** purchase: the order's coupon codes, comma-separated. */
+	coupon?: string;
+	/** purchase: the order's discount total. */
+	discount_amount?: string;
 	currency?: string;
 	value?: string;
 	items?: EcommerceItem[];

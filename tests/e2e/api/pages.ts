@@ -56,6 +56,16 @@ export async function createClassicCartPage( requestUtils: RequestUtils ): Promi
 	return { id: created.id, link: created.link };
 }
 
+/** A published page holding `content` and nothing else. */
+export async function createPage( requestUtils: RequestUtils, content: string ): Promise< CreatedPage > {
+	const created = await requestUtils.rest( {
+		path: '/wp/v2/pages',
+		method: 'POST',
+		data: { title: `${ TITLE_PREFIX }Page ${ uniqueSuffix() }`, status: 'publish', content },
+	} );
+	return { id: created.id, link: created.link };
+}
+
 export async function deletePage( requestUtils: RequestUtils, id: number ): Promise< void > {
 	await requestUtils.rest( {
 		path: `/wp/v2/pages/${ id }`,

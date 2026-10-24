@@ -19,8 +19,13 @@ async function findOrders( requestUtils: RequestUtils, email: string ): Promise<
 	return found.filter( ( order ) => order.billing.email.startsWith( email ) ).map( ( order ) => order.id );
 }
 
-async function deleteOrder( requestUtils: RequestUtils, id: number ): Promise< void > {
+export async function deleteOrder( requestUtils: RequestUtils, id: number ): Promise< void > {
 	await requestUtils.rest( { path: `/wc/v3/orders/${ id }`, method: 'DELETE', params: { force: 'true' } } );
+}
+
+/** Sets an order's status the way the store admin would, which runs WooCommerce's status hooks. */
+export async function setOrderStatus( requestUtils: RequestUtils, id: number, status: string ): Promise< void > {
+	await requestUtils.rest( { path: `/wc/v3/orders/${ id }`, method: 'PUT', data: { status } } );
 }
 
 /** Deletes every order placed with this billing email. */

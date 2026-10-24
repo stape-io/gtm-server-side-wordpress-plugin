@@ -235,6 +235,18 @@ export async function createProduct(
 	};
 }
 
+/** The fields of a simple product a test may change after creating it. */
+export type ProductChanges = { regular_price?: string; sale_price?: string };
+
+/** Changes a product the test created, the way the store admin would. */
+export async function updateProduct(
+	requestUtils: RequestUtils,
+	product: CreatedProduct,
+	changes: ProductChanges
+): Promise< void > {
+	await requestUtils.rest( { path: `/wc/v3/products/${ product.id }`, method: 'PUT', data: changes } );
+}
+
 export async function deleteProduct( requestUtils: RequestUtils, id: number ): Promise< void > {
 	await requestUtils.rest( {
 		path: `/wc/v3/products/${ id }`,
