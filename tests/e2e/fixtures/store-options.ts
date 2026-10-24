@@ -66,6 +66,20 @@ type StoreOptionValues = {
 	 * loads (WC_TAX_ROUNDING_MODE), which is after the helper plugin.
 	 */
 	pricesIncludeTax: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Allow customers to create an account on the My account
+	 * page". Off on the baseline store; on, My Account shows a Register form.
+	 * Nothing runs when it is saved, and WooCommerce reads it when it renders
+	 * My Account (myaccount/form-login.php).
+	 */
+	myAccountRegistration: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Allow customers to create an account during checkout".
+	 * Off on the baseline store; on, the checkout offers "Create an account".
+	 * Nothing runs when it is saved, and WC_Checkout::is_registration_enabled()
+	 * reads it when the checkout renders and when the Store API places the order.
+	 */
+	checkoutSignup: 'yes' | 'no';
 };
 
 export const STORE_OPTIONS = {
@@ -77,6 +91,8 @@ export const STORE_OPTIONS = {
 	cartRedirectAfterAdd: 'woocommerce_cart_redirect_after_add',
 	calcTaxes: 'woocommerce_calc_taxes',
 	pricesIncludeTax: 'woocommerce_prices_include_tax',
+	myAccountRegistration: 'woocommerce_enable_myaccount_registration',
+	checkoutSignup: 'woocommerce_enable_signup_and_login_from_checkout',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;
