@@ -1,5 +1,8 @@
 import type { Page } from '@playwright/test';
 
+/** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
+export const CART_STATE_ACTION = 'gtm_server_side_state_cart_data';
+
 /** The shop's sort options, as the sort select sends them. */
 export type CatalogOrderby = 'menu_order' | 'popularity' | 'rating' | 'date' | 'price' | 'price-desc';
 
@@ -29,6 +32,23 @@ export class ProductListing {
 	 */
 	async addToCart( productName: string ): Promise< void > {
 		await this.addToCartButton( productName ).click();
+	}
+
+	/**
+	 * Clicks "Add to cart" and waits until the plugin's `cart_state` request
+	 * has been answered: the last request the click makes, for the add_to_cart
+	 * it pushes. For a case that ends after the click's select_item while the
+	 * test's account is deleted after it, which would turn that request into a
+	 * 403 still on its way.
+	 */
+	async addToCartUntilCartState( productName: string ): Promise< void > {
+		const cartState = this.page.waitForResponse(
+			( response ) =>
+				response.url().includes( '/wp-admin/admin-ajax.php' ) &&
+				new URLSearchParams( response.request().postData() ?? '' ).get( 'action' ) === CART_STATE_ACTION
+		);
+		await this.addToCart( productName );
+		await cartState;
 	}
 
 	/**

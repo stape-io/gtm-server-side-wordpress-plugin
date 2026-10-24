@@ -1,10 +1,10 @@
 import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
-import { GUEST_EMAIL_PREFIX } from './customers';
+import { CUSTOMER_EMAIL_PREFIX, GUEST_EMAIL_PREFIX } from './customers';
 
 /**
  * Orders a test places through the checkout. The browser creates them, not
  * REST, so they are found again by the guest buyer's email, which is unique
- * per test (buildGuestBuyer()).
+ * per test (buildGuestBuyer()), or by the customer who placed them.
  */
 
 type FoundOrder = { id: number; billing: { email: string } };
@@ -33,10 +33,24 @@ export async function deleteOrdersOf( requestUtils: RequestUtils, email: string 
 	await Promise.all( ( await findOrders( requestUtils, email ) ).map( ( id ) => deleteOrder( requestUtils, id ) ) );
 }
 
-/** Deletes every guest order a previous run left behind (see purgeTestCatalog()). */
+/** Deletes every order the customer with this ID placed, whatever its billing email. */
+export async function deleteOrdersOfCustomer( requestUtils: RequestUtils, customerId: number ): Promise< void > {
+	const found: Array< { id: number } > = await requestUtils.rest( {
+		path: '/wc/v3/orders',
+		params: { customer: customerId, status: 'any', per_page: 100 },
+	} );
+	await Promise.all( found.map( ( { id } ) => deleteOrder( requestUtils, id ) ) );
+}
+
+/**
+ * Deletes every order a previous run left behind (see purgeTestCatalog()):
+ * a guest's, and a test customer's placed with the account's own email.
+ */
 export async function purgeTestOrders( requestUtils: RequestUtils ): Promise< void > {
-	const leftovers = () => findOrders( requestUtils, GUEST_EMAIL_PREFIX );
-	for ( let ids = await leftovers(); ids.length; ids = await leftovers() ) {
-		await Promise.all( ids.map( ( id ) => deleteOrder( requestUtils, id ) ) );
+	for ( const prefix of [ GUEST_EMAIL_PREFIX, CUSTOMER_EMAIL_PREFIX ] ) {
+		const leftovers = () => findOrders( requestUtils, prefix );
+		for ( let ids = await leftovers(); ids.length; ids = await leftovers() ) {
+			await Promise.all( ids.map( ( id ) => deleteOrder( requestUtils, id ) ) );
+		}
 	}
 }

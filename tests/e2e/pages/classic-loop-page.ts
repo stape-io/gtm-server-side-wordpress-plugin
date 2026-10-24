@@ -1,12 +1,9 @@
 import type { Request } from '@playwright/test';
 import type { CreatedPage } from '../api/pages';
-import { ProductListing } from './product-listing';
+import { CART_STATE_ACTION, ProductListing } from './product-listing';
 
 /** A POST the page sent: its path and query, and the admin-ajax `action` it posted, if any. */
 export type SentPost = { path: string; action?: string };
-
-/** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
-export const CART_STATE_ACTION = 'gtm_server_side_state_cart_data';
 
 function sentPost( request: Request ): SentPost {
 	const url = new URL( request.url() );

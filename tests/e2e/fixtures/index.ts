@@ -10,7 +10,8 @@ import { ClassicCartPage } from '../pages/classic-cart-page';
 import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
 import { MyAccountPage } from '../pages/my-account-page';
-import { CART_STATE_ACTION, ClassicLoopPage } from '../pages/classic-loop-page';
+import { ClassicLoopPage } from '../pages/classic-loop-page';
+import { CART_STATE_ACTION } from '../pages/product-listing';
 import { OrderReceivedPage } from '../pages/order-received-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
@@ -35,11 +36,15 @@ import { createClassicCartPage, createClassicLoopPage, createPage, deletePage, t
 import {
 	buildGuestBuyer,
 	buildNewCustomer,
+	createCustomer,
+	deleteAccount,
 	deleteAccountsOf,
+	findAccountId,
 	type BillingDetails,
+	type CreatedCustomer,
 	type NewCustomer,
 } from '../api/customers';
-import { deleteOrder, deleteOrdersOf, setOrderStatus } from '../api/orders';
+import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -109,6 +114,12 @@ type Catalog = {
 	 * `{ tax_class: rate.taxClass }` is taxed at it.
 	 */
 	createTaxRate: ( options: TaxRateOptions ) => Promise< CreatedTaxRate >;
+	/**
+	 * A throwaway customer account with a billing address, for a case that
+	 * starts logged in (myAccountPage.logIn()). Deleted after the test with
+	 * every order it placed, whatever email the checkout gave them.
+	 */
+	createCustomer: () => Promise< CreatedCustomer >;
 };
 
 type PhpErrors = {
@@ -226,11 +237,14 @@ type ShopFixtures = {
 	 * A shopper to register on My Account, with an email unique to this test.
 	 * The account registered with it is deleted after the test.
 	 */
-	newCustomer: NewCustomer;
+	newCustomer: NewCustomer & {
+		/** The ID of the account the browser registered with this email. */
+		accountId: () => Promise< number >;
+	};
 	/**
 	 * Content the named fixtures below don't cover: variable and grouped
-	 * products, subcategories, tags, sets of products, coupons, tax rates.
-	 * Deleted after the test.
+	 * products, subcategories, tags, sets of products, coupons, tax rates,
+	 * customers. Deleted after the test.
 	 */
 	catalog: Catalog;
 	/** A throwaway product category, created before the test and deleted after. */
@@ -455,7 +469,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	newCustomer: async ( { requestUtils }, use ) => {
 		const customer = buildNewCustomer();
-		await use( customer );
+		await use( { ...customer, accountId: () => findAccountId( requestUtils, customer.email ) } );
 		// The browser registers the account, not REST: found by its email.
 		await deleteAccountsOf( requestUtils, customer.email );
 	},
@@ -501,6 +515,14 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			createTaxRate: async ( options ) => {
 				const created = await createTaxRate( requestUtils, options );
 				deletions.push( () => deleteTaxRate( requestUtils, created ) );
+				return created;
+			},
+			createCustomer: async () => {
+				const created = await createCustomer( requestUtils );
+				deletions.push( async () => {
+					await deleteOrdersOfCustomer( requestUtils, created.id );
+					await deleteAccount( requestUtils, created.id );
+				} );
 				return created;
 			},
 		} );
