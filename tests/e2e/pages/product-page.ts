@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Response } from '@playwright/test';
 import type { CreatedProduct } from '../api/products';
 
 /** The part of jQuery the page's console steps use; the store loads jQuery on product pages. */
@@ -11,6 +11,9 @@ type JQueryWindow = {
 
 /** Single product page. */
 export class ProductPage {
+	/** The page goto() opened, as the server sent it. */
+	private landing: Response | null = null;
+
 	constructor( private readonly page: Page ) {}
 
 	/** The add-to-cart form, not a grid button: related products on the same page have their own. */
@@ -20,7 +23,20 @@ export class ProductPage {
 	}
 
 	async goto( product: CreatedProduct ) {
-		await this.page.goto( product.permalink );
+		this.landing = await this.page.goto( product.permalink );
+	}
+
+	/** The HTML of the page goto() opened, as View Source shows it: before any script ran. */
+	async source(): Promise< string > {
+		if ( ! this.landing ) {
+			throw new Error( 'Call goto() first: source() is the HTML of the page it opens.' );
+		}
+		return this.landing.text();
+	}
+
+	/** The product's name as the page's title. */
+	title( product: CreatedProduct ): Locator {
+		return this.page.getByRole( 'heading', { level: 1, name: product.name, exact: true } );
 	}
 
 	/**

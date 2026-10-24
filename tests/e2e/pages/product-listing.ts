@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /** Posted by the frontend script to fetch `cart_state` (see _sendStateCartDataAjax()). */
 export const CART_STATE_ACTION = 'gtm_server_side_state_cart_data';
@@ -80,5 +80,14 @@ export class ProductListing {
 			.getByRole( 'listitem' )
 			.getByRole( 'heading', { level: 2 } );
 		return ( await titles.allTextContents() ).map( ( name ) => name.trim() );
+	}
+
+	/**
+	 * The elements carrying the plugin's product data (`data-gtm_item_id`),
+	 * which its add-to-cart event class adds to the grid's buttons.
+	 */
+	gtmItemData(): Locator {
+		// eslint-disable-next-line playwright/no-raw-locators -- a data attribute the plugin prints, which no role or label exposes.
+		return this.page.locator( '[data-gtm_item_id]' );
 	}
 }

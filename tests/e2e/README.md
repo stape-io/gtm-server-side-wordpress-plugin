@@ -122,6 +122,10 @@ The rest is up to the author and the review.
   (lint: the CSS needs the comment, and the comment needs the reason).
   No XPath, no theme classes (`.wp-block-…`), no `nth()` / `first()` (lint),
   unless the position is what the case checks.
+- **The plugin's own settings fields in wp-admin** have no accessible name
+  (no `<label>`, and WordPress's settings table has role=presentation), so
+  `AdminSettingsPage` finds them by their id, the option they save, which the
+  plugin's admin script uses too.
 - **Narrow by container:** the product card by its name, then the button in
   it. Never the first "Add to cart" on the page.
 
@@ -177,6 +181,17 @@ The rest is up to the author and the review.
   (`shopPage.goto( { orderby: 'date' } )`) with 100 products to a page
   (`storeOptions( { catalogColumns: '4', catalogRows: '25' } )`), so what the
   tests next to it create can't push the product off page 1.
+- **With ecommerce events off** (`storeOptions( { dataLayerEcommerce: 'no' } )`)
+  the plugin's frontend script doesn't load, so there is no
+  `varGtmServerSide` for `expectNotPushed()` to require. The spec shows the
+  page rendered (its product title, grid, cart line, checkout summary line;
+  on the front page the site footer, `homePage.footer`) and has a dataLayer
+  (the GTM snippet's `entriesWith( 'gtm.start' )` is not empty), then compares
+  `dataLayer.entriesWith( 'ecommerce' )` and `entriesWith( 'ecomm_pagetype' )`
+  with `[]` and checks `dataLayer.hasPluginConfig()` is `false`.
+- **View Source** is the HTML the server sent, before any script ran: the
+  page object keeps the response of the page it opened and hands it out as
+  `source()` (`productPage.source()`, `myAccountPage.source()`).
 - **A field no entry may carry** (`user_data` with user data off) is read
   with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
   holding it, events or not, and compared with `[]`. It is a snapshot: the

@@ -3,6 +3,7 @@ import type { APIResponse, Request } from '@playwright/test';
 import { test as base, expect } from '@wordpress/e2e-test-utils-playwright';
 import { DataLayer } from '../data-layer/data-layer';
 import { AdminNewOrderPage } from '../pages/admin-new-order-page';
+import { AdminSettingsPage } from '../pages/admin-settings-page';
 import { CartPage } from '../pages/cart-page';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
@@ -188,6 +189,7 @@ type ShopFixtures = {
 	shopPage: ShopPage;
 	contentPage: ContentPage;
 	adminNewOrderPage: AdminNewOrderPage;
+	adminSettingsPage: AdminSettingsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
 	/**
@@ -376,6 +378,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	adminNewOrderPage: async ( { page }, use ) => {
 		await use( new AdminNewOrderPage( page ) );
+	},
+	adminSettingsPage: async ( { page }, use ) => {
+		await use( new AdminSettingsPage( page ) );
 	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );

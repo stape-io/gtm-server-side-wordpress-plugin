@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import type { CreatedProduct } from '../api/products';
 
 /** The store's front page. */
@@ -8,6 +8,15 @@ export class HomePage {
 	/** Opens `/`, or `/?<query>` with `query` (a UTM link, say). */
 	async goto( query?: Record< string, string > ): Promise< void > {
 		await this.page.goto( query ? `/?${ new URLSearchParams( query ).toString() }` : '/' );
+	}
+
+	/**
+	 * The site footer, the last part of the page the theme renders before
+	 * wp_footer: the front page's main content is the theme's blog, nothing a
+	 * test creates.
+	 */
+	get footer(): Locator {
+		return this.page.getByRole( 'contentinfo' );
 	}
 
 	/**

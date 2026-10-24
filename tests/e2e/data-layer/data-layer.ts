@@ -143,6 +143,17 @@ export class DataLayer {
 		return config;
 	}
 
+	/**
+	 * Whether the page has the `varGtmServerSide` config, which comes with the
+	 * plugin's frontend script: for a case where the script must not load
+	 * (ecommerce events off), which pluginConfig() would fail on.
+	 */
+	async hasPluginConfig(): Promise< boolean > {
+		return this.page.evaluate(
+			() => typeof ( window as unknown as { varGtmServerSide?: PluginConfig } ).varGtmServerSide !== 'undefined'
+		);
+	}
+
 	private async snapshot( selector: EntrySelector ): Promise< Snapshot > {
 		const snapshot = await this.page.evaluate( ( sel ) => {
 			const w = window as unknown as {
