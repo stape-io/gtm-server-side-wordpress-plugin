@@ -1,34 +1,18 @@
-import type { Page } from '@playwright/test';
 import type { CreatedCategory } from '../api/products';
+import { ProductListing, type CatalogOrderby } from './product-listing';
 
-/**
- * Storefront category archive. Locators are keyed by product name (not SKU or
- * CSS class) so specs read the way a shopper would describe the page and stay
- * resilient to markup/theme changes.
- */
-export class CategoryPage {
-	constructor( private readonly page: Page ) {}
-
-	async goto( category: CreatedCategory ) {
-		await this.page.goto( category.link );
-	}
-
-	productCard( productName: string ) {
-		return this.page.getByRole( 'listitem' ).filter( { hasText: productName } );
-	}
-
-	addToCartButton( productName: string ) {
-		return this.productCard( productName ).getByRole( 'button', { name: /add to cart/i } );
-	}
-
+/** Storefront category archive. */
+export class CategoryPage extends ProductListing {
 	/**
-	 * Clicks "Add to cart", and nothing more. Deliberately waits on no specific
-	 * endpoint: the block Product Collection grid sends the cart mutation to
-	 * POST wc/store/v1/batch, classic themes to wc-ajax=add_to_cart, and the
-	 * page object is what absorbs a theme change. Specs wait on the dataLayer
-	 * event instead (DataLayer.expectPushedOnce()).
+	 * `orderby` is the shop's sort (`price-desc`, …), `pageNumber` a page of
+	 * the paginated grid, the way a shopper reaches them from the sort select
+	 * and the pagination links.
 	 */
-	async addToCart( productName: string ): Promise< void > {
-		await this.addToCartButton( productName ).click();
+	async goto( category: CreatedCategory, { orderby, pageNumber }: { orderby?: CatalogOrderby; pageNumber?: number } = {} ) {
+		const url = new URL( pageNumber && pageNumber > 1 ? `page/${ pageNumber }/` : '', category.link );
+		if ( orderby ) {
+			url.searchParams.set( 'orderby', orderby );
+		}
+		await this.page.goto( url.toString() );
 	}
 }
