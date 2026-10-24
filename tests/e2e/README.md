@@ -60,7 +60,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
-| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`) |
+| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`) |
 | `setup/preflight.setup.ts`   | Runs before every run: checks the store, purges leftovers            |
 | `mu-plugins/`                | Test-only WordPress plugins, must-use, in the e2e site only (see Test plugins) |
 
@@ -151,12 +151,17 @@ The rest is up to the author and the review.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
+  An event with no fixture data to map (sign_up: `{ event: 'sign_up_stape' }`)
+  is spelled out in the spec, with no builder.
 - **A case checking that an event is *not* pushed** first shows the page did
   its work (its grid shows products, say), then calls
   `dataLayer.expectNotPushed()`, which also fails on a page without the
   plugin's script. It is for events printed into the page, which are in the
   dataLayer once the page has loaded; it doesn't wait for a JS push unless
   the case says how long to wait (`{ quietMs }`).
+  An event printed in `wp_footer` on every page (sign_up) needs no other
+  proof: `varGtmServerSide`, which the check requires, comes with the footer
+  scripts after it, so the page's footer rendered whatever else it shows.
 - **On a page every test shares** (shop, home), a test's own products may be
   on another page of it. The spec checks what holds whatever else is in the
   store (the grid shows products), and looks for its own products on pages
@@ -221,8 +226,8 @@ decision of its own: name it in the plan before making it.
   fixture's teardown guarantees. A listing page is that category's archive, so
   it shows only what the test created.
 - **Names are generated** (`E2E …` plus a unique suffix), and so are emails
-  (`guestBuyer`). Don't reuse the names from the case text (`Cap Mug`) or
-  hard-code IDs.
+  (`guestBuyer`, `newCustomer`). Don't reuse the names from the case text
+  (`Cap Mug`) or hard-code IDs.
 - **Names sort in the order they were created** within a test
   (`uniqueSuffix()`), so a case about title order creates its products in the
   order it expects them back.
@@ -264,6 +269,14 @@ decision of its own: name it in the plan before making it.
   returns the order's ID and order-received URL. The case's later curl
   requests are pages the browser opens, and its `grep -c` is
   `expectPushedOnce()` or `expectNotPushed()`.
+- **An account the browser registers is deleted by the fixture whose email
+  it has.** A case that registers on My Account gives `newCustomer.email` to
+  `myAccountPage.register()`; one that creates an account at checkout ticks
+  `checkoutPage.createAccount()` as `guestBuyer`. Both fixtures delete the
+  account with their email after the test, and the preflight deletes the
+  ones killed runs left behind (`purgeTestAccounts()`). Registration is off
+  on the baseline store; the case turns it on for its own browser
+  (`storeOptions( { myAccountRegistration: 'yes' } )` or `checkoutSignup`).
 - **A new private window, or a deleted cookie jar, is `newSession()`**: the
   test's browser forgets its cookies, the `storeOptions()` and `testPlugins`
   ones included, so set those again after it.

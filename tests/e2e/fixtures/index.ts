@@ -9,6 +9,7 @@ import { CheckoutPage } from '../pages/checkout-page';
 import { ClassicCartPage } from '../pages/classic-cart-page';
 import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
+import { MyAccountPage } from '../pages/my-account-page';
 import { CART_STATE_ACTION, ClassicLoopPage } from '../pages/classic-loop-page';
 import { OrderReceivedPage } from '../pages/order-received-page';
 import { ProductPage } from '../pages/product-page';
@@ -31,7 +32,13 @@ import {
 	type ProductOptions,
 } from '../api/products';
 import { createClassicCartPage, createClassicLoopPage, createPage, deletePage, type CreatedPage } from '../api/pages';
-import { buildGuestBuyer, type BillingDetails } from '../api/customers';
+import {
+	buildGuestBuyer,
+	buildNewCustomer,
+	deleteAccountsOf,
+	type BillingDetails,
+	type NewCustomer,
+} from '../api/customers';
 import { deleteOrder, deleteOrdersOf, setOrderStatus } from '../api/orders';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
@@ -166,6 +173,7 @@ type ShopFixtures = {
 	classicLoopPage: ClassicLoopPage;
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
+	myAccountPage: MyAccountPage;
 	shopPage: ShopPage;
 	contentPage: ContentPage;
 	adminNewOrderPage: AdminNewOrderPage;
@@ -210,9 +218,15 @@ type ShopFixtures = {
 	phpErrors: PhpErrors;
 	/**
 	 * Billing details for a guest checkout, unique to this test. The orders
-	 * placed with them are deleted after the test.
+	 * placed with them, and the account the checkout creates with them when
+	 * the test asks for one, are deleted after the test.
 	 */
 	guestBuyer: BillingDetails;
+	/**
+	 * A shopper to register on My Account, with an email unique to this test.
+	 * The account registered with it is deleted after the test.
+	 */
+	newCustomer: NewCustomer;
 	/**
 	 * Content the named fixtures below don't cover: variable and grouped
 	 * products, subcategories, tags, sets of products, coupons, tax rates.
@@ -337,6 +351,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	homePage: async ( { page }, use ) => {
 		await use( new HomePage( page ) );
 	},
+	myAccountPage: async ( { page }, use ) => {
+		await use( new MyAccountPage( page ) );
+	},
 	shopPage: async ( { page }, use ) => {
 		await use( new ShopPage( page ) );
 	},
@@ -434,6 +451,13 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		// The checkout creates a guest's orders, not REST, so catalog never
 		// hears of them: they are found by the buyer's email.
 		await deleteOrdersOf( requestUtils, buyer.email );
+		await deleteAccountsOf( requestUtils, buyer.email );
+	},
+	newCustomer: async ( { requestUtils }, use ) => {
+		const customer = buildNewCustomer();
+		await use( customer );
+		// The browser registers the account, not REST: found by its email.
+		await deleteAccountsOf( requestUtils, customer.email );
 	},
 	catalog: async ( { requestUtils }, use ) => {
 		const deletions: Array< () => Promise< void > > = [];

@@ -60,6 +60,14 @@ export class CheckoutPage {
 	}
 
 	/**
+	 * Ticks "Create an account with <store>", which the checkout offers a
+	 * guest when account creation at checkout is on (`checkoutSignup`).
+	 */
+	async createAccount(): Promise< void > {
+		await this.form.getByRole( 'checkbox', { name: /^Create an account/ } ).check();
+	}
+
+	/**
 	 * Pays with Cash on delivery and places the order, then waits until the
 	 * checkout has sent the browser to the order-received page.
 	 */

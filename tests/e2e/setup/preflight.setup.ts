@@ -1,6 +1,7 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCoupons } from '../api/coupons';
+import { purgeTestAccounts } from '../api/customers';
 import { purgeTestOrders } from '../api/orders';
 import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
@@ -26,9 +27,10 @@ import {
  * and pluginDir fixtures first, which would fail before any of the checks below
  * ran and hide what they would have said.
  *
- * Also removes the products, pages, coupons, tax rates and guest orders
- * killed runs left behind, and records the WordPress, WooCommerce and theme
- * versions on the test, so a report says what it ran against.
+ * Also removes the products, pages, coupons, tax rates, guest orders and
+ * registered accounts killed runs left behind, and records the WordPress,
+ * WooCommerce and theme versions on the test, so a report says what it ran
+ * against.
  */
 
 const THEME = 'twentytwentyfive';
@@ -44,6 +46,7 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	await purgeTestCoupons( requestUtils );
 	await purgeTestTaxRates( requestUtils );
 	await purgeTestOrders( requestUtils );
+	await purgeTestAccounts( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -128,6 +131,15 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	for ( const [ group, id, value ] of taxedCart ) {
 		expect( await wooSetting( group, id ), `${ id } is not "${ value }". ${ FIX }` ).toBe( value );
 	}
+
+	// The sign_up specs register with an email only: WooCommerce makes up the
+	// password, so neither My Account nor the checkout asks for one. (It makes
+	// up the username too, but REST doesn't expose that setting: a My Account
+	// spec would fail on the form's missing Username field instead.)
+	expect(
+		await wooSetting( 'account', 'woocommerce_registration_generate_password' ),
+		`woocommerce_registration_generate_password is off. ${ FIX }`
+	).toBe( 'yes' );
 
 	// The order specs pay with it: the one gateway that needs no processor.
 	const cod: { enabled: boolean } = await requestUtils.rest( { path: '/wc/v3/payment_gateways/cod' } );

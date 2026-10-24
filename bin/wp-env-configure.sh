@@ -52,6 +52,12 @@ wp option update woocommerce_tax_based_on 'shipping'
 wp option update woocommerce_tax_display_cart 'excl'
 wp option update woocommerce_tax_total_display 'itemized'
 
+# WooCommerce's defaults, pinned: an account is registered with an email only,
+# on My Account and at checkout, which the sign_up specs do.
+echo "==> Generated usernames and passwords for new accounts"
+wp option update woocommerce_registration_generate_username 'yes'
+wp option update woocommerce_registration_generate_password 'yes'
+
 # WooCommerce's default for a new store, pinned: the wp-admin order specs
 # create orders on the HPOS screen (admin.php?page=wc-orders). Only warns when
 # it is on already.

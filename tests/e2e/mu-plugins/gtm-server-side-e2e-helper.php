@@ -45,6 +45,8 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'woocommerce_cart_redirect_after_add',
 	'woocommerce_calc_taxes',
 	'woocommerce_prices_include_tax',
+	'woocommerce_enable_myaccount_registration',
+	'woocommerce_enable_signup_and_login_from_checkout',
 );
 
 /**
