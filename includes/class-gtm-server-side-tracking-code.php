@@ -59,6 +59,13 @@ class GTM_Server_Side_Tracking_Code {
 			return;
 		}
 
+		// The Stape identifier from the same-origin API key only works with the
+		// loader from the API, so without it GTM loads straight from Google.
+		if ( GTM_Server_Side_Helpers::has_same_origin_settings() ) {
+			$this->print_google_gtm_code();
+			return;
+		}
+
 		if ( GTM_Server_Side_Helpers::is_enable_cookie_keeper() ) {
 			$this->print_cookie_keeper_gtm_code();
 			return;
@@ -86,6 +93,24 @@ class GTM_Server_Side_Tracking_Code {
 		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 		        '" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_url() ) . '/' . esc_js( GTM_Server_Side_Helpers::get_gtm_container_identifier() ) . ".js?id='+i+dl;f.parentNode.insertBefore(j,f);
 		    })(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_gtm_container_id() ) . "');</script>
+		<!-- End Google Tag Manager -->
+		";
+	}
+
+	/**
+	 * Print Google's standard GTM code.
+	 *
+	 * @return void
+	 */
+	private function print_google_gtm_code() {
+		// phpcs:ignore Squiz.Strings.DoubleQuoteUsage.NotRequired
+		echo "\n
+		<!-- Google Tag Manager -->
+		<script" . $this->print_tag_script_attrs() /* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */ . ">(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+		            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+		        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+		        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+		    })(window,document,'script','dataLayer','" . esc_js( GTM_Server_Side_Helpers::get_raw_gtm_container_id() ) . "');</script>
 		<!-- End Google Tag Manager -->
 		";
 	}

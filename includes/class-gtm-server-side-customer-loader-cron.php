@@ -82,16 +82,7 @@ class GTM_Server_Side_Customer_Loader_Cron {
 			return;
 		}
 
-		$result = GTM_Server_Side_Customer_Loader_Handler::instance()->send_data();
-		if ( is_wp_error( $result ) ) {
-			return;
-		}
-
-		if (
-			! empty( $result['body'] ) &&
-			! empty( $result['body']['jsCode'] )
-		) {
-			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, $result['body']['jsCode'] );
+		if ( GTM_Server_Side_Customer_Loader_Handler::instance()->refresh() ) {
 			$this->deactivation();
 		}
 	}

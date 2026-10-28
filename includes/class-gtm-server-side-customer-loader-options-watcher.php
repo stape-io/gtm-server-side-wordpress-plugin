@@ -54,21 +54,7 @@ class GTM_Server_Side_Customer_Loader_Options_Watcher {
 			return;
 		}
 
-		$result = GTM_Server_Side_Customer_Loader_Handler::instance()->send_data();
-		if ( is_wp_error( $result ) ) {
-			delete_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API );
-			return;
-		}
-
-		if (
-			! empty( $result['body'] ) &&
-			! empty( $result['body']['jsCode'] )
-		) {
-			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, (string) $result['body']['jsCode'] );
-			return;
-		}
-
-		delete_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API );
+		GTM_Server_Side_Customer_Loader_Handler::instance()->refresh();
 	}
 
 	/**

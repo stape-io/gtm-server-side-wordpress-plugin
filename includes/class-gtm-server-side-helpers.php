@@ -130,6 +130,15 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Return why the last attempt to fetch the custom loader from the API failed.
+	 *
+	 * @return string  Empty string when it did not fail.
+	 */
+	public static function get_gtm_custom_loader_error() {
+		return (string) self::get_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_ERROR, '' );
+	}
+
+	/**
 	 * Return the raw same-origin proxy path (e.g. '/gtm/').
 	 *
 	 * @return string

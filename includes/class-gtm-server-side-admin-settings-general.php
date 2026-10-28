@@ -400,6 +400,21 @@ class GTM_Server_Side_Admin_Settings_General {
 								</div>
 							</div>
 							<?php endif; ?>
+							<?php if ( GTM_Server_Side_Helpers::has_same_origin_settings() && ! GTM_Server_Side_Helpers::has_gtm_custom_loader_from_api() ) : ?>
+							<div class="notice notice-warning inline gtm-so-loader-error">
+								<p>
+									<?php esc_html_e( 'The GTM loader could not be fetched from Stape, so GTM loads from googletagmanager.com instead of the proxy path. The plugin retries every 3 hours.', 'gtm-server-side' ); ?>
+									<?php $loader_error = GTM_Server_Side_Helpers::get_gtm_custom_loader_error(); ?>
+									<?php if ( '' !== $loader_error ) : ?>
+									<br>
+									<?php
+									/* translators: %s: error returned when fetching the loader. */
+									echo esc_html( sprintf( __( 'Reason: %s', 'gtm-server-side' ), $loader_error ) );
+									?>
+									<?php endif; ?>
+								</p>
+							</div>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr class="gtm-server-side-same-origin-field">
