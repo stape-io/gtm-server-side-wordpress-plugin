@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.1.0
-Stable tag: 2.3.10
+Stable tag: 2.3.11
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,10 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.11 =
+* Security: hardened the same-origin proxy so it only forwards requests to the configured Stape container. Thanks to Joep van Antwerpen for the responsible disclosure, coordinated by WPScan.
+* Fixed same-origin sites loading no GTM when the custom loader could not be fetched from Stape (an API error, a timeout, or a proxy path saved with a trailing slash, which the API rejects). They now fall back to the standard GTM snippet from googletagmanager.com, the trailing slash is no longer sent to the API, and the same-origin settings show a warning with the reason until the loader is fetched.
 
 = 2.3.10 =
 * Removed the end-to-end test tooling (tests/, bin/, the wp-env and Playwright/Vitest configs) that 2.3.9 accidentally shipped in the plugin package. None of it was loaded by the plugin; the package is back to runtime files only.
