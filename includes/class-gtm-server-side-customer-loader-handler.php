@@ -16,6 +16,30 @@ class GTM_Server_Side_Customer_Loader_Handler {
 	use GTM_Server_Side_Singleton;
 
 	/**
+	 * Fetch the loader from the API and store it, or store the reason it
+	 * could not be fetched for the settings page.
+	 *
+	 * @return bool Whether a loader was stored.
+	 */
+	public function refresh() {
+		$result = $this->send_data();
+
+		if ( ! is_wp_error( $result ) && empty( $result['body']['jsCode'] ) ) {
+			$result = new WP_Error( 'stape_api_no_loader', 'Stape API returned no loader.' );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			delete_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API );
+			update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_ERROR, $this->get_error_reason( $result ), false );
+			return false;
+		}
+
+		update_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_FROM_API, (string) $result['body']['jsCode'] );
+		delete_option( GTM_SERVER_SIDE_GTM_CUSTOM_LOADER_ERROR );
+		return true;
+	}
+
+	/**
 	 * Send data.
 	 *
 	 * @return array|WP_Error
@@ -174,15 +198,11 @@ class GTM_Server_Side_Customer_Loader_Handler {
 			}
 		}
 
-		$same_origin_path = '';
-		if ( ! empty( $parsed_url['path'] ) ) {
-			$same_origin_path = $parsed_url['path'];
-		}
-
+		// The API rejects a path with a trailing slash.
 		$data = array(
 			'webGtmId'            => $gtm_container_id,
 			'domain'              => $domain,
-			'sameOriginPath'      => $same_origin_path,
+			'sameOriginPath'      => GTM_Server_Side_Helpers::get_same_origin_base_path(),
 			'source'              => 'wordpress',
 			'dataLayerObjectName' => 'dataLayer',
 		);
@@ -236,6 +256,35 @@ class GTM_Server_Side_Customer_Loader_Handler {
 		}
 
 		return $decoded;
+	}
+
+	/**
+	 * Describe a failed request for the admin, adding the API's own message
+	 * when its error body carries one.
+	 *
+	 * @param  WP_Error $error Error.
+	 * @return string
+	 */
+	private function get_error_reason( WP_Error $error ) {
+		$reason = $error->get_error_message();
+		$data   = $error->get_error_data();
+
+		if ( ! is_array( $data ) || empty( $data['body'] ) ) {
+			return $reason;
+		}
+
+		$body = json_decode( (string) $data['body'], true );
+		if ( ! is_array( $body ) ) {
+			return $reason;
+		}
+
+		foreach ( array( $body, isset( $body['error'] ) ? $body['error'] : null, isset( $body['body'] ) ? $body['body'] : null ) as $source ) {
+			if ( is_array( $source ) && ! empty( $source['message'] ) && is_string( $source['message'] ) ) {
+				return $reason . ' ' . $source['message'];
+			}
+		}
+
+		return $reason;
 	}
 
 	/**
