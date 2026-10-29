@@ -37,8 +37,17 @@ const GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE = 'gtm_e2e_options';
  * tests/e2e/fixtures/store-options.ts.
  */
 const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
+	'gtm_server_side_data_layer_ecommerce',
 	'gtm_server_side_data_layer_user_data',
 	'gtm_server_side_same_origin_api_key',
+	'woocommerce_catalog_columns',
+	'woocommerce_catalog_rows',
+	'woocommerce_enable_ajax_add_to_cart',
+	'woocommerce_cart_redirect_after_add',
+	'woocommerce_calc_taxes',
+	'woocommerce_prices_include_tax',
+	'woocommerce_enable_myaccount_registration',
+	'woocommerce_enable_signup_and_login_from_checkout',
 );
 
 /**

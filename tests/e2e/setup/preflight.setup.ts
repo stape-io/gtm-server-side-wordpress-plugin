@@ -1,6 +1,11 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
+import { purgeTestCoupons } from '../api/coupons';
+import { purgeTestAccounts } from '../api/customers';
+import { purgeTestOrders } from '../api/orders';
+import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
+import { purgeTestTaxRates } from '../api/taxes';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
 import {
@@ -22,7 +27,8 @@ import {
  * and pluginDir fixtures first, which would fail before any of the checks below
  * ran and hide what they would have said.
  *
- * Also removes catalog leftovers from killed runs, and records the WordPress,
+ * Also removes the products, pages, coupons, tax rates, guest orders and
+ * registered accounts killed runs left behind, and records the WordPress,
  * WooCommerce and theme versions on the test, so a report says what it ran
  * against.
  */
@@ -36,6 +42,11 @@ type InstalledTheme = { stylesheet: string; version: string };
 
 preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { page, requestUtils } ) => {
 	await purgeTestCatalog( requestUtils );
+	await purgeTestPages( requestUtils );
+	await purgeTestCoupons( requestUtils );
+	await purgeTestTaxRates( requestUtils );
+	await purgeTestOrders( requestUtils );
+	await purgeTestAccounts( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -83,6 +94,66 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 		keyless.status(),
 		`${ PROXY_PATH }/ should answer 404 on the baseline. A same-origin API key is stored in the database (specs supply it through storeOptions). ${ FIX }`
 	).toBe( 404 );
+
+	// The classic loop adds over wc-ajax only with AJAX buttons on, and a
+	// redirect to the cart would load a page the add_to_cart specs don't expect.
+	const wooSetting = async ( group: string, id: string ): Promise< string > =>
+		( await requestUtils.rest( { path: `/wc/v3/settings/${ group }/${ id }` } ) ).value;
+	expect(
+		await wooSetting( 'products', 'woocommerce_enable_ajax_add_to_cart' ),
+		`woocommerce_enable_ajax_add_to_cart is off. ${ FIX }`
+	).toBe( 'yes' );
+	expect(
+		await wooSetting( 'products', 'woocommerce_cart_redirect_after_add' ),
+		`woocommerce_cart_redirect_after_add is on. ${ FIX }`
+	).toBe( 'no' );
+
+	// Cart totals carry no tax, so a total is the sum the case gives; a spec
+	// about tax turns it on for its own browser through storeOptions.
+	expect(
+		await wooSetting( 'general', 'woocommerce_calc_taxes' ),
+		`woocommerce_calc_taxes is on. ${ FIX }`
+	).toBe( 'no' );
+	expect(
+		await wooSetting( 'tax', 'woocommerce_prices_include_tax' ),
+		`woocommerce_prices_include_tax is on. ${ FIX }`
+	).toBe( 'no' );
+	// With taxes on, a guest is taxed where the store is (a US store, so a US
+	// rate applies), and the cart shows each rate as a line of its own, named
+	// after the rate, apart from the net prices.
+	const taxedCart: Array< [ string, string, string ] > = [
+		[ 'general', 'woocommerce_default_country', 'US:CA' ],
+		[ 'general', 'woocommerce_default_customer_address', 'base' ],
+		[ 'tax', 'woocommerce_tax_based_on', 'shipping' ],
+		[ 'tax', 'woocommerce_tax_display_cart', 'excl' ],
+		[ 'tax', 'woocommerce_tax_total_display', 'itemized' ],
+	];
+	for ( const [ group, id, value ] of taxedCart ) {
+		expect( await wooSetting( group, id ), `${ id } is not "${ value }". ${ FIX }` ).toBe( value );
+	}
+
+	// The sign_up specs register with an email only: WooCommerce makes up the
+	// password, so neither My Account nor the checkout asks for one. (It makes
+	// up the username too, but REST doesn't expose that setting: a My Account
+	// spec would fail on the form's missing Username field instead.)
+	expect(
+		await wooSetting( 'account', 'woocommerce_registration_generate_password' ),
+		`woocommerce_registration_generate_password is off. ${ FIX }`
+	).toBe( 'yes' );
+
+	// The order specs pay with it: the one gateway that needs no processor.
+	const cod: { enabled: boolean } = await requestUtils.rest( { path: '/wc/v3/payment_gateways/cod' } );
+	expect( cod.enabled, `Cash on delivery is disabled. ${ FIX }` ).toBe( true );
+
+	// The wp-admin order specs create orders on the HPOS screen; without HPOS
+	// WooCommerce doesn't register it.
+	const newOrderScreen = await requestUtils.request.get( '/wp-admin/admin.php?page=wc-orders&action=new', {
+		maxRedirects: 0,
+	} );
+	expect(
+		newOrderScreen.status(),
+		`WooCommerce's HPOS order screen doesn't answer: orders are not in WooCommerce's own tables (wp wc hpos enable). ${ FIX }`
+	).toBe( 200 );
 
 	const [ theme ]: InstalledTheme[] = await requestUtils.rest( {
 		path: '/wp/v2/themes',

@@ -53,14 +53,14 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 
 | Path                         | What                                                                 |
 |------------------------------|----------------------------------------------------------------------|
-| `specs/`                     | One file per Testomat suite (see Writing specs)                      |
+| `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
-| `pages/`                     | Page objects                                                         |
+| `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
-| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`) |
+| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`) |
 | `setup/preflight.setup.ts`   | Runs before every run: checks the store, purges leftovers            |
 | `mu-plugins/`                | Test-only WordPress plugins, must-use, in the e2e site only (see Test plugins) |
 
@@ -95,6 +95,10 @@ The rest is up to the author and the review.
 - **One spec file per Testomat suite**, named after the suite: `view_item` →
   `view-item.spec.ts`, `add_to_cart - AJAX click` →
   `add-to-cart-ajax-click.spec.ts`.
+- **In a folder named after the suite's Testomat folder** under
+  `CMS / WordPress`, the same way: `Data layer - ecommerce events / view_item`
+  → `specs/data-layer-ecommerce-events/view-item.spec.ts`. Testomat matches
+  results by the `@T` tag, not the path, so the folders are for people.
 - **One `test()` per Testomat case**, in the suite's order. Its title is the
   case title followed by ` @T<case id>` (lint). See Testomat below.
 - **No `test.describe` by default**: the file already groups the suite. Use
@@ -103,8 +107,8 @@ The rest is up to the author and the review.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
 - **Tests are independent.** No serial mode, no state shared between tests,
   no order they rely on.
-- **Specs import `test` and `expect` from `../fixtures`** (lint), never from
-  `@playwright/test` directly.
+- **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
+  never from `@playwright/test` directly.
 
 ### Locators
 
@@ -118,21 +122,29 @@ The rest is up to the author and the review.
   (lint: the CSS needs the comment, and the comment needs the reason).
   No XPath, no theme classes (`.wp-block-…`), no `nth()` / `first()` (lint),
   unless the position is what the case checks.
+- **The plugin's own settings fields in wp-admin** have no accessible name
+  (no `<label>`, and WordPress's settings table has role=presentation), so
+  `AdminSettingsPage` finds them by their id, the option they save, which the
+  plugin's admin script uses too.
 - **Narrow by container:** the product card by its name, then the button in
   it. Never the first "Add to cart" on the page.
 
 ### Waiting
 
 - **No fixed waits** (`waitForTimeout`, lint). The one exception is inside
-  `DataLayer.expectPushedOnce()`, which waits out a duplicate push that must
-  not come.
+  `DataLayer`, which waits out a push that must not come: a duplicate after
+  `expectPushedOnce()`, or any push before `expectNotPushed()`. When a case
+  gives that wait itself ("wait 5 more seconds"), pass it as `quietMs`
+  instead of the default.
 - Wait for a dataLayer event (`expectPushedOnce()`), a response
   (`waitForResponse()`) or a visible state (`expect( locator ).toBeVisible()`).
 - **A page object action waits for its own result** (`ProductPage.addToCart()`
   waits for WooCommerce's notice), so a spec never has to know how long it
   takes. The exception is an action whose result is the dataLayer event the
-  spec waits for anyway: `CategoryPage.addToCart()` only clicks, since the
-  grid's cart request differs by theme and the event is what the case checks.
+  spec waits for anyway: the grid pages' `ProductListing.addToCart()` only clicks, since the
+  grid's cart request differs by theme and the event is what the case checks,
+  and so does `ProductPage.clickAddToCart()`, whose result is what the
+  dataLayer gets or must not get.
 
 ### Assertions
 
@@ -143,9 +155,53 @@ The rest is up to the author and the review.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
-- **A case about one field asserts that field only** (`user_data`,
-  `cart_state`): the rest of the event belongs to the cases about the event,
-  so one defect fails a few cases, not every case that reads the event.
+  An event with no fixture data to map (sign_up: `{ event: 'sign_up_stape' }`)
+  is spelled out in the spec, with no builder.
+- **An entry pushed without an event** (home's `{ ecomm_pagetype: 'home' }`)
+  is selected by its page type: `dataLayer.expectPushedOnce( { ecomm_pagetype:
+  'home' } )`, and the same for `expectNotPushed()`. The checks are the same
+  as for an event. It matches every entry with that page type, events
+  included, so it is only for a page type no event carries (`home`, not
+  `product` or `basket`).
+- **A case checking that an event is *not* pushed** first shows the page did
+  its work (its grid shows products, say), then calls
+  `dataLayer.expectNotPushed()`, which also fails on a page without the
+  plugin's script. It is for events printed into the page, which are in the
+  dataLayer once the page has loaded; it doesn't wait for a JS push unless
+  the case says how long to wait (`{ quietMs }`).
+  An entry the plugin decides on in `wp_footer` (sign_up on every page, home
+  on `/` only) needs no other proof: `varGtmServerSide`, which the check
+  requires, comes with the footer scripts after it, so the page's footer
+  rendered whatever else it shows.
+- **On a page every test shares** (shop, home), a test's own products may be
+  on another page of it. The spec checks what holds whatever else is in the
+  store (the grid shows products), and looks for its own products on pages
+  only it creates (its category, tag or search keyword). A case that has to
+  click its own product in the shop opens it newest first
+  (`shopPage.goto( { orderby: 'date' } )`) with 100 products to a page
+  (`storeOptions( { catalogColumns: '4', catalogRows: '25' } )`), so what the
+  tests next to it create can't push the product off page 1.
+- **With ecommerce events off** (`storeOptions( { dataLayerEcommerce: 'no' } )`)
+  the plugin's frontend script doesn't load, so there is no
+  `varGtmServerSide` for `expectNotPushed()` to require. The spec shows the
+  page rendered (its product title, grid, cart line, checkout summary line;
+  on the front page the site footer, `homePage.footer`) and has a dataLayer
+  (the GTM snippet's `entriesWith( 'gtm.start' )` is not empty), then compares
+  `dataLayer.entriesWith( 'ecommerce' )` and `entriesWith( 'ecomm_pagetype' )`
+  with `[]` and checks `dataLayer.hasPluginConfig()` is `false`.
+- **View Source** is the HTML the server sent, before any script ran: the
+  page object keeps the response of the page it opened and hands it out as
+  `source()` (`productPage.source()`, `myAccountPage.source()`).
+- **A field no entry may carry** (`user_data` with user data off) is read
+  with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
+  holding it, events or not, and compared with `[]`. It is a snapshot: the
+  spec first waits for the events the page pushes (`expectPushedOnce()`).
+- **A case about some fields asserts those fields only** (`user_data`,
+  `cart_state`, which products a list holds and in what order): the rest of
+  the event belongs to the cases about the whole event, so one defect fails a
+  few cases, not every case that reads the event. It still spells out `event`
+  when the case names it, and compares its items with
+  `expect.objectContaining()` holding the fields the case lists.
 - **Builders map fixture data and nothing more.** What the plugin computes
   (`index`, `quantity`, a discounted `value`) is passed in by the spec, so a
   builder can never share a bug with the code it checks.
@@ -163,6 +219,12 @@ The rest is up to the author and the review.
   ignored, as are requests cancelled by a navigation: they change with every
   release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
   The preflight check uses the base test and skips this fixture.
+- **PHP warnings in `debug.log`** are checked with the `phpErrors` fixture,
+  not by reading the log, which every test running at the same time writes
+  to: `await phpErrors.expectNone()` last, for a case that has the line. It
+  counts the warnings, notices and fatal errors PHP reported on this test's
+  browser requests only (`mu-plugins/record-php-errors.php`), from any
+  plugin, as the log would show them.
 
 ### Where new code goes
 
@@ -190,10 +252,85 @@ decision of its own: name it in the plan before making it.
   fixture's teardown guarantees. A listing page is that category's archive, so
   it shows only what the test created.
 - **Names are generated** (`E2E …` plus a unique suffix), and so are emails
-  (`guestBuyer`). Don't reuse the names from the case text (`Cap Mug`) or
-  hard-code IDs.
-- **A new kind of product is an option of `api/products.ts`** plus a fixture,
-  not a new function per case.
+  (`guestBuyer`, `newCustomer`). Don't reuse the names from the case text
+  (`Cap Mug`) or hard-code IDs.
+- **Names sort in the order they were created** within a test
+  (`uniqueSuffix()`), so a case about title order creates its products in the
+  order it expects them back.
+- **A new kind of product is an option of `api/products.ts`**
+  (`ProductOptions`), not a new function per case.
+- **A shape many cases use gets a named fixture; the rest come from
+  `catalog`.** `category`, `product` and `saleProduct` are named, since most
+  cases need just those. Anything else - a variable or grouped product, a
+  subcategory, a set of products - the test creates through
+  `catalog.createCategory()` / `catalog.createProduct()`, which deletes it
+  after the test, newest first. A shape earns a named fixture once cases in
+  several suites need it (`saleProduct`: view_item, view_cart, begin_checkout,
+  purchase), not for one case.
+- **Coupons and tax rates are store-wide, so they come from `catalog` too.**
+  A coupon gets a generated code (`catalog.createCoupon( '10' )`), which only
+  the test applies. A tax rate goes into a tax class of its own
+  (`catalog.createTaxRate( { country: 'US', rate: '25' } )`), and only the
+  test's product uses that class (`{ tax_class: rate.taxClass }`), where the
+  case says "standard rate": no other product, and no other test running at
+  the same time, is ever taxed at it. Taxes are off on the baseline store; a
+  case with tax turns them on for its own browser
+  (`storeOptions( { calcTaxes: 'yes' } )`, plus `pricesIncludeTax`).
+- **A product the case only needs in the cart goes there with
+  `homePage.addToCart()`**, which requests the case's `?add-to-cart=` link
+  with the test's cookies but renders no page. The rendered front page
+  (`homePage.gotoAddingToCart()`) fetches the cart over the Store API, and an
+  add that starts while that request is still saving the session can be lost.
+  `gotoAddingToCart()` is for a case about the page the add lands on.
+- **An order is placed by the browser, so `guestBuyer` cleans it up.** A case
+  that places one checks out as `guestBuyer`
+  (`checkoutPage.fillBillingDetails()`, then `placeOrder()`). REST never
+  creates the order, so `catalog` doesn't know it: the `guestBuyer` fixture
+  deletes every order with its email after the test, and the preflight
+  deletes the guest orders killed runs left behind (`api/orders.ts`).
+- **A case that places the order with curl** (no page rendered in between)
+  places it from the test's browser instead: `homePage.addToCart()`, then
+  `checkoutPage.placeOrderThroughStoreApi( guestBuyer )`, which posts to the
+  Store API endpoint the Checkout block uses with the browser's cookies and
+  returns the order's ID and order-received URL. The case's later curl
+  requests are pages the browser opens, and its `grep -c` is
+  `expectPushedOnce()` or `expectNotPushed()`.
+- **An account the browser registers is deleted by the fixture whose email
+  it has.** A case that registers on My Account gives `newCustomer.email` to
+  `myAccountPage.register()`; one that creates an account at checkout ticks
+  `checkoutPage.createAccount()` as `guestBuyer`. Both fixtures delete the
+  account with their email after the test, and the preflight deletes the
+  ones killed runs left behind (`purgeTestAccounts()`). Registration is off
+  on the baseline store; the case turns it on for its own browser
+  (`storeOptions( { myAccountRegistration: 'yes' } )` or `checkoutSignup`).
+- **A case that starts logged in as a customer** creates the account with
+  `catalog.createCustomer()` (generated email, names and password; the
+  case's address and phone as billing, no shipping address) and logs the
+  test's browser in through My Account, `myAccountPage.logIn( customer )`.
+  `catalog` deletes the account after the test, with every order it placed,
+  whatever contact email the checkout gave them.
+  - It does so before the browser closes, so a case that ends right after a
+    JS push that fetches `cart_state` (a grid's "Add to cart", say) waits for
+    that request first, as `addToCartUntilCartState()` does: still on its
+    way, it would answer 403 for the deleted account.
+  - A case that needs a contact email other than the account's gives the
+    checkout `guestBuyer.email` (`checkoutPage.fillContactEmail()`): it is
+    unique, and the preflight deletes the orders killed runs left behind
+    with a guest's or a test customer's email (`purgeTestOrders()`).
+- **A new private window, or a deleted cookie jar, is `newSession()`**: the
+  test's browser forgets its cookies, the `storeOptions()` and `testPlugins`
+  ones included, so set those again after it.
+- **What a case does as the store admin over WP-CLI** to its own content
+  (a product's price, an order's status) goes through REST: `catalog.updateProduct()`,
+  `orders.setStatus()`. A case in wp-admin logs the test's browser in with
+  `loginAsAdmin()`; an order it creates there has no guest's email, so the
+  spec hands its ID to `orders.deleteAfterTest()`.
+- **Shipping is off for everyone but the test that asks.** The baseline store
+  has no shipping method, and adding one to the database makes every cart
+  need a shipping option: the checkouts of the tests next to it fail. A case
+  with shipping gets a flat rate for its own browser,
+  `testPlugins.flatRateShipping( '5.00' )` (not taxed). The checkout labels
+  its line with the method's title, `Flat rate`.
 - **Environment state lives in `bin/wp-env-configure.sh`.** When a spec starts
   depending on a setting, add a check for it to the preflight. A spec that
   needs a different setting doesn't change it there: see Store settings.
@@ -224,6 +361,12 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
 - **Local only, when a visitor could trigger it.** Anyone can set a cookie,
   so a plugin that acts on one does so only where `wp_get_environment_type()`
   is `local`, and only for what it lists.
+- **A test plugin a spec turns on** has a method on the `testPlugins`
+  fixture, which sets its cookie: `flatRateShipping()`
+  (`flat-rate-shipping.php`), `markOrderConfirmationPage()` for a shop's own
+  thank-you page (`order-confirmation-page.php`, in place of a case's
+  store-wide filter), and `endEmailVerificationGrace()`, for a guest order
+  link opened more than 10 minutes later (`email-verification-grace.php`).
 - **A third-party plugin under test** (GTM4WP, say) is installed through
   `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 
@@ -323,15 +466,17 @@ result. Cases tagged `known-defect` are not automated for now. The
 `/automate-suite <suite>` skill (`.claude/skills/automate-suite/`) runs the
 whole flow for one Testomat suite.
 
-## Known gaps
+## Classic markup
 
-- Only the block grid is automated. There, "Add to cart" goes through
-  `wc/store/v1/batch`, which jQuery's `ajaxComplete` never sees, so
-  `add-to-cart-ajax-click.spec.ts` exercises only the 1500 ms fallback in
-  `_pushWithStateCartData()`. The classic path (`wc-ajax=add_to_cart`, the
-  classic cart) doesn't need another theme: its Testomat cases use a page with
-  the `[products]` or `[woocommerce_cart]` shortcode in the same block theme,
-  which a test can create like any other content.
+The store runs a block theme. A case about WooCommerce's classic markup (the
+`[products]` loop, which adds over `wc-ajax=add_to_cart`, or the
+`[woocommerce_cart]` form) doesn't need another theme: the test creates a page
+holding the shortcode, with `catalog.createClassicLoopPage( category )` for
+the loop and `catalog.createClassicCartPage()` for the cart. The loop page's
+`[products]` lists only the test's category, where the case's page lists the
+whole store, so other tests can't move the product. The cart page stands in
+for the case's shared "Classic cart page": the cart belongs to the test's
+browser either way.
 
 ## WebStorm
 

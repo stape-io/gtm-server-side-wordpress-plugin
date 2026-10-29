@@ -15,6 +15,13 @@
  */
 /** The value each setting takes, as WordPress stores it. */
 type StoreOptionValues = {
+	/**
+	 * "Add ecommerce Data Layer events". On (`yes`) on the baseline store; off,
+	 * the plugin registers none of its events and doesn't enqueue its frontend
+	 * script. Nothing runs when it is saved, and the plugin reads it on every
+	 * request, when it loads (GTM_Server_Side_Helpers::is_enable_data_layer_ecommerce()).
+	 */
+	dataLayerEcommerce: 'yes' | 'no';
 	/** "Add user data to Data Layer events". Not set on the baseline store. */
 	userData: 'yes' | 'no';
 	/**
@@ -29,11 +36,71 @@ type StoreOptionValues = {
 	 * no live store has - so elsewhere it renders as without the key.
 	 */
 	sameOriginApiKey: string;
+	/**
+	 * WooCommerce's product grid ("Products per row" and "Rows per page" in
+	 * the Customizer); a page holds columns x rows products. Not set on the
+	 * baseline store, so 4 x 4 unless something set them by hand: a spec that
+	 * counts the products on a page sets both. Nothing runs when they are
+	 * saved, and WooCommerce reads them on every page that renders a grid.
+	 */
+	catalogColumns: string;
+	catalogRows: string;
+	/**
+	 * WooCommerce's "Enable AJAX add to cart buttons on archives". On (`yes`)
+	 * on the baseline store; off, a grid's "Add to cart" is a plain
+	 * `?add-to-cart=` link that loads a page. Nothing runs when it is saved,
+	 * and WooCommerce reads it on every page that renders a grid.
+	 */
+	ajaxAddToCart: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Redirect to the cart page after successful addition". Off
+	 * on the baseline store; on, an `?add-to-cart=` request answers with a
+	 * redirect and renders no page. Nothing runs when it is saved, and
+	 * WC_Form_Handler reads it on the add-to-cart request itself.
+	 */
+	cartRedirectAfterAdd: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Enable tax rates and calculations". Off (`no`) on the
+	 * baseline store, so no cart has tax unless a test turns it on. Nothing
+	 * runs when it is saved, and wc_tax_enabled() reads it on every request
+	 * that prices a cart, the Store API's included.
+	 */
+	calcTaxes: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Prices entered with tax": `yes` is inclusive of tax. Off
+	 * on the baseline store, and it matters only with calcTaxes on. Nothing
+	 * runs when it is saved; WooCommerce reads it per request, and when it
+	 * loads (WC_TAX_ROUNDING_MODE), which is after the helper plugin.
+	 */
+	pricesIncludeTax: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Allow customers to create an account on the My account
+	 * page". Off on the baseline store; on, My Account shows a Register form.
+	 * Nothing runs when it is saved, and WooCommerce reads it when it renders
+	 * My Account (myaccount/form-login.php).
+	 */
+	myAccountRegistration: 'yes' | 'no';
+	/**
+	 * WooCommerce's "Allow customers to create an account during checkout".
+	 * Off on the baseline store; on, the checkout offers "Create an account".
+	 * Nothing runs when it is saved, and WC_Checkout::is_registration_enabled()
+	 * reads it when the checkout renders and when the Store API places the order.
+	 */
+	checkoutSignup: 'yes' | 'no';
 };
 
 export const STORE_OPTIONS = {
+	dataLayerEcommerce: 'gtm_server_side_data_layer_ecommerce',
 	userData: 'gtm_server_side_data_layer_user_data',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
+	catalogColumns: 'woocommerce_catalog_columns',
+	catalogRows: 'woocommerce_catalog_rows',
+	ajaxAddToCart: 'woocommerce_enable_ajax_add_to_cart',
+	cartRedirectAfterAdd: 'woocommerce_cart_redirect_after_add',
+	calcTaxes: 'woocommerce_calc_taxes',
+	pricesIncludeTax: 'woocommerce_prices_include_tax',
+	myAccountRegistration: 'woocommerce_enable_myaccount_registration',
+	checkoutSignup: 'woocommerce_enable_signup_and_login_from_checkout',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;

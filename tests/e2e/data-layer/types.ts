@@ -14,18 +14,44 @@ export type EcommerceItem = {
 	item_sku?: string;
 	item_brand?: string;
 	item_category?: string;
+	/** The next level of the category chain under item_category (the plugin goes up to item_category5). */
+	item_category2?: string;
 	item_variant?: string;
 	price?: string;
 	quantity?: number;
 	index?: number;
+	/** view_item_list: the listed category's term ID, a number rather than GA4's string. */
+	item_list_id?: number;
+	item_list_name?: string;
 	/** camelCase: derived from the data-gtm_image-url attribute. */
 	imageUrl?: string;
+	/** purchase: the whole line's discount, not the unit's. */
+	discount?: string;
 };
 
 export type Ecommerce = {
+	/** purchase: the order number. */
+	transaction_id?: string;
+	/** purchase: always `''`. */
+	affiliation?: string;
+	/** purchase: the order's tax total, which `value` includes. */
+	tax?: string;
+	/** purchase: the order's shipping total, which `value` includes. */
+	shipping?: string;
+	/** purchase: the order's coupon codes, comma-separated. */
+	coupon?: string;
+	/** purchase: the order's discount total. */
+	discount_amount?: string;
 	currency?: string;
 	value?: string;
 	items?: EcommerceItem[];
+	/**
+	 * select_item: the listed category's or tag's term ID, as a string (it is
+	 * read from a data attribute), and `''` on the shop and search pages.
+	 */
+	collection_id?: string;
+	/** select_item: the listed term's name, `''` on the shop and search pages. */
+	item_list_name?: string;
 };
 
 /** One entry in `cart_state.lines`. */
