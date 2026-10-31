@@ -192,6 +192,12 @@ The rest is up to the author and the review.
 - **View Source** is the HTML the server sent, before any script ran: the
   page object keeps the response of the page it opened and hands it out as
   `source()` (`productPage.source()`, `myAccountPage.source()`).
+- **A case about what every page prints** (the GTM snippet in `<head>`)
+  opens its pages with `storefrontPage.goto( path )`, whatever they show,
+  and reads `storefrontPage.source()`. Its DevTools → Network filter is
+  `storefrontPage.requestedUrls( '<filter text>' )`, the requests of that
+  page load. gtm.js is answered by the automatic `stubGtm` fixture, so a
+  spec checks the request, not the 404 the placeholder container gets.
 - **A field no entry may carry** (`user_data` with user data off) is read
   with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
   holding it, events or not, and compared with `[]`. It is a snapshot: the
@@ -219,6 +225,13 @@ The rest is up to the author and the review.
   ignored, as are requests cancelled by a navigation: they change with every
   release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
   The preflight check uses the base test and skips this fixture.
+  A case that lists a known defect's error under "Not covered here" (the
+  `dataLayer is not defined` of DEV-12902, with placement "Disable") lets
+  exactly that uncaught error through with
+  `test.use( { knownPageErrors: [ { message, ticket } ] } )`, in a
+  `test.describe` of its own. A listed error that never happens fails the
+  test, naming its ticket: the defect looks fixed, so the entry goes, and
+  the known-defect case can be automated.
 - **PHP warnings in `debug.log`** are checked with the `phpErrors` fixture,
   not by reading the log, which every test running at the same time writes
   to: `await phpErrors.expectNone()` last, for a case that has the line. It
@@ -462,9 +475,9 @@ Two limits of the Testomat run to keep in mind:
 To automate a case: copy its title from Testomat and append `@T<id>`. The
 case turns `automated` in Testomat by itself once a CI run reports it. A case
 counts as automated only when the spec asserts every line of its Expected
-result. Cases tagged `known-defect` are not automated for now. The
-`/automate-suite <suite>` skill (`.claude/skills/automate-suite/`) runs the
-whole flow for one Testomat suite.
+result. Cases tagged `known-defect` or `open-question` are not automated for
+now. The `/automate-suite <suite>` skill (`.claude/skills/automate-suite/`)
+runs the whole flow for one Testomat suite.
 
 ## Classic markup
 

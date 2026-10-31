@@ -115,6 +115,17 @@ export class DataLayer {
 	}
 
 	/**
+	 * Every entry pushed so far, in order: for a case about where an entry
+	 * stands in the dataLayer (the GTM snippet's `gtm.start` first). A
+	 * snapshot, like entriesWith().
+	 */
+	async entries(): Promise< DataLayerEvent[] > {
+		return this.page.evaluate(
+			() => ( window as unknown as { dataLayer?: DataLayerEvent[] } ).dataLayer ?? []
+		);
+	}
+
+	/**
 	 * Every entry pushed so far that has `field`, event or not, in order: for
 	 * a case about a field no entry may carry (`user_data` with user data off).
 	 * A snapshot, so the spec first waits for what the page pushes.
