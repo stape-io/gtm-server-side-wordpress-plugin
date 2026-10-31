@@ -31,7 +31,8 @@ test( '"Add web GTM script onto every page" prints the default GTM snippet exact
 	await storefrontPage.goto( product.permalink );
 	expect( await storefrontPage.source() ).toContain( GTM_END );
 	const block = ( await storefrontPage.source() ).split( GTM_START )[ 1 ].split( GTM_END )[ 0 ];
-	expect( block.match( /<script\b[^>]*>/g ) ).toEqual( [ '<script>' ] );
+	// Any case: a `<SCRIPT …>` the plugin printed would still be a second tag.
+	expect( block.match( /<script\b[^>]*>/gi ) ).toEqual( [ '<script>' ] );
 	expect( block ).toContain( "'https://www.googletagmanager.com/gtm.js?id='+i+dl" );
 	expect( block.trimEnd() ).toMatch( /\(window,document,'script','dataLayer','GTM-TESTID'\);<\/script>$/ );
 
