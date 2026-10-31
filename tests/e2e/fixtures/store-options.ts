@@ -25,6 +25,13 @@ type StoreOptionValues = {
 	/** "Add user data to Data Layer events". Not set on the baseline store. */
 	userData: 'yes' | 'no';
 	/**
+	 * The General tab's GTM placement: `code` ("Add web GTM script onto every
+	 * page") on the baseline store, `gtm_consent`, `plugin` (GTM4WP) or
+	 * `disable`. Nothing runs when it is saved, and the plugin reads it on
+	 * every request, when it loads (GTM_Server_Side_Tracking_Code::init()).
+	 */
+	placement: 'code' | 'gtm_consent' | 'plugin' | 'disable';
+	/**
 	 * The same-origin proxy's Stape API key. Saving it only flushes the rewrite
 	 * rules (and, in wp-admin, rebuilds the custom loader); the proxy path's
 	 * rule doesn't depend on the key, and the proxy reads it per request.
@@ -92,6 +99,7 @@ type StoreOptionValues = {
 export const STORE_OPTIONS = {
 	dataLayerEcommerce: 'gtm_server_side_data_layer_ecommerce',
 	userData: 'gtm_server_side_data_layer_user_data',
+	placement: 'gtm_server_side_placement',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
 	catalogColumns: 'woocommerce_catalog_columns',
 	catalogRows: 'woocommerce_catalog_rows',

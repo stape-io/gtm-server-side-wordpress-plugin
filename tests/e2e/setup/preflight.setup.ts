@@ -161,7 +161,24 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	} );
 	expect( theme?.stylesheet, `Page objects are written against ${ THEME }. ${ FIX }` ).toBe( THEME );
 
-	await page.goto( '/shop/' );
+	const shop = await page.goto( '/shop/' );
+	// The GTM snippet specs assume the baseline placement and container: the
+	// default snippet, loading GTM-TESTID from Google. Any of the sGTM URL,
+	// Stape container identifier, Cookie Keeper or a stored API loader would
+	// print another one.
+	const shopSource = ( await shop?.text() ) ?? '';
+	expect(
+		shopSource,
+		`/shop/ doesn't print the default GTM snippet: gtm_server_side_placement is not "code", or an sGTM URL, Stape container identifier, Cookie Keeper or API loader is stored. ${ FIX }`
+	).toContain( "'https://www.googletagmanager.com/gtm.js?id='+i+dl" );
+	expect(
+		shopSource,
+		`/shop/ prints the consent script: gtm_server_side_placement is "gtm_consent", not "code". ${ FIX }`
+	).not.toContain( 'custom-loader' );
+	expect(
+		shopSource,
+		`The GTM snippet doesn't load GTM-TESTID: gtm_server_side_web_container_id is not "GTM-TESTID". ${ FIX }`
+	).toContain( "(window,document,'script','dataLayer','GTM-TESTID');</script>" );
 	const config = await page.evaluate(
 		() => ( window as unknown as { varGtmServerSide?: PluginConfig } ).varGtmServerSide
 	);
