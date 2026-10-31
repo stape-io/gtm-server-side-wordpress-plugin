@@ -18,6 +18,7 @@ import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
 import { ShopPage } from '../pages/shop-page';
+import { StorefrontPage } from '../pages/storefront-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
@@ -164,6 +165,20 @@ type Orders = {
 	deleteAfterTest: ( id: number ) => void;
 };
 
+/**
+ * A JS error a known plugin defect raises, which a case lists under "Not
+ * covered here" because another case, tagged known-defect, is about it.
+ */
+type KnownPageError = {
+	/** The error's message, exactly as the browser reports it. */
+	message: string;
+	/**
+	 * The Jira ticket of the defect. Once it is fixed the error stops, and the
+	 * test fails naming the ticket, so the entry is removed.
+	 */
+	ticket: string;
+};
+
 type SameOriginProxy = {
 	/** GETs a path on this site, expecting the proxy to answer it with a 200. */
 	get: ( path: string ) => Promise< APIResponse >;
@@ -192,6 +207,7 @@ type ShopFixtures = {
 	adminSettingsPage: AdminSettingsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
+	storefrontPage: StorefrontPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
@@ -271,6 +287,14 @@ type ShopFixtures = {
 	 * when the page navigates away.
 	 */
 	pageErrors: void;
+	/**
+	 * Option: uncaught errors pageErrors lets through, set with `test.use()` for
+	 * a case that lists a known defect's error under "Not covered here". Only
+	 * an uncaught error from the plugin with exactly that message is let
+	 * through; any other error from the plugin still fails the test, and so
+	 * does a listed error that never happened: its defect looks fixed.
+	 */
+	knownPageErrors: KnownPageError[];
 };
 
 type WorkerFixtures = {
@@ -302,16 +326,23 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		},
 		{ auto: true },
 	],
+	knownPageErrors: [ [], { option: true } ],
 	pageErrors: [
-		async ( { page, pluginDir }, use ) => {
+		async ( { page, pluginDir, knownPageErrors }, use ) => {
 			const errors: string[] = [];
 			// Only errors from the plugin's own scripts count: WooCommerce, the
 			// theme and other plugins log their own (SCRIPT_DEBUG makes React
 			// warn through console.error), and they change with every release.
+			const seenKnown = new Set< string >();
 			page.on( 'pageerror', ( error ) => {
-				if ( stackUrls( error.stack ).some( ( url ) => isPluginScript( url, pluginDir, page.url() ) ) ) {
-					errors.push( error.message );
+				if ( ! stackUrls( error.stack ).some( ( url ) => isPluginScript( url, pluginDir, page.url() ) ) ) {
+					return;
 				}
+				if ( knownPageErrors.some( ( known ) => known.message === error.message ) ) {
+					seenKnown.add( error.message );
+					return;
+				}
+				errors.push( error.message );
 			} );
 			// "Failed to load resource" lines are judged by URL below instead.
 			page.on( 'console', ( message ) => {
@@ -336,7 +367,13 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				}
 			} );
 			await use();
-			expect( errors, 'JS errors and failed plugin requests on the page' ).toEqual( [] );
+			// Soft, so a known error that changed its message shows up in both lists.
+			expect.soft( errors, 'JS errors and failed plugin requests on the page' ).toEqual( [] );
+			const fixed = knownPageErrors.filter( ( known ) => ! seenKnown.has( known.message ) );
+			expect(
+				fixed,
+				'Known errors that no longer happen: their defects look fixed, so remove them from knownPageErrors (and the known-defect tag from their cases)'
+			).toEqual( [] );
 		},
 		{ auto: true },
 	],
@@ -387,6 +424,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	productSearchPage: async ( { page }, use ) => {
 		await use( new ProductSearchPage( page ) );
+	},
+	storefrontPage: async ( { page }, use ) => {
+		await use( new StorefrontPage( page ) );
 	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
