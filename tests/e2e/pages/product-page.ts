@@ -22,8 +22,16 @@ export class ProductPage {
 		return this.page.locator( 'form.cart' );
 	}
 
-	async goto( product: CreatedProduct ) {
-		this.landing = await this.page.goto( product.permalink );
+	/**
+	 * Opens the product page. `untilCartLoaded` also waits for the page's own
+	 * Store API cart request, which saves the session when it ends: an add
+	 * that starts before then can be lost with the session it was saved in.
+	 */
+	async goto( product: CreatedProduct, { untilCartLoaded = false }: { untilCartLoaded?: boolean } = {} ) {
+		const cartLoaded = untilCartLoaded
+			? this.page.waitForResponse( ( response ) => response.request().method() === 'GET' && new URL( response.url() ).pathname.endsWith( '/wc/store/v1/cart' ) )
+			: Promise.resolve( null );
+		[ this.landing ] = await Promise.all( [ this.page.goto( product.permalink ), cartLoaded ] );
 	}
 
 	/** The HTML of the page goto() opened, as View Source shows it: before any script ran. */
@@ -100,6 +108,19 @@ export class ProductPage {
 	async holdFormSubmit(): Promise< void > {
 		await this.page.evaluate( () => {
 			( window as unknown as JQueryWindow ).jQuery( 'form.cart' ).on( 'submit', ( e ) => e.preventDefault() );
+		} );
+	}
+
+	/**
+	 * Pushes the add the click is holding, by the call the plugin's
+	 * `added_to_cart` handler makes. For a spec that checks what the server
+	 * keeps after the push: the event on the body also runs the block mini-cart's
+	 * refresh, which rewrites the session and drops the add the server
+	 * stashed, as no classic theme's AJAX add does.
+	 */
+	async flushHeldAdd(): Promise< void > {
+		await this.page.evaluate( () => {
+			( window as unknown as { pluginGtmServerSide: { flushPendingAddToCart: () => void } } ).pluginGtmServerSide.flushPendingAddToCart();
 		} );
 	}
 
