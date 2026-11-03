@@ -272,7 +272,8 @@ test( 'A theme AJAX add the shopper leaves before the push is still reported onc
 	await productPage.clickAddToCart();
 	await shopPage.addToCartWithoutRendering( product );
 
-	// No added_to_cart: the shopper leaves before the theme's AJAX add is done.
+	// No added_to_cart: the add has landed, but the shopper leaves before the
+	// theme triggers the event, so the held add dies with the page.
 	await shopPage.goto();
 	const addToCart = await dataLayer.expectPushedOnce( 'add_to_cart' );
 

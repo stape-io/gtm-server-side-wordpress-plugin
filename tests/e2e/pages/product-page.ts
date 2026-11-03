@@ -9,6 +9,13 @@ type JQueryWindow = {
 	};
 };
 
+/** The part of the plugin's assets/js/javascript.js the page's console steps call. */
+type PluginWindow = {
+	pluginGtmServerSide: {
+		flushPendingAddToCart: () => void;
+	};
+};
+
 /** Single product page. */
 export class ProductPage {
 	/** The page goto() opened, as the server sent it. */
@@ -120,7 +127,7 @@ export class ProductPage {
 	 */
 	async flushHeldAdd(): Promise< void > {
 		await this.page.evaluate( () => {
-			( window as unknown as { pluginGtmServerSide: { flushPendingAddToCart: () => void } } ).pluginGtmServerSide.flushPendingAddToCart();
+			( window as unknown as PluginWindow ).pluginGtmServerSide.flushPendingAddToCart();
 		} );
 	}
 
