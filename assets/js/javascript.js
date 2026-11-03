@@ -162,6 +162,13 @@ var pluginGtmServerSide = {
 	PENDING_ADD_TO_CART_MAX_AGE: 30000,
 
 	/**
+	 * Cookie holding the token of the add the server stashed last.
+	 *
+	 * See GTM_Server_Side_Event_AddToCart::TOKEN_COOKIE.
+	 */
+	ADD_TO_CART_TOKEN_COOKIE: 'gtm_server_side_add_to_cart',
+
+	/**
 	 * Push an add_to_cart for a click, or hold it until the add lands.
 	 *
 	 * The item is held only when the click is expected to load a page: there
@@ -192,8 +199,14 @@ var pluginGtmServerSide = {
 
 	/**
 	 * Push the add held by trackAddToCart(), if there is still one to push.
+	 *
+	 * The add was posted as if it loaded a page, so the server may have stashed
+	 * it too. Once the push is in dataLayer, the token cookie is deleted so the
+	 * next render does not push it again; until then, leaving the page keeps
+	 * the server-side push as the fallback.
 	 */
 	flushPendingAddToCart: function () {
+		var self              = this;
 		var pending           = this.pendingAddToCart;
 		this.pendingAddToCart = null;
 
@@ -205,7 +218,12 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		this.pushAddToCart( pending.item );
+		this.pushAddToCart(
+			pending.item,
+			function () {
+				document.cookie = self.ADD_TO_CART_TOKEN_COOKIE + '=; max-age=-1; path=/';
+			}
+		);
 	},
 
 	/**
@@ -495,9 +513,10 @@ var pluginGtmServerSide = {
 	 * Push add_to_cart to dataLayer.
 	 *
 	 * @param mixed item List items.
+	 * @param function onPushed Called once the event is in dataLayer.
 	 */
-	pushAddToCart: function ( item ) {
-		this._pushToDataLayer( item, 'add_to_cart', 'product' )
+	pushAddToCart: function ( item, onPushed ) {
+		this._pushToDataLayer( item, 'add_to_cart', 'product', {}, onPushed )
 	},
 
 	/**
@@ -527,8 +546,9 @@ var pluginGtmServerSide = {
 	 * @param string event Event name.
 	 * @param string pagetype Page type name.
 	 * @param object customEcommerce Ecommerce data.
+	 * @param function onPushed Called once the event is in dataLayer.
 	 */
-	_pushToDataLayer: function ( originalItem, event, pagetype, customEcommerce = {} ) {
+	_pushToDataLayer: function ( originalItem, event, pagetype, customEcommerce = {}, onPushed ) {
 		var originalItems = Array.isArray( originalItem ) ? originalItem : [ originalItem ];
 
 		var items = [];
@@ -566,13 +586,17 @@ var pluginGtmServerSide = {
 		}
 
 		if ( 'add_to_cart' === event && 'yes' === varGtmServerSide.is_custom_event_name ) {
-			this._pushWithStateCartData( eventData );
+			this._pushWithStateCartData( eventData, onPushed );
 
 			return;
 		}
 
 		dataLayer.push( { ecommerce: null } );
 		dataLayer.push( eventData );
+
+		if ( onPushed ) {
+			onPushed();
+		}
 	},
 
 	/**
@@ -592,9 +616,10 @@ var pluginGtmServerSide = {
 	 * Internal helper: actually performs the AJAX request and pushes to the dataLayer.
 	 *
 	 * @param {object} eventData eventData object.
+	 * @param {function} onPushed Called once the event is in dataLayer.
 	 * @return {void}
 	 */
-	_sendStateCartDataAjax: function( eventData ) {
+	_sendStateCartDataAjax: function( eventData, onPushed ) {
 		jQuery.post(
 			varGtmServerSide.ajax,
 			{
@@ -602,17 +627,16 @@ var pluginGtmServerSide = {
 				security: varGtmServerSide.security,
 			},
 			function ( response ) {
-				if ( ! response || ! response.success ) {
-					dataLayer.push( { ecommerce: null } );
-					dataLayer.push( eventData );
-
-					return false;
+				if ( response && response.success ) {
+					eventData['cart_state'] = response.data;
 				}
-
-				eventData['cart_state'] = response.data;
 
 				dataLayer.push( { ecommerce: null } );
 				dataLayer.push( eventData );
+
+				if ( onPushed ) {
+					onPushed();
+				}
 			}
 		);
 	},
@@ -621,9 +645,10 @@ var pluginGtmServerSide = {
 	 * Push dataLayer with state cart data
 	 *
 	 * @param {object} eventData Event data object.
+	 * @param {function} onPushed Called once the event is in dataLayer.
 	 * @return {void}
 	 */
-	_pushWithStateCartData: function( eventData ) {
+	_pushWithStateCartData: function( eventData, onPushed ) {
 		let self  = this;
 		let fired = false;
 
@@ -646,7 +671,7 @@ var pluginGtmServerSide = {
 
 				jQuery( document ).off( 'ajaxComplete', handler );
 
-				self._sendStateCartDataAjax( eventData );
+				self._sendStateCartDataAjax( eventData, onPushed );
 			}
 		};
 
@@ -659,7 +684,7 @@ var pluginGtmServerSide = {
 				}
 
 				jQuery( document ).off( 'ajaxComplete', handler );
-				self._sendStateCartDataAjax( eventData );
+				self._sendStateCartDataAjax( eventData, onPushed );
 			},
 			1500
 		);
