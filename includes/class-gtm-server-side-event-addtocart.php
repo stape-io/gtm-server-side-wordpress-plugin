@@ -40,6 +40,30 @@ class GTM_Server_Side_Event_AddToCart {
 	const SESSION_ITEMS_MAX_AGE = 300;
 
 	/**
+	 * Cookie carrying the token of the request that stashed the last items.
+	 *
+	 * Some themes, such as Blocksy, post the product form over AJAX to the
+	 * product URL itself. That request looks like a page load here, so its items
+	 * are stashed, while assets/js/javascript.js pushes the same add on
+	 * added_to_cart. The script deletes this cookie when it pushes, and the
+	 * stashed items are only rendered while their token is still in it. An add
+	 * whose push never happened, because the shopper left first, keeps the
+	 * cookie and is still rendered on the next page.
+	 *
+	 * Keep in sync with ADD_TO_CART_TOKEN_COOKIE in assets/js/javascript.js.
+	 *
+	 * @var string
+	 */
+	const TOKEN_COOKIE = 'gtm_server_side_add_to_cart';
+
+	/**
+	 * Token of the items stashed by the current request.
+	 *
+	 * @var string|null
+	 */
+	private $request_token = null;
+
+	/**
 	 * Init.
 	 *
 	 * @return void
@@ -98,9 +122,44 @@ class GTM_Server_Side_Event_AddToCart {
 			'quantity'     => max( 1, (int) $quantity ),
 			'variation'    => $this->sanitize_variation( $variation ),
 			'time'         => time(),
+			'token'        => $this->get_request_token(),
 		);
 
 		WC()->session->set( self::SESSION_ITEMS_KEY, $items );
+	}
+
+	/**
+	 * Return the token of the current request, setting its cookie on first use.
+	 *
+	 * A grouped product adds every child in one request, so they share a token.
+	 * If the cookie can no longer be sent, the items are stashed without a
+	 * token and rendered unconditionally, as before the cookie existed.
+	 *
+	 * @return string
+	 */
+	private function get_request_token() {
+		if ( null !== $this->request_token ) {
+			return $this->request_token;
+		}
+
+		$this->request_token = '';
+		if ( headers_sent() ) {
+			return $this->request_token;
+		}
+
+		$this->request_token = wp_generate_password( 16, false );
+
+		GTM_Server_Side_Helpers::set_cookie(
+			array(
+				'name'    => self::TOKEN_COOKIE,
+				'value'   => $this->request_token,
+				'expires' => time() + self::SESSION_ITEMS_MAX_AGE,
+				'domain'  => '',
+				'secure'  => is_ssl(),
+			)
+		);
+
+		return $this->request_token;
 	}
 
 	/**
@@ -121,6 +180,7 @@ class GTM_Server_Side_Event_AddToCart {
 		WC()->session->__unset( self::SESSION_ITEMS_KEY );
 
 		$items = $this->drop_expired_items( $items );
+		$items = $this->drop_pushed_items( $items );
 		if ( empty( $items ) ) {
 			return;
 		}
@@ -200,6 +260,32 @@ class GTM_Server_Side_Event_AddToCart {
 			}
 
 			if ( ( $now - (int) $item['time'] ) > self::SESSION_ITEMS_MAX_AGE ) {
+				continue;
+			}
+
+			$result[] = $item;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Drop stashed items the browser already pushed. See TOKEN_COOKIE.
+	 *
+	 * The current request's own token counts as not pushed: a form post that
+	 * renders the page itself has not sent its cookie back yet.
+	 *
+	 * @param  array $items Stashed items.
+	 * @return array
+	 */
+	private function drop_pushed_items( $items ) {
+		$cookie = isset( $_COOKIE[ self::TOKEN_COOKIE ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ self::TOKEN_COOKIE ] ) ) : '';
+		$result = array();
+
+		foreach ( $items as $item ) {
+			$token = isset( $item['token'] ) ? (string) $item['token'] : '';
+
+			if ( '' !== $token && $token !== $cookie && $token !== $this->request_token ) {
 				continue;
 			}
 
