@@ -33,7 +33,7 @@ const GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE = 'gtm_e2e_options';
 /**
  * The only options a cookie may override. Anyone can set a cookie, so
  * without this list a visitor could override any option, such as
- * users_can_register and default_role. Keep it in step with STORE_OPTIONS in
+ * default_role and siteurl. Keep it in step with STORE_OPTIONS in
  * tests/e2e/fixtures/store-options.ts.
  */
 const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
@@ -48,6 +48,10 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'woocommerce_prices_include_tax',
 	'woocommerce_enable_myaccount_registration',
 	'woocommerce_enable_signup_and_login_from_checkout',
+	'users_can_register',
+	'gtm_server_side_placement',
+	'gtm_server_side_gtm_exclude_roles',
+	'gtm_server_side_gtm_exclude_list_roles',
 );
 
 /**
@@ -93,11 +97,13 @@ function gtm_server_side_e2e_cookie_options(): array {
 		return array();
 	}
 
-	// Strings only, as stored options are: a false from pre_option_<name>
-	// would mean "don't override", and an array isn't an option value here.
+	// Strings, or arrays of strings for an option stored as one (the excluded
+	// roles): a false from pre_option_<name> would mean "don't override".
 	return array_filter(
 		array_intersect_key( $options, array_flip( GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS ) ),
-		'is_string'
+		static function ( $value ) {
+			return is_string( $value ) || ( is_array( $value ) && array_filter( $value, 'is_string' ) === $value );
+		}
 	);
 }
 
