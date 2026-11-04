@@ -11,9 +11,16 @@ Needs Docker and Node 22.
 npm ci
 npx playwright install chromium
 npm run env:e2e:start   # WordPress + WooCommerce on http://localhost:8889
-npm run test:e2e        # or test:e2e:ui / test:e2e:debug
+npm run test:e2e        # the parallel run, then the serial one (see Store settings)
 npm run lint:e2e        # the spec rules a machine can check
 ```
+
+`npm run test:e2e:parallel` (plain `playwright test`, and `test:e2e:ui` /
+`test:e2e:debug`) runs the parallel specs only, and `npm run test:e2e:serial`
+(`E2E_SERIAL=1`) the serial ones only: a run never has both, so a serial spec
+can't change a setting under a parallel one. Pass Playwright arguments
+(`--grep`, a file) to one of those two: `test:e2e` hands them to the serial
+run only.
 
 `npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
 
@@ -125,7 +132,9 @@ The rest is up to the author and the review.
 - **The plugin's own settings fields in wp-admin** have no accessible name
   (no `<label>`, and WordPress's settings table has role=presentation), so
   `AdminSettingsPage` finds them by their id, the option they save, which the
-  plugin's admin script uses too.
+  plugin's admin script uses too. A switch whose checkbox hides under it
+  (the same-origin proxy's) is clicked where the user clicks it, its label:
+  `label[for="<option id>"]`.
 - **Narrow by container:** the product card by its name, then the button in
   it. Never the first "Add to cart" on the page.
 
@@ -197,7 +206,9 @@ The rest is up to the author and the review.
   and reads `storefrontPage.source()`. Its DevTools → Network filter is
   `storefrontPage.requestedUrls( '<filter text>' )`, the requests of that
   page load. gtm.js is answered by the automatic `stubGtm` fixture, so a
-  spec checks the request, not the 404 the placeholder container gets.
+  spec checks the request, not the 404 the placeholder container gets. So
+  are the loaders on the case's sGTM URL, `https://sgtm.example.test`, which
+  doesn't resolve.
 - **A field no entry may carry** (`user_data` with user data off) is read
   with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
   holding it, events or not, and compared with `[]`. It is a snapshot: the
@@ -380,6 +391,21 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   thank-you page (`order-confirmation-page.php`, in place of a case's
   store-wide filter), and `endEmailVerificationGrace()`, for a guest order
   link opened more than 10 minutes later (`email-verification-grace.php`).
+- **The loader cache is the test's own** after `loaderCache.isolate()`
+  (`loader-cache.php`). The plugin caches the identifier's random prefix and
+  the encoded Web GTM ID in two site-wide transients, not keyed by the
+  identifier, so a test that overrides the identifier with `storeOptions()`
+  would share them with every test doing the same. Isolated, it starts with
+  an empty cache, as after the case's `wp transient delete`, reads it with
+  `loaderCache.read()` (the case's `wp transient get`), and it is deleted
+  after the test. Without `isolate()`, `read()` and `clear()` act on the
+  site's transients, for a serial test.
+- **Two test plugins are always on**, since what they guard against needs
+  no test's cookie. `block-stape-api.php` answers every request to the Stape
+  API with an error: saving the General tab in wp-admin, and the loader cron,
+  which runs with no cookie, would otherwise send the placeholder identifiers
+  to it. `same-origin-baseline.php` only acts on its own query arg
+  (`restoreSameOriginBaseline()`, see Store settings).
 - **A third-party plugin under test** (GTM4WP, say) is installed through
   `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 
@@ -443,11 +469,22 @@ when it is not the first.
    restore the option in the fixture's teardown. No spec needs this yet.
 3. **Serial.** The spec writes something every spec reads: a setting saved
    through wp-admin, an option with an `update_option_<name>` hook, cron.
-   It runs in a `serial` project with `workers: 1`, started as its own CI
-   step after the parallel one and reporting into the same Testomat run.
-   Not through `dependencies`: Playwright skips a dependent project when any
-   test it depends on fails. Not set up yet; the first spec that needs it
-   adds the project and the CI step.
+   The test carries `{ tag: '@serial' }` (not in its title, which stays the
+   case's), in its suite's file, and runs in the `serial` project with
+   `workers: 1`: `npm run test:e2e:serial`, started as its own CI step after
+   the parallel one, even when that failed, and reporting into the same
+   Testomat run (`TESTOMATIO_RUN`, finished last). Not through
+   `dependencies`: Playwright skips a dependent project when any test it
+   depends on fails.
+
+   A spec that saves the General tab restores it with
+   `generalSettings.restoreAfterTest()`, which saves the baseline back in
+   wp-admin, so the save hooks run again. The tab hides the sGTM URL and
+   identifier while the same-origin proxy is on, which it is on the e2e
+   store, so the spec turns it off first
+   (`adminSettingsPage.setSameOriginProxy( false )`, the case's baseline);
+   wp-admin can't save it on again without an API key, so the teardown turns
+   it back on through `mu-plugins/same-origin-baseline.php`.
 
 ## Testomat
 

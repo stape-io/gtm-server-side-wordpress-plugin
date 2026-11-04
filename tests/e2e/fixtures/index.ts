@@ -47,6 +47,8 @@ import {
 	type NewCustomer,
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
+import { clearLoaderCache, LOADER_CACHE_COOKIE, readLoaderCache, type LoaderCacheValues } from '../api/loader-cache';
+import { restoreSameOriginBaseline } from '../api/same-origin';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -179,6 +181,39 @@ type KnownPageError = {
 	ticket: string;
 };
 
+/**
+ * The loader cache: the identifier's random prefix and the encoded Web GTM ID
+ * the plugin caches site-wide, in two transients that aren't keyed by the
+ * identifier (mu-plugins/loader-cache.php).
+ */
+type LoaderCache = {
+	/**
+	 * Gives this test's browser a cache of its own, empty to begin with, as
+	 * after the case's `wp transient delete`, and deleted after the test. A
+	 * test that overrides the identifier with storeOptions() calls it first:
+	 * the shared cache may hold another test's prefix, and a test clearing it
+	 * would change the loader URL under the others.
+	 */
+	isolate: () => Promise< void >;
+	/** The cached values, as `wp transient get` prints them: this test's own after isolate(), else the site's. */
+	read: () => Promise< LoaderCacheValues >;
+	/** Clears the cache read() reads, as `wp transient delete` does. */
+	clear: () => Promise< void >;
+};
+
+/** The General tab, for a serial test that saves it in wp-admin. */
+type GeneralSettings = {
+	/**
+	 * Saves the General tab's baseline back after the test, in wp-admin, so
+	 * the save hooks run as they did for the test: the Web GTM ID GTM-TESTID,
+	 * no sGTM URL or identifier. Then turns the same-origin proxy back on,
+	 * which wp-admin can't save without an API key (restoreSameOriginBaseline()),
+	 * and clears the loader cache. The options the tab saved stay, empty, where
+	 * the case's clean-up deletes them: the pages render the same.
+	 */
+	restoreAfterTest: () => void;
+};
+
 type SameOriginProxy = {
 	/** GETs a path on this site, expecting the proxy to answer it with a 200. */
 	get: ( path: string ) => Promise< APIResponse >;
@@ -221,6 +256,10 @@ type ShopFixtures = {
 	 * what the proxy did, and anything but a 200 fails the test.
 	 */
 	sameOriginProxy: SameOriginProxy;
+	/** See LoaderCache. */
+	loaderCache: LoaderCache;
+	/** See GeneralSettings. Only for a test in the serial project: the save changes every page. */
+	generalSettings: GeneralSettings;
 	/** See TestPlugins. */
 	testPlugins: TestPlugins;
 	/**
@@ -272,7 +311,8 @@ type ShopFixtures = {
 	/** A throwaway simple product in `category`, regular 50.00 and on sale at 35.00. */
 	saleProduct: CreatedProduct;
 	/**
-	 * Automatic: answers requests for gtm.js with an empty script. The store is
+	 * Automatic: answers requests for gtm.js, and for the loaders on the sGTM
+	 * URL the snippet specs store, with an empty script. The store is
 	 * configured with a placeholder container, so the real one would only add
 	 * a network dependency and a third-party script writing to the same
 	 * window.dataLayer the specs assert on.
@@ -319,7 +359,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	],
 	stubGtm: [
 		async ( { page }, use ) => {
-			await page.route( 'https://www.googletagmanager.com/**', ( route ) =>
+			// The sGTM URL the snippet specs store, `https://sgtm.example.test`,
+			// doesn't resolve: answered the same way, so a page doesn't wait on DNS.
+			await page.route( /^https:\/\/(www\.googletagmanager\.com|sgtm\.example\.test)\//, ( route ) =>
 				route.fulfill( { status: 200, contentType: 'text/javascript', body: '' } )
 			);
 			await use();
@@ -471,6 +513,50 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 		} );
 		await Promise.all( created.map( ( id ) => deleteOrder( requestUtils, id ) ) );
+	},
+	loaderCache: async ( { page, baseURL }, use ) => {
+		let scope: string | undefined;
+		await use( {
+			isolate: async () => {
+				scope = randomUUID();
+				await page.context().addCookies( [ { name: LOADER_CACHE_COOKIE, value: scope, url: baseURL } ] );
+			},
+			read: () => readLoaderCache( page.request ),
+			clear: () => clearLoaderCache( page.request ),
+		} );
+		// By the scope, not the browser's cookies, which newSession() may have
+		// cleared: without the cookie this would clear the site's cache. A
+		// request still on its way that renders a page (a missing image's 404
+		// does) can write the copy again; nothing reads it, and the preflight
+		// purges it next run.
+		if ( scope ) {
+			await clearLoaderCache( page.request, scope );
+		}
+	},
+	generalSettings: async ( { page, loginAsAdmin, adminSettingsPage }, use, testInfo ) => {
+		let restore = false;
+		await use( {
+			restoreAfterTest: () => {
+				if ( testInfo.project.name !== 'serial' ) {
+					throw new Error( "Saving the General tab changes every page: tag the test { tag: '@serial' }." );
+				}
+				restore = true;
+			},
+		} );
+		if ( ! restore ) {
+			return;
+		}
+		await loginAsAdmin();
+		await adminSettingsPage.goto( 'general' );
+		// Hidden while the proxy is on: then the test never got to save the tab.
+		if ( await adminSettingsPage.webContainerUrlInput.isVisible() ) {
+			await adminSettingsPage.webContainerIdInput.fill( 'GTM-TESTID' );
+			await adminSettingsPage.webContainerUrlInput.fill( '' );
+			await adminSettingsPage.webIdentifierInput.fill( '' );
+			await adminSettingsPage.save();
+		}
+		await restoreSameOriginBaseline( page.request );
+		await clearLoaderCache( page.request );
 	},
 	sameOriginProxy: async ( { page }, use ) => {
 		await use( {

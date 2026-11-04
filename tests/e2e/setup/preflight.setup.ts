@@ -1,6 +1,7 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCoupons } from '../api/coupons';
+import { purgeLoaderCaches } from '../api/loader-cache';
 import { purgeTestAccounts } from '../api/customers';
 import { purgeTestOrders } from '../api/orders';
 import { purgeTestPages } from '../api/pages';
@@ -27,8 +28,8 @@ import {
  * and pluginDir fixtures first, which would fail before any of the checks below
  * ran and hide what they would have said.
  *
- * Also removes the products, pages, coupons, tax rates, guest orders and
- * registered accounts killed runs left behind, and records the WordPress,
+ * Also removes the products, pages, coupons, tax rates, guest orders,
+ * registered accounts and isolated loader caches killed runs left behind, and records the WordPress,
  * WooCommerce and theme versions on the test, so a report says what it ran
  * against.
  */
@@ -47,6 +48,7 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	await purgeTestTaxRates( requestUtils );
 	await purgeTestOrders( requestUtils );
 	await purgeTestAccounts( requestUtils );
+	await purgeLoaderCaches( page.request );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
