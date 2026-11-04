@@ -63,6 +63,7 @@ const OPTION_WRITES_COOKIE = 'gtm_e2e_option_writes';
 const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
 const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
 const NO_EMAIL_VERIFICATION_GRACE_COOKIE = 'gtm_e2e_no_email_verification_grace';
+const CONSENT_PLATFORM_COOKIE = 'gtm_e2e_consent_platform';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -172,6 +173,13 @@ type TestPlugins = {
 	 * the order email opened later (email-verification-grace.php).
 	 */
 	endEmailVerificationGrace: () => Promise< void >;
+	/**
+	 * Plays a consent platform restoring a stored choice: its consent commands
+	 * are in the dataLayer before the plugin's consent script runs
+	 * (consent-platform.php). `granted-then-denied` pushes a default grant of
+	 * ad_storage and analytics_storage, then an update denying both.
+	 */
+	consentPlatform: ( choice: 'granted-then-denied' ) => Promise< void >;
 };
 
 /** Orders the guestBuyer fixture doesn't clean up, and what a case does to them as the store admin. */
@@ -507,6 +515,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			flatRateShipping: ( cost ) => setCookie( FLAT_RATE_COOKIE, cost ),
 			markOrderConfirmationPage: ( created ) => setCookie( CONFIRMATION_PAGE_COOKIE, String( created.id ) ),
 			endEmailVerificationGrace: () => setCookie( NO_EMAIL_VERIFICATION_GRACE_COOKIE, '1' ),
+			consentPlatform: ( choice ) => setCookie( CONSENT_PLATFORM_COOKIE, choice ),
 		} );
 	},
 	newSession: async ( { page }, use ) => {

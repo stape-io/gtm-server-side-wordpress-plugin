@@ -87,9 +87,47 @@ export class StorefrontPage {
 	}
 
 	/**
+	 * The `type` of the element with id `id` (`custom-loader`, the GTM
+	 * snippet's script in consent mode), as the DevTools console reads
+	 * `document.getElementById( id ).type`; `undefined` if there is no such script.
+	 */
+	async scriptType( id: string ): Promise< string | undefined > {
+		return this.page.evaluate( ( elementId ) => {
+			const element = document.getElementById( elementId );
+			return element instanceof HTMLScriptElement ? element.type : undefined;
+		}, id );
+	}
+
+	/**
+	 * Runs `gtag( ...args )` in the DevTools console, defining gtag first the
+	 * way the cases do, since the page has none:
+	 * `function gtag(){ dataLayer.push(arguments); }`. So the push is an
+	 * `arguments` object, as a real gtag's is, not an array.
+	 */
+	async gtag( ...args: unknown[] ): Promise< void > {
+		await this.page.evaluate( ( gtagArgs ) => {
+			const w = window as unknown as { dataLayer: unknown[] };
+			function gtag( ..._: unknown[] ) {
+				// eslint-disable-next-line prefer-rest-params -- gtag pushes its arguments object, which the consent script reads.
+				w.dataLayer.push( arguments );
+			}
+			gtag( ...gtagArgs );
+		}, args );
+	}
+
+	/** Runs `dataLayer.push( entry )` in the DevTools console: a plain array or object, not gtag's `arguments`. */
+	async pushToDataLayer( entry: unknown ): Promise< void > {
+		await this.page.evaluate( ( pushed ) => {
+			( window as unknown as { dataLayer: unknown[] } ).dataLayer.push( pushed );
+		}, entry );
+	}
+
+	/**
 	 * The URLs the page goto() opened requested that contain `filter`, as
 	 * DevTools → Network lists them with that filter. A snapshot: the scripts
 	 * the head inserts are requested before the load event goto() waits for.
+	 * A script inserted later (GTM released by a consent push) adds its
+	 * request when it is made, so a spec polls for that one.
 	 */
 	requestedUrls( filter: string ): string[] {
 		return this.requests.map( ( request ) => request.url() ).filter( ( url ) => url.includes( filter ) );

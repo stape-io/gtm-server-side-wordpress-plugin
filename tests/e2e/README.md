@@ -400,8 +400,10 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   fixture, which sets its cookie: `flatRateShipping()`
   (`flat-rate-shipping.php`), `markOrderConfirmationPage()` for a shop's own
   thank-you page (`order-confirmation-page.php`, in place of a case's
-  store-wide filter), and `endEmailVerificationGrace()`, for a guest order
-  link opened more than 10 minutes later (`email-verification-grace.php`).
+  store-wide filter), `endEmailVerificationGrace()`, for a guest order
+  link opened more than 10 minutes later (`email-verification-grace.php`),
+  and `consentPlatform()`, a consent platform whose stored choice is in the
+  dataLayer before the plugin's consent script (`consent-platform.php`).
 - **The loader cache is the test's own** after `loaderCache.isolate()`
   (`loader-cache.php`). The plugin caches the identifier's random prefix and
   the encoded Web GTM ID in two site-wide transients, not keyed by the
