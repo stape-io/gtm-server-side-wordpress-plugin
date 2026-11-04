@@ -41,7 +41,9 @@ class GTM_Server_Side_Tracking_Code {
 	 * @return void
 	 */
 	public function wp_head() {
-		if ( is_user_logged_in() && GTM_Server_Side_Helpers::is_enable_gtm_exclude_roles() ) {
+		$is_logged_in = is_user_logged_in();
+
+		if ( $is_logged_in && GTM_Server_Side_Helpers::is_enable_gtm_exclude_roles() ) {
 			$current_user  = wp_get_current_user();
 			$exclude_roles = GTM_Server_Side_Helpers::get_gtm_exclude_list_roles();
 
@@ -49,6 +51,8 @@ class GTM_Server_Side_Tracking_Code {
 				return;
 			}
 		}
+
+		$this->print_login_state( $is_logged_in );
 
 		if ( GTM_Server_Side_Helpers::is_enable_placement_gtm_consent() ) {
 			$this->print_gtm_consent_loader();
@@ -77,6 +81,26 @@ class GTM_Server_Side_Tracking_Code {
 		}
 
 		$this->print_default_gtm_code();
+	}
+
+	/**
+	 * Print the login state into the dataLayer.
+	 *
+	 * Pushed without an event, so no trigger fires and GTM only stores the key,
+	 * for every later event to read. Plain script, so the consent gate does not
+	 * hold it back.
+	 *
+	 * @param  bool $is_logged_in Whether the visitor is logged in.
+	 * @return void
+	 */
+	private function print_login_state( $is_logged_in ) {
+		$data_layer = array( 'login_state' => $is_logged_in ? 'logged-in' : 'logged-out' );
+		?>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
+		</script>
+		<?php
 	}
 
 	/**
