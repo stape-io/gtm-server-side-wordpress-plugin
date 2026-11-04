@@ -40,13 +40,22 @@ class GTM_Server_Side_Event_ViewItem {
 	 * names it from the options the shopper chose, as it does for add_to_cart,
 	 * because a variation's own attributes are empty for an "Any …" attribute.
 	 *
+	 * Only there: themes that show swatches in product grids build the
+	 * variation data for every product card, where no view_item is pushed.
+	 *
 	 * @param  array                $data      Variation data.
 	 * @param  WC_Product           $product   Variable product.
 	 * @param  WC_Product_Variation $variation Variation.
 	 * @return array
 	 */
-	public function woocommerce_available_variation( $data, $product, $variation ) {
+	public function woocommerce_available_variation( $data, $product = null, $variation = null ) {
 		if ( ! is_array( $data ) || ! ( $variation instanceof WC_Product ) ) {
+			return $data;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only reads which wc-ajax endpoint runs.
+		$is_get_variation = isset( $_GET['wc-ajax'] ) && 'get_variation' === $_GET['wc-ajax'];
+		if ( ! is_product() && ! $is_get_variation ) {
 			return $data;
 		}
 

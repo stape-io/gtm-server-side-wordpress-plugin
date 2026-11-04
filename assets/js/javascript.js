@@ -386,6 +386,12 @@ var pluginGtmServerSide = {
 			return;
 		}
 
+		// A product page only: a variation form elsewhere (a quick view in a
+		// grid) is not the view the event reports as ecomm_pagetype product.
+		if ( ! jQuery( document.body ).hasClass( 'single-product' ) ) {
+			return;
+		}
+
 		setTimeout(
 			function () {
 				if ( ! $elForm.data( 'gtm_variation_changed' ) ) {
