@@ -374,8 +374,10 @@ var pluginGtmServerSide = {
 	 * Remove from cart
 	 *
 	 * @param object item
+	 * @param string value ecommerce.value, sent only when given: the classic
+	 *                     cart's remove sends none (DEV-12686).
 	 */
-	removeFromCart: function ( item ) {
+	removeFromCart: function ( item, value ) {
 		item.quantity = item.quantity || 1;
 		var eventData = {
 			'event': this.getDataLayerEventName( 'remove_from_cart' ),
@@ -386,6 +388,10 @@ var pluginGtmServerSide = {
 				],
 			},
 		};
+
+		if ( undefined !== value ) {
+			eventData.ecommerce.value = value;
+		}
 
 		if ( varGtmServerSide.user_data ) {
 			eventData.user_data = {};
@@ -532,13 +538,24 @@ var pluginGtmServerSide = {
 				this.pushAddToCart( item );
 			} else if ( delta < 0 ) {
 				item.quantity = -delta;
-				this.removeFromCart( item );
+				this.removeFromCart( item, this.getItemValue( item ) );
 			}
 		} else if ( line && 'cart/remove-item' === request.route ) {
-			this.removeFromCart( Object.assign( { quantity: line.quantity }, line.item ) );
+			var removed = Object.assign( { quantity: line.quantity }, line.item );
+			this.removeFromCart( removed, this.getItemValue( removed ) );
 		}
 
 		this.storeApiCartLines = this.getStoreApiCartLines( cart );
+	},
+
+	/**
+	 * An item's price x quantity, formatted as every event's ecommerce.value.
+	 *
+	 * @param object item Item with price and quantity.
+	 * @returns string
+	 */
+	getItemValue: function ( item ) {
+		return ( ( parseFloat( item.price ) || 0 ) * item.quantity ).toFixed( 2 );
 	},
 
 	/**

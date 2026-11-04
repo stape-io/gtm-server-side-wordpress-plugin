@@ -21,49 +21,57 @@ export class MiniCart {
 		return this.drawer().getByRole( 'link', { name: product.name, exact: true } );
 	}
 
+	/** The quantity field of `product`'s line in the drawer. */
+	quantity( product: CreatedProduct ): Locator {
+		return this.drawer().getByRole( 'spinbutton', { name: `Quantity of ${ product.name } in your cart.` } );
+	}
+
+	/** The drawer's message for a cart with nothing in it. */
+	get emptyCartNotice(): Locator {
+		return this.drawer().getByText( 'Your cart is currently empty!' );
+	}
+
 	/**
 	 * Clicks the line's "+" and waits until the Store API has saved the new
 	 * quantity: the drawer shows it at once, before the server has it.
+	 * Returns the Store API's answer.
 	 */
-	async increaseQuantity( product: CreatedProduct ): Promise< void > {
-		const saved = this.cartChanged();
+	async increaseQuantity( product: CreatedProduct ): Promise< Response > {
+		const saved = this.storeApiPost();
 		await this.drawer().getByRole( 'button', { name: `Increase quantity of ${ product.name }` } ).click();
-		await saved;
-	}
-
-	/** Clicks the line's "-" and waits until the Store API has saved the new quantity. */
-	async decreaseQuantity( product: CreatedProduct ): Promise< void > {
-		const saved = this.cartChanged();
-		await this.drawer().getByRole( 'button', { name: `Reduce quantity of ${ product.name }` } ).click();
-		await saved;
+		return saved;
 	}
 
 	/**
 	 * Types a new quantity into the line's field and leaves it, on which the
-	 * drawer saves it, and waits until the Store API has.
+	 * drawer saves it, and waits until the Store API has. Returns the Store
+	 * API's answer.
 	 */
-	async setQuantity( product: CreatedProduct, quantity: number ): Promise< void > {
-		const saved = this.cartChanged();
-		const field = this.drawer().getByRole( 'spinbutton', { name: `Quantity of ${ product.name } in your cart.` } );
-		await field.fill( String( quantity ) );
-		await field.blur();
-		await saved;
+	async setQuantity( product: CreatedProduct, quantity: number ): Promise< Response > {
+		const saved = this.storeApiPost();
+		await this.quantity( product ).fill( String( quantity ) );
+		await this.quantity( product ).blur();
+		return saved;
 	}
 
-	/** Clicks the line's "Remove" and waits until the line is gone. */
-	async remove( product: CreatedProduct ): Promise< void > {
+	/**
+	 * Clicks the line's "Remove" and waits until the Store API has removed it.
+	 * Returns the Store API's answer.
+	 */
+	async remove( product: CreatedProduct ): Promise< Response > {
+		const removed = this.storeApiPost();
 		await this.drawer().getByRole( 'button', { name: `Remove ${ product.name } from cart` } ).click();
-		await this.item( product ).waitFor( { state: 'detached' } );
+		return removed;
 	}
 
 	private drawer(): Locator {
 		return this.page.getByRole( 'dialog' );
 	}
 
-	/** The Store API's answer to a change the drawer posts, which it sends as a batch. */
-	private cartChanged(): Promise< Response > {
+	/** The Store API's answer to the next change the drawer posts. */
+	private storeApiPost(): Promise< Response > {
 		return this.page.waitForResponse(
-			( response ) => response.request().method() === 'POST' && new URL( response.url() ).pathname.endsWith( '/wc/store/v1/batch' )
+			( response ) => response.request().method() === 'POST' && new URL( response.url() ).pathname.includes( '/wc/store/v1/' )
 		);
 	}
 }

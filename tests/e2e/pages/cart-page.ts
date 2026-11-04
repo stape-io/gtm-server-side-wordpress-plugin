@@ -27,43 +27,47 @@ export class CartPage {
 		return this.page.getByRole( 'main' ).getByRole( 'link', { name: product.name, exact: true } );
 	}
 
-	/**
-	 * Clicks the line's "+" and waits until the Store API has saved the new
-	 * quantity: the block shows it at once, before the server has it.
-	 */
-	async increaseQuantity( product: CreatedProduct ): Promise< void > {
-		const saved = this.cartItemUpdated();
-		await this.page.getByRole( 'button', { name: `Increase quantity of ${ product.name }` } ).click();
-		await saved;
+	/** The quantity field of `product`'s cart line. */
+	quantity( product: CreatedProduct ): Locator {
+		return this.page.getByRole( 'spinbutton', { name: `Quantity of ${ product.name } in your cart.` } );
 	}
 
-	/** Clicks the line's "-" and waits until the Store API has saved the new quantity. */
-	async decreaseQuantity( product: CreatedProduct ): Promise< void > {
-		const saved = this.cartItemUpdated();
-		await this.page.getByRole( 'button', { name: `Reduce quantity of ${ product.name }` } ).click();
-		await saved;
+	/**
+	 * Clicks the line's "+" and waits until the Store API has saved the new
+	 * quantity: the block shows it at once, before the server has it. Returns
+	 * the Store API's answer.
+	 */
+	async increaseQuantity( product: CreatedProduct ): Promise< Response > {
+		const saved = this.storeApiPost();
+		await this.page.getByRole( 'button', { name: `Increase quantity of ${ product.name }` } ).click();
+		return saved;
 	}
 
 	/**
 	 * Types a new quantity into the line's field, which the block saves on its
 	 * own after a short pause, and waits until the Store API has saved it.
+	 * Returns the Store API's answer.
 	 */
-	async setQuantity( product: CreatedProduct, quantity: number ): Promise< void > {
-		const saved = this.cartItemUpdated();
-		await this.page.getByRole( 'spinbutton', { name: `Quantity of ${ product.name } in your cart.` } ).fill( String( quantity ) );
-		await saved;
+	async setQuantity( product: CreatedProduct, quantity: number ): Promise< Response > {
+		const saved = this.storeApiPost();
+		await this.quantity( product ).fill( String( quantity ) );
+		return saved;
 	}
 
-	/** Clicks the line's "Remove" and waits until the line is gone. */
-	async remove( product: CreatedProduct ): Promise< void > {
+	/**
+	 * Clicks the line's "Remove" and waits until the Store API has removed it.
+	 * Returns the Store API's answer.
+	 */
+	async remove( product: CreatedProduct ): Promise< Response > {
+		const removed = this.storeApiPost();
 		await this.page.getByRole( 'button', { name: `Remove ${ product.name } from cart` } ).click();
-		await this.item( product ).waitFor( { state: 'detached' } );
+		return removed;
 	}
 
-	/** The Store API's answer to the quantity change the Cart block posts. */
-	private cartItemUpdated(): Promise< Response > {
+	/** The Store API's answer to the next change the Cart block posts. */
+	private storeApiPost(): Promise< Response > {
 		return this.page.waitForResponse(
-			( response ) => response.request().method() === 'POST' && new URL( response.url() ).pathname.endsWith( '/wc/store/v1/cart/update-item' )
+			( response ) => response.request().method() === 'POST' && new URL( response.url() ).pathname.includes( '/wc/store/v1/' )
 		);
 	}
 

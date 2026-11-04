@@ -74,11 +74,6 @@ export function expectedEcommerce( items: EcommerceItem[] ): Ecommerce {
 	return { currency: STORE_CURRENCY, value: value.toFixed( 2 ), items };
 }
 
-/** remove_from_cart's `ecommerce`: the removed items, with no `value`. */
-export function expectedRemoveFromCartEcommerce( items: EcommerceItem[] ): Ecommerce {
-	return { currency: STORE_CURRENCY, items };
-}
-
 /**
  * One view_item_list item: the product, plus the list it was shown in.
  * `extra` as for expectedItem().
