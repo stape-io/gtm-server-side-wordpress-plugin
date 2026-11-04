@@ -10,6 +10,7 @@ import { CheckoutPage } from '../pages/checkout-page';
 import { ClassicCartPage } from '../pages/classic-cart-page';
 import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
+import { MiniCart } from '../pages/mini-cart';
 import { MyAccountPage } from '../pages/my-account-page';
 import { ClassicLoopPage } from '../pages/classic-loop-page';
 import { CART_STATE_ACTION } from '../pages/product-listing';
@@ -185,6 +186,7 @@ type ShopFixtures = {
 	classicLoopPage: ClassicLoopPage;
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
+	miniCart: MiniCart;
 	myAccountPage: MyAccountPage;
 	shopPage: ShopPage;
 	contentPage: ContentPage;
@@ -366,6 +368,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	homePage: async ( { page }, use ) => {
 		await use( new HomePage( page ) );
+	},
+	miniCart: async ( { page }, use ) => {
+		await use( new MiniCart( page ) );
 	},
 	myAccountPage: async ( { page }, use ) => {
 		await use( new MyAccountPage( page ) );

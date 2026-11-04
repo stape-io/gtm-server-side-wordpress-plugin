@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, Response } from '@playwright/test';
 import type { CreatedProduct } from '../api/products';
 
 /**
@@ -25,6 +25,46 @@ export class CartPage {
 	/** The cart line of `product`, by the link to it the line shows. */
 	item( product: CreatedProduct ): Locator {
 		return this.page.getByRole( 'main' ).getByRole( 'link', { name: product.name, exact: true } );
+	}
+
+	/**
+	 * Clicks the line's "+" and waits until the Store API has saved the new
+	 * quantity: the block shows it at once, before the server has it.
+	 */
+	async increaseQuantity( product: CreatedProduct ): Promise< void > {
+		const saved = this.cartItemUpdated();
+		await this.page.getByRole( 'button', { name: `Increase quantity of ${ product.name }` } ).click();
+		await saved;
+	}
+
+	/** Clicks the line's "-" and waits until the Store API has saved the new quantity. */
+	async decreaseQuantity( product: CreatedProduct ): Promise< void > {
+		const saved = this.cartItemUpdated();
+		await this.page.getByRole( 'button', { name: `Reduce quantity of ${ product.name }` } ).click();
+		await saved;
+	}
+
+	/**
+	 * Types a new quantity into the line's field, which the block saves on its
+	 * own after a short pause, and waits until the Store API has saved it.
+	 */
+	async setQuantity( product: CreatedProduct, quantity: number ): Promise< void > {
+		const saved = this.cartItemUpdated();
+		await this.page.getByRole( 'spinbutton', { name: `Quantity of ${ product.name } in your cart.` } ).fill( String( quantity ) );
+		await saved;
+	}
+
+	/** Clicks the line's "Remove" and waits until the line is gone. */
+	async remove( product: CreatedProduct ): Promise< void > {
+		await this.page.getByRole( 'button', { name: `Remove ${ product.name } from cart` } ).click();
+		await this.item( product ).waitFor( { state: 'detached' } );
+	}
+
+	/** The Store API's answer to the quantity change the Cart block posts. */
+	private cartItemUpdated(): Promise< Response > {
+		return this.page.waitForResponse(
+			( response ) => response.request().method() === 'POST' && new URL( response.url() ).pathname.endsWith( '/wc/store/v1/cart/update-item' )
+		);
 	}
 
 	/**
