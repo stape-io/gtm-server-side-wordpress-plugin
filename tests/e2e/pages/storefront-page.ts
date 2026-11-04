@@ -35,6 +35,11 @@ export class StorefrontPage {
 		return this.landing.text();
 	}
 
+	/** A global a script on the page set (`snipApiLoader`), as the DevTools console reads `window.<name>`. */
+	async windowValue( name: string ): Promise< unknown > {
+		return this.page.evaluate( ( key ) => ( window as unknown as Record< string, unknown > )[ key ], name );
+	}
+
 	/**
 	 * The URLs the page goto() opened requested that contain `filter`, as
 	 * DevTools → Network lists them with that filter. A snapshot: the scripts

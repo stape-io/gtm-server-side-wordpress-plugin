@@ -32,6 +32,28 @@ type StoreOptionValues = {
 	 */
 	placement: 'code' | 'gtm_consent' | 'plugin' | 'disable';
 	/**
+	 * The General tab's sGTM URL ("Server GTM container URL"), the Stape
+	 * container identifier and Cookie Keeper (`yes`): not set on the baseline
+	 * store. Saving any of them makes the plugin fetch a custom loader from the
+	 * Stape API, and saving the identifier clears the loader cache, so a test of
+	 * either saves them in wp-admin instead. The snippet reads them on every
+	 * request (GTM_Server_Side_Tracking_Code::wp_head()).
+	 *
+	 * The cache of the identifier's prefix and the encoded Web GTM ID is
+	 * site-wide and not keyed by the identifier, so a test that overrides the
+	 * identifier gives itself a cache of its own first, loaderCache.isolate().
+	 */
+	webContainerUrl: string;
+	webIdentifier: string;
+	cookieKeeper: 'yes';
+	/**
+	 * The custom loader fetched from the Stape API, the script the plugin
+	 * prints instead of any snippet. Not set on the baseline store; the plugin
+	 * stores it itself, after a save in wp-admin or from its cron, and reads it
+	 * on every request.
+	 */
+	customLoaderFromApi: string;
+	/**
 	 * The same-origin proxy's Stape API key. Saving it only flushes the rewrite
 	 * rules (and, in wp-admin, rebuilds the custom loader); the proxy path's
 	 * rule doesn't depend on the key, and the proxy reads it per request.
@@ -100,6 +122,10 @@ export const STORE_OPTIONS = {
 	dataLayerEcommerce: 'gtm_server_side_data_layer_ecommerce',
 	userData: 'gtm_server_side_data_layer_user_data',
 	placement: 'gtm_server_side_placement',
+	webContainerUrl: 'gtm_server_side_web_container_url',
+	webIdentifier: 'gtm_server_side_web_identifier',
+	cookieKeeper: 'gtm_server_side_cookie_keeper',
+	customLoaderFromApi: 'gtm_server_side_gtm_custom_loader_from_api',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
 	catalogColumns: 'woocommerce_catalog_columns',
 	catalogRows: 'woocommerce_catalog_rows',

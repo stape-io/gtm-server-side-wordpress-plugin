@@ -22,11 +22,22 @@ process.env.WP_BASE_URL = baseURL;
  */
 process.env.STORAGE_STATE_PATH ??= path.join( __dirname, 'tests/e2e/artifacts/storage-states/admin.json' );
 
+/**
+ * Serial tests (tagged `@serial`) save settings every page reads, such as the
+ * General tab in wp-admin, so they never run next to the parallel ones: a run
+ * has either the parallel project or, with E2E_SERIAL=1, the serial one
+ * (`npm run test:e2e` runs both, one after the other). Not a project that
+ * depends on the parallel one: Playwright skips a dependent project when any
+ * test it depends on fails. Read again in every worker, which inherits it.
+ */
+const serial = process.env.E2E_SERIAL === '1';
+
 export default defineConfig( {
 	testDir: './tests/e2e/specs',
 	// Pinned so output lands in a predictable place no matter which directory
-	// the run was started from, which is also what CI uploads.
-	outputDir: './tests/e2e/test-results',
+	// the run was started from, which is also what CI uploads. The serial run
+	// has its own, so it doesn't wipe what the parallel run left.
+	outputDir: serial ? './tests/e2e/test-results-serial' : './tests/e2e/test-results',
 	fullyParallel: true,
 	forbidOnly: !! process.env.CI,
 	retries: process.env.CI ? 1 : 0,
@@ -36,7 +47,13 @@ export default defineConfig( {
 	reporter: process.env.CI
 		? [
 				[ 'github' ],
-				[ 'html', { open: 'never', outputFolder: 'tests/e2e/playwright-report' } ],
+				[
+					'html',
+					{
+						open: 'never',
+						outputFolder: serial ? 'tests/e2e/playwright-report-serial' : 'tests/e2e/playwright-report',
+					},
+				],
 				// Reports each run to Testomat, matching results to cases by the
 				// @T{id} tag in the test title. Left out without a token (PRs from
 				// forks get no secrets), so the suite never depends on it.
@@ -62,10 +79,19 @@ export default defineConfig( {
 			testDir: './tests/e2e/setup',
 			testMatch: /.*\.setup\.ts/,
 		},
-		{
-			name: 'chromium',
-			use: { ...devices[ 'Desktop Chrome' ] },
-			dependencies: [ 'preflight' ],
-		},
+		serial
+			? {
+					name: 'serial',
+					use: { ...devices[ 'Desktop Chrome' ] },
+					dependencies: [ 'preflight' ],
+					grep: /@serial/,
+					workers: 1,
+			  }
+			: {
+					name: 'chromium',
+					use: { ...devices[ 'Desktop Chrome' ] },
+					dependencies: [ 'preflight' ],
+					grepInvert: /@serial/,
+			  },
 	],
 } );
