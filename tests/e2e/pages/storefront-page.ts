@@ -1,4 +1,4 @@
-import type { Page, Request, Response } from '@playwright/test';
+import type { CDPSession, Cookie, Page, Request, Response } from '@playwright/test';
 
 /**
  * Any storefront page, opened by its path, for a case about what every page
@@ -9,10 +9,16 @@ export class StorefrontPage {
 	/** The page goto() opened, as the server sent it. */
 	private landing: Response | null = null;
 
+	/** The DevTools protocol session emulateUserAgent() opened, kept for the rest of the test. */
+	private devTools: CDPSession | null = null;
+
 	/** Every request the browser made since goto() started, in order. */
 	private requests: Request[] = [];
 
-	constructor( private readonly page: Page ) {
+	constructor(
+		private readonly page: Page,
+		private readonly baseURL: string
+	) {
 		// Reset when goto() starts, not when the new page commits: Playwright can
 		// report the head's script requests before the main frame's navigation.
 		page.on( 'request', ( request ) => this.requests.push( request ) );
@@ -25,6 +31,46 @@ export class StorefrontPage {
 	async goto( path: string ): Promise< void > {
 		this.requests = [];
 		this.landing = await this.page.goto( path );
+	}
+
+	/** Reloads the page goto() opened, as the browser's reload button does; source() and requestedUrls() are the reload's. */
+	async reload(): Promise< void > {
+		this.requests = [];
+		this.landing = await this.page.reload();
+	}
+
+	/**
+	 * The `Set-Cookie` headers for `name` the server sent with the page goto()
+	 * or reload() opened, as `curl -D -` prints them after `Set-Cookie: `.
+	 */
+	async setCookieHeaders( name: string ): Promise< string[] > {
+		if ( ! this.landing ) {
+			throw new Error( 'Call goto() first: setCookieHeaders() reads the response of the page it opens.' );
+		}
+		return ( await this.landing.headersArray() )
+			.filter( ( header ) => header.name.toLowerCase() === 'set-cookie' )
+			.map( ( header ) => header.value )
+			.filter( ( value ) => value.startsWith( `${ name }=` ) );
+	}
+
+	/** The browser's cookie `name` for the store, as DevTools → Application → Cookies shows it. */
+	async cookie( name: string ): Promise< Cookie | undefined > {
+		return ( await this.page.context().cookies( this.baseURL ) ).find( ( cookie ) => cookie.name === name );
+	}
+
+	/** Gives the browser cookie `name` the value `value` for the store, as editing it in DevTools → Application → Cookies does. */
+	async setCookie( name: string, value: string ): Promise< void > {
+		await this.page.context().addCookies( [ { name, value, url: this.baseURL } ] );
+	}
+
+	/**
+	 * Sends `userAgent` from now on, in the header and as navigator.userAgent,
+	 * as DevTools → Network conditions → User agent does: for the rest of the
+	 * test, across navigations, until it is called again.
+	 */
+	async emulateUserAgent( userAgent: string ): Promise< void > {
+		this.devTools ??= await this.page.context().newCDPSession( this.page );
+		await this.devTools.send( 'Emulation.setUserAgentOverride', { userAgent } );
 	}
 
 	/** The HTML of the page goto() opened, as View Source shows it: before any script ran. */

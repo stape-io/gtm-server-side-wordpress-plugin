@@ -56,6 +56,9 @@ import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
 const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
 
+/** Read by mu-plugins/record-option-writes.php; the PHP side names it GTM_SERVER_SIDE_E2E_OPTION_WRITES_COOKIE. */
+const OPTION_WRITES_COOKIE = 'gtm_e2e_option_writes';
+
 /** Read by the test plugins in mu-plugins/ behind the testPlugins fixture; each names its own on the PHP side. */
 const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
 const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
@@ -126,6 +129,17 @@ type Catalog = {
 	createCustomer: () => Promise< CreatedCustomer >;
 };
 
+type OptionWrites = {
+	/**
+	 * Asserts the plugin wrote none of the settings
+	 * mu-plugins/record-option-writes.php watches (Cookie Keeper) while
+	 * serving this test's browser requests so far: the case's `wp option get`
+	 * for a setting the test overrides, which lives in a cookie. A delete of a
+	 * setting the database doesn't hold fires no hook, so it goes unseen.
+	 */
+	expectNone: () => Promise< void >;
+};
+
 type PhpErrors = {
 	/**
 	 * Asserts PHP reported no warning, notice or fatal error while serving
@@ -192,7 +206,9 @@ type LoaderCache = {
 	 * after the case's `wp transient delete`, and deleted after the test. A
 	 * test that overrides the identifier with storeOptions() calls it first:
 	 * the shared cache may hold another test's prefix, and a test clearing it
-	 * would change the loader URL under the others.
+	 * would change the loader URL under the others. Called again after
+	 * newSession(), it gives the new session the same cache: the site's is
+	 * the same for every browser window.
 	 */
 	isolate: () => Promise< void >;
 	/** The cached values, as `wp transient get` prints them: this test's own after isolate(), else the site's. */
@@ -266,7 +282,7 @@ type ShopFixtures = {
 	 * Starts a new session in this test's browser, as a new private window
 	 * would: the browser forgets its cookies, and with them the WooCommerce
 	 * session and the storeOptions() and testPlugins cookies set so far. It
-	 * keeps the phpErrors one, which a spec can't set again.
+	 * keeps the phpErrors and optionWrites ones, which a spec can't set again.
 	 */
 	newSession: () => Promise< void >;
 	/**
@@ -284,6 +300,8 @@ type ShopFixtures = {
 	 * running at the same time. Starts recording before the first page load.
 	 */
 	phpErrors: PhpErrors;
+	/** See OptionWrites. Starts recording before the first page load. */
+	optionWrites: OptionWrites;
 	/**
 	 * Billing details for a guest checkout, unique to this test. The orders
 	 * placed with them, and the account the checkout creates with them when
@@ -467,8 +485,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	productSearchPage: async ( { page }, use ) => {
 		await use( new ProductSearchPage( page ) );
 	},
-	storefrontPage: async ( { page }, use ) => {
-		await use( new StorefrontPage( page ) );
+	storefrontPage: async ( { page, baseURL }, use ) => {
+		if ( ! baseURL ) {
+			throw new Error( 'storefrontPage needs baseURL, which playwright.config.ts sets from WP_BASE_URL.' );
+		}
+		await use( new StorefrontPage( page, baseURL ) );
 	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
@@ -491,7 +512,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	newSession: async ( { page }, use ) => {
 		await use( async () => {
 			const context = page.context();
-			const kept = ( await context.cookies() ).filter( ( cookie ) => cookie.name === PHP_ERRORS_COOKIE );
+			const kept = ( await context.cookies() ).filter( ( cookie ) =>
+				[ PHP_ERRORS_COOKIE, OPTION_WRITES_COOKIE ].includes( cookie.name )
+			);
 			await context.clearCookies();
 			await context.addCookies( kept );
 		} );
@@ -518,7 +541,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		let scope: string | undefined;
 		await use( {
 			isolate: async () => {
-				scope = randomUUID();
+				scope ??= randomUUID();
 				await page.context().addCookies( [ { name: LOADER_CACHE_COOKIE, value: scope, url: baseURL } ] );
 			},
 			read: () => readLoaderCache( page.request ),
@@ -586,6 +609,26 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		await use( {
 			expectNone: async () => {
 				expect( await call( 'GET' ), "PHP warnings, notices or fatal errors on this test's requests" ).toEqual( [] );
+			},
+		} );
+		await call( 'DELETE' );
+	},
+	optionWrites: async ( { page, baseURL, requestUtils }, use ) => {
+		const token = randomUUID();
+		const path = `/gtm-e2e/v1/option-writes/${ token }`;
+		await page.context().addCookies( [ { name: OPTION_WRITES_COOKIE, value: token, url: baseURL } ] );
+		const call = async ( method: 'GET' | 'DELETE' ): Promise< string[] > => {
+			try {
+				return await requestUtils.rest( { path, method } );
+			} catch ( error ) {
+				throw new Error(
+					`Cannot read the option writes this test recorded: is mu-plugins/record-option-writes.php loaded? After a branch switch, restart the store: npm run env:e2e:stop && npm run env:e2e:start. ${ String( error ) }`
+				);
+			}
+		};
+		await use( {
+			expectNone: async () => {
+				expect( await call( 'GET' ), "writes to the watched settings on this test's requests" ).toEqual( [] );
 			},
 		} );
 		await call( 'DELETE' );

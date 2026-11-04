@@ -209,6 +209,14 @@ The rest is up to the author and the review.
   spec checks the request, not the 404 the placeholder container gets. So
   are the loaders on the case's sGTM URL, `https://sgtm.example.test`, which
   doesn't resolve.
+- **Cookies and the user agent** go through the same page object.
+  DevTools → Application → Cookies is `storefrontPage.cookie( name )`, and
+  editing a value there is `setCookie( name, value )`. A case's curl that
+  prints `Set-Cookie` is the page the browser opens, with the cookies the case
+  sends set first: `storefrontPage.setCookieHeaders( name )` returns those
+  headers, as curl prints them. DevTools → Network conditions → User agent is
+  `emulateUserAgent( ua )`, which holds for the rest of the test, so one test
+  can switch it between page loads as the case does.
 - **A field no entry may carry** (`user_data` with user data off) is read
   with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
   holding it, events or not, and compared with `[]`. It is a snapshot: the
@@ -363,7 +371,10 @@ decision of its own: name it in the plan before making it.
   `/metrics` answers 404. A proxy spec supplies the key for its own requests
   with `storeOptions( { sameOriginApiKey } )`; a key ending in `:test` sends
   the proxy to `*.stape.test`, which `mu-plugins/stub-same-origin-upstream.php`
-  answers with the URL it was sent.
+  answers with the URL it was sent. A case about the pages of a store with
+  same-origin configured uses `sameOriginApiKeyOnEveryPage` (see Store
+  settings) with the path the store has: the case's own path changes no
+  check outside the proxy.
 
 ### Test plugins
 
@@ -399,7 +410,15 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   an empty cache, as after the case's `wp transient delete`, reads it with
   `loaderCache.read()` (the case's `wp transient get`), and it is deleted
   after the test. Without `isolate()`, `read()` and `clear()` act on the
-  site's transients, for a serial test.
+  site's transients, for a serial test. After `newSession()`, `isolate()`
+  again gives the new session the same cache, as the site's is shared by
+  every browser window.
+- **A setting the test overrides is kept** when the plugin never wrote it:
+  the case's `wp option get` would read the database, not the test's
+  cookie. `optionWrites.expectNone()` (`record-option-writes.php`) fails on
+  any `update_option()`, `add_option()` or `delete_option()` of a setting it
+  watches (Cookie Keeper) on the test's browser requests. Add a setting to
+  its `GTM_SERVER_SIDE_E2E_RECORDED_OPTIONS` when a case needs it.
 - **Two test plugins are always on**, since what they guard against needs
   no test's cookie. `block-stape-api.php` answers every request to the Stape
   API with an error: saving the General tab in wp-admin, and the loader cron,
@@ -449,15 +468,18 @@ when it is not the first.
      proxy answers 404, so they can't be overridden either. Saving the
      same-origin API key only flushes the rewrite rules (and, in wp-admin,
      rebuilds the loader too), and the rule doesn't depend on the key, so a
-     proxy test can override it;
-   - the override doesn't put the pages in a state no live store has. The
-     same-origin API key would: with it, every page switches to same-origin
-     (service worker patch, identifier from the key, no Cookie Keeper) but
-     keeps the raw sGTM URL, since the same-origin loader exists only after a
-     real save. So the helper applies it to requests under the proxy path
-     only, and any other page renders as without it. An option like that
-     goes into the helper's `GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS`, or a
-     scope of its own;
+     test can override it;
+   - the override doesn't put the pages in a state no live store has, and
+     applies only where the test asks for it. The same-origin API key with
+     no loader from the Stape API is a state a live store has: Stape didn't
+     send the loader on the save. Since DEV-13426 every page then prints
+     Google's GTM snippet, with no Cookie Keeper (the service worker patch
+     comes only with the loader). A proxy test doesn't ask for that change,
+     so `sameOriginApiKey` applies to requests under the proxy path only
+     (the helper's `GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS`) and any
+     other page renders as without it. A case about those pages uses
+     `sameOriginApiKeyOnEveryPage`, the same option on every request (the
+     helper's `GTM_SERVER_SIDE_E2E_EVERY_PAGE_ALIASES`);
    - the code under test reads it during a browser request, not in cron, a
      webhook or a REST call made by `requestUtils` (a request made through the
      test's browser context, `page.request`, carries the cookie).
