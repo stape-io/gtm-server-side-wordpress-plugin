@@ -69,14 +69,23 @@ if ( 'local' === wp_get_environment_type() ) {
 					return $cache[ $gtm_server_side_e2e_loader_cache_key ] ?? false;
 				}
 			);
-			// set_transient() has no way to skip the write, so the value moves to
-			// the scope's copy right after it, and the shared transient goes.
-			add_action(
-				'set_transient_' . $gtm_server_side_e2e_loader_cache_key,
+			// set_transient() has no way to skip the write, so the value goes to
+			// the scope's copy before it, whether or not the shared write then
+			// succeeds: tests running at the same time write the same shared
+			// row, and a write that loses that race fires no set_transient_<key>.
+			add_filter(
+				'pre_set_transient_' . $gtm_server_side_e2e_loader_cache_key,
 				static function ( $value ) use ( $gtm_server_side_e2e_loader_cache_option, $gtm_server_side_e2e_loader_cache_key ) {
 					$cache = get_option( $gtm_server_side_e2e_loader_cache_option, array() );
 					$cache[ $gtm_server_side_e2e_loader_cache_key ] = $value;
 					update_option( $gtm_server_side_e2e_loader_cache_option, $cache, false );
+					return $value;
+				}
+			);
+			// Then the shared transient goes, so no test without a scope reads it.
+			add_action(
+				'set_transient_' . $gtm_server_side_e2e_loader_cache_key,
+				static function () use ( $gtm_server_side_e2e_loader_cache_key ) {
 					delete_transient( $gtm_server_side_e2e_loader_cache_key );
 				}
 			);
