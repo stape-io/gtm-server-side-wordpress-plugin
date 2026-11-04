@@ -214,3 +214,82 @@ test( 'A Store API / AJAX add leaves nothing in the stash, so the next page load
 	await dataLayer.expectPushedOnce( 'view_item' );
 	await dataLayer.expectNotPushed( 'add_to_cart' );
 } );
+
+test( 'A theme AJAX add whose request renders no page pushes add_to_cart once, and the next page pushes none @T7b76886b', async ( {
+	dataLayer,
+	product,
+	productPage,
+	shopPage,
+	storeOptions,
+} ) => {
+	// The add request redirects instead of rendering a page, as a theme's
+	// AJAX endpoint answers before the footer: the server stashes the add and
+	// nothing shows it.
+	await storeOptions( { cartRedirectAfterAdd: 'yes' } );
+
+	// The page's own cart request saves the session when it ends; an add
+	// that starts before then is overwritten, and its stash with it.
+	await productPage.goto( product, { untilCartLoaded: true } );
+	await productPage.holdFormSubmit();
+	await productPage.clickAddToCart();
+	await shopPage.addToCartWithoutRendering( product );
+	await productPage.flushHeldAdd();
+
+	const addToCart = await dataLayer.expectPushedOnce( 'add_to_cart' );
+
+	expect( withoutCartState( addToCart ) ).toEqual( {
+		event: 'add_to_cart_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: {
+			...expectedEcommerce( [
+				// A simple product: no item_variant key at all.
+				expectedItem( product, { quantity: 1, index: 1 } ),
+			] ),
+			value: '20.00',
+		},
+	} );
+
+	await shopPage.goto();
+	// The shop is shared, so this test's product may be on another page of
+	// it; any product shows the page rendered its grid.
+	expect( await shopPage.productNames() ).not.toEqual( [] );
+	await dataLayer.expectNotPushed( 'add_to_cart' );
+} );
+
+test( 'A theme AJAX add the shopper leaves before the push is still reported once on the next page @T65b78c8e', async ( {
+	dataLayer,
+	product,
+	productPage,
+	shopPage,
+	storeOptions,
+} ) => {
+	await storeOptions( { cartRedirectAfterAdd: 'yes' } );
+
+	// The page's own cart request saves the session when it ends; an add
+	// that starts before then is overwritten, and its stash with it.
+	await productPage.goto( product, { untilCartLoaded: true } );
+	await productPage.holdFormSubmit();
+	await productPage.clickAddToCart();
+	await shopPage.addToCartWithoutRendering( product );
+
+	// No added_to_cart: the add has landed, but the shopper leaves before the
+	// theme triggers the event, so the held add dies with the page.
+	await shopPage.goto();
+	const addToCart = await dataLayer.expectPushedOnce( 'add_to_cart' );
+
+	expect( withoutCartState( addToCart ) ).toEqual( {
+		event: 'add_to_cart_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: {
+			...expectedEcommerce( [
+				expectedItem( product, { quantity: 1, index: 1 } ),
+			] ),
+			value: '20.00',
+		},
+	} );
+
+	await productPage.goto( product );
+	// view_item shows the plugin printed this page's events.
+	await dataLayer.expectPushedOnce( 'view_item' );
+	await dataLayer.expectNotPushed( 'add_to_cart' );
+} );

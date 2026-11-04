@@ -34,6 +34,9 @@ function genericWrapper() {
 		on() {
 			return this;
 		},
+		off() {
+			return this;
+		},
 		is() {
 			return false;
 		},
@@ -107,19 +110,40 @@ function jQueryShim( arg ) {
  * Loads a fresh copy of javascript.js into its own sandbox, so each test gets
  * a clean pendingAddToCart and dataLayer, exactly like a fresh page load.
  */
-function loadPlugin( { ajaxAddToCart = false } = {} ) {
+function loadPlugin( { ajaxAddToCart = false, customEventName = false } = {} ) {
+	const timers  = [];
+	const posts   = [];
+	const jQuery  = Object.assign(
+		( arg ) => jQueryShim( arg ),
+		{
+			post( url, data, callback ) {
+				posts.push( callback );
+			},
+		}
+	);
 	const sandbox = {
-		jQuery: jQueryShim,
-		document: { body: { __isElement: false } },
+		jQuery,
+		document: { body: { __isElement: false }, cookie: '' },
 		dataLayer: [],
 		varGtmServerSide: {
 			currency: 'USD',
-			is_custom_event_name: 'no',
+			is_custom_event_name: customEventName ? 'yes' : 'no',
+			DATA_LAYER_CUSTOM_EVENT_NAME: '_stape',
 			user_data: false,
 		},
 		console,
 		URL,
+		Date,
 		window: { location: { href: 'https://shop.test/shop/' } },
+		setTimeout( fn ) {
+			timers.push( fn );
+		},
+		runTimers() {
+			timers.splice( 0 ).forEach( ( fn ) => fn() );
+		},
+		respondToPosts( response ) {
+			posts.splice( 0 ).forEach( ( fn ) => fn( response ) );
+		},
 	};
 	if ( ajaxAddToCart ) {
 		sandbox.wc_add_to_cart_params = {};
@@ -211,5 +235,62 @@ describe( 'trackAddToCart() hold-vs-push (DEV-12446)', () => {
 
 		sandbox.pluginGtmServerSide.flushPendingAddToCart();
 		expect( sandbox.dataLayer.filter( ( e ) => e.event === 'add_to_cart' ) ).toHaveLength( 1 );
+	} );
+} );
+
+describe( 'flushPendingAddToCart() token cookie (DEV-13298)', () => {
+	const DELETE_COOKIE = 'gtm_server_side_add_to_cart=; max-age=-1; path=/';
+
+	function holdFormCartAdd( sandbox ) {
+		const el = makeElement( { tag: 'button', classes: [ 'single_add_to_cart_button' ], inFormCart: true } );
+		sandbox.pluginGtmServerSide.trackAddToCart( { item_id: '7' }, el );
+	}
+
+	it( 'deletes the token cookie when it pushes a held add on added_to_cart', () => {
+		const sandbox = loadPlugin();
+		holdFormCartAdd( sandbox );
+		expect( sandbox.document.cookie ).toBe( '' );
+
+		sandbox.pluginGtmServerSide.flushPendingAddToCart();
+
+		expect( sandbox.dataLayer.filter( ( e ) => e.event === 'add_to_cart' ) ).toHaveLength( 1 );
+		expect( sandbox.document.cookie ).toBe( DELETE_COOKIE );
+	} );
+
+	it( 'keeps the token cookie when the held add expired and nothing was pushed', () => {
+		const sandbox = loadPlugin();
+		holdFormCartAdd( sandbox );
+		sandbox.pluginGtmServerSide.pendingAddToCart.time -= sandbox.pluginGtmServerSide.PENDING_ADD_TO_CART_MAX_AGE + 1;
+
+		sandbox.pluginGtmServerSide.flushPendingAddToCart();
+
+		expect( sandbox.dataLayer ).toHaveLength( 0 );
+		expect( sandbox.document.cookie ).toBe( '' );
+	} );
+
+	it( 'keeps the token cookie for an immediate push, which the server never stashed', () => {
+		const sandbox = loadPlugin();
+		const el      = makeElement( { tag: 'button', classes: [ 'wp-block-woocommerce-product-button' ] } );
+
+		sandbox.pluginGtmServerSide.trackAddToCart( { item_id: '8' }, el );
+
+		expect( sandbox.dataLayer.filter( ( e ) => e.event === 'add_to_cart' ) ).toHaveLength( 1 );
+		expect( sandbox.document.cookie ).toBe( '' );
+	} );
+
+	it( 'with custom event names, deletes the cookie only once the cart state response pushes the event', () => {
+		const sandbox = loadPlugin( { customEventName: true } );
+		holdFormCartAdd( sandbox );
+
+		sandbox.pluginGtmServerSide.flushPendingAddToCart();
+		sandbox.runTimers();
+
+		expect( sandbox.dataLayer ).toHaveLength( 0 );
+		expect( sandbox.document.cookie ).toBe( '' );
+
+		sandbox.respondToPosts( { success: true, data: { items: [] } } );
+
+		expect( sandbox.dataLayer.filter( ( e ) => e.event === 'add_to_cart_stape' ) ).toHaveLength( 1 );
+		expect( sandbox.document.cookie ).toBe( DELETE_COOKIE );
 	} );
 } );

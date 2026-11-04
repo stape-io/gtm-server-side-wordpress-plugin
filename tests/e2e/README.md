@@ -314,6 +314,15 @@ decision of its own: name it in the plan before making it.
   (`homePage.gotoAddingToCart()`) fetches the cart over the Store API, and an
   add that starts while that request is still saving the session can be lost.
   `gotoAddingToCart()` is for a case about the page the add lands on.
+- **A case about what the server keeps after an add that renders no page**
+  (`shopPage.addToCartWithoutRendering()`, with `cartRedirectAfterAdd: 'yes'`)
+  guards two things, since the stash lives in the WooCommerce session. It
+  opens the product page with `productPage.goto( product, { untilCartLoaded:
+  true } )`, so the page's own Store API cart request, which saves the session
+  when it ends, can't overwrite an add made after it. And it pushes the held
+  add with `productPage.flushHeldAdd()`, not `triggerAddedToCart()`: on the
+  block theme the event also runs the mini-cart's refresh, which rewrites the
+  session and drops the stash, as no classic theme's AJAX add does.
 - **An order is placed by the browser, so `guestBuyer` cleans it up.** A case
   that places one checks out as `guestBuyer`
   (`checkoutPage.fillBillingDetails()`, then `placeOrder()`). REST never
