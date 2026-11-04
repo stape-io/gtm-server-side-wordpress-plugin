@@ -1,5 +1,5 @@
 import { expect, test } from '../../fixtures';
-import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
+import { expectedEcommerce, expectedItem, expectedVariationItem, withoutCartState } from '../../data-layer/expected';
 
 /**
  * Unlike add_to_cart, this event is rendered server-side: the plugin prints it
@@ -117,4 +117,96 @@ test( "view_item category fields follow the first category's parent chain (item_
 	expect( item ).not.toHaveProperty( 'item_category3' );
 	expect( item ).not.toHaveProperty( 'item_category4' );
 	expect( item ).not.toHaveProperty( 'item_category5' );
+} );
+
+// eslint-disable-next-line playwright/valid-title -- no Testomat case yet: QA creates it (see DEV-12487's PR) and appends its @T<id>.
+test( 'Choosing a variation pushes view_item with the variation\'s id, SKU, price and item_variant incl. the value chosen for an "Any" attribute', async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	// Red comes first and sets no Size, so the shopper picks one (see VARIATIONS in api/products.ts).
+	const [ red ] = variableProduct.variations;
+
+	await productPage.goto( variableProduct );
+	await dataLayer.expectPushedOnce( 'view_item' );
+	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+
+	// The page's own view_item first, then the one for the choice.
+	const [ , viewVariation ] = await dataLayer.expectPushedTimes( 'view_item', 2 );
+
+	// Shaped as the page's own view_item, with the variation as the item.
+	expect( withoutCartState( viewVariation ) ).toEqual( {
+		event: 'view_item_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: expectedEcommerce( [
+			expectedVariationItem( variableProduct, red, {
+				item_name: `${ variableProduct.name } - Red`,
+				item_variant: 'Red,M',
+			} ),
+		] ),
+	} );
+} );
+
+// eslint-disable-next-line playwright/valid-title -- no Testomat case yet: QA creates it (see DEV-12487's PR) and appends its @T<id>.
+test( 'Switching to another variation pushes view_item for it, and choosing the same variation again pushes none', async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	const [ red, blueM ] = variableProduct.variations;
+
+	await productPage.goto( variableProduct );
+	await dataLayer.expectPushedOnce( 'view_item' );
+	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+	await dataLayer.expectPushedTimes( 'view_item', 2 );
+	await productPage.chooseOptions( { Color: 'Blue' } );
+	await dataLayer.expectPushedTimes( 'view_item', 3 );
+	await productPage.chooseOptions( { Color: 'Red' } );
+	await dataLayer.expectPushedTimes( 'view_item', 4 );
+
+	// The same value again: WooCommerce matches Red once more.
+	await productPage.chooseOptions( { Size: 'M' } );
+	const viewItems = await dataLayer.expectPushedTimes( 'view_item', 4, { quietMs: 2000 } );
+
+	expect( viewItems.slice( 1 ).map( ( viewItem ) => viewItem.ecommerce?.items ) ).toEqual( [
+		[ expectedVariationItem( variableProduct, red, { item_name: `${ variableProduct.name } - Red`, item_variant: 'Red,M' } ) ],
+		[ expectedVariationItem( variableProduct, blueM, { item_name: `${ variableProduct.name } - Blue, M`, item_variant: 'Blue,M' } ) ],
+		[ expectedVariationItem( variableProduct, red, { item_name: `${ variableProduct.name } - Red`, item_variant: 'Red,M' } ) ],
+	] );
+} );
+
+// eslint-disable-next-line playwright/valid-title -- no Testomat case yet: QA creates it (see DEV-12487's PR) and appends its @T<id>.
+test( 'A variation preselected by the product\'s default options pushes no view_item of its own on page load', async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, {
+		type: 'variable',
+		default_attributes: [
+			{ name: 'Color', option: 'Blue' },
+			{ name: 'Size', option: 'M' },
+		],
+	} );
+	const red = variableProduct.variations.find( ( variation ) =>
+		variation.attributes.some( ( { name, option } ) => name === 'Color' && option === 'Red' )
+	);
+
+	await productPage.goto( variableProduct );
+	// WooCommerce matched the preselected Blue / M, as it does for a shopper's choice.
+	await productPage.waitForVariation();
+
+	// Only the page's own view_item, still the parent at its lowest price.
+	const viewItem = await dataLayer.expectPushedOnce( 'view_item', { quietMs: 2000 } );
+	expect( withoutCartState( viewItem ) ).toEqual( {
+		event: 'view_item_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: expectedEcommerce( [ expectedItem( variableProduct, { price: red?.regular_price } ) ] ),
+	} );
 } );

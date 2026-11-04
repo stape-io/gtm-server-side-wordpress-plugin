@@ -26,6 +26,33 @@ class GTM_Server_Side_Event_ViewItem {
 		}
 
 		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
+		add_filter( 'woocommerce_available_variation', array( $this, 'woocommerce_available_variation' ), 10, 3 );
+	}
+
+	/**
+	 * Hook: woocommerce_available_variation.
+	 *
+	 * Gives each variation the item assets/js/javascript.js pushes in
+	 * view_item once the shopper picks it, built as the page's own view_item
+	 * builds the product. The variation data reaches the browser in the form's
+	 * markup or, for a product with many variations, from wc-ajax=get_variation,
+	 * and both go through this filter. item_variant is left out: the browser
+	 * names it from the options the shopper chose, as it does for add_to_cart,
+	 * because a variation's own attributes are empty for an "Any …" attribute.
+	 *
+	 * @param  array                $data      Variation data.
+	 * @param  WC_Product           $product   Variable product.
+	 * @param  WC_Product_Variation $variation Variation.
+	 * @return array
+	 */
+	public function woocommerce_available_variation( $data, $product, $variation ) {
+		if ( ! is_array( $data ) || ! ( $variation instanceof WC_Product ) ) {
+			return $data;
+		}
+
+		$data['gtm_item'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_item( $variation, array( 'add_variations' => false ) );
+
+		return $data;
 	}
 
 	/**

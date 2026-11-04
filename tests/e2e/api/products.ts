@@ -93,7 +93,8 @@ export async function deleteCategory( requestUtils: RequestUtils, id: number ): 
  * it on sale, `tags` tags it, `description` gives a search something to find
  * besides the generated name, and `tax_class` taxes it at a test's own rate
  * (see api/taxes.ts) instead of the standard one. A variable product always
- * has the same two variations, and a grouped one links the given products.
+ * has the same two variations, and `default_attributes` preselects options on
+ * its page; a grouped one links the given products.
  */
 export type ProductOptions =
 	| {
@@ -104,7 +105,7 @@ export type ProductOptions =
 			description?: string;
 			tax_class?: string;
 	  }
-	| { type: 'variable' }
+	| { type: 'variable'; default_attributes?: VariationAttribute[] }
 	| { type: 'grouped'; children: CreatedProduct[] };
 
 type VariationAttribute = { name: string; option: string };
@@ -157,7 +158,10 @@ export type CreatedProduct = {
 function typeFields( options: ProductOptions ): Record< string, unknown > {
 	switch ( options.type ) {
 		case 'variable':
-			return { attributes: VARIABLE_ATTRIBUTES };
+			return {
+				attributes: VARIABLE_ATTRIBUTES,
+				...( options.default_attributes ? { default_attributes: options.default_attributes } : {} ),
+			};
 		case 'grouped':
 			return { grouped_products: options.children.map( ( child ) => child.id ) };
 		default:

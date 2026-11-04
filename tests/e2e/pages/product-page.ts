@@ -86,8 +86,16 @@ export class ProductPage {
 		for ( const [ attribute, value ] of Object.entries( options ) ) {
 			await form.getByLabel( attribute ).selectOption( value );
 		}
+		await this.waitForVariation();
+	}
+
+	/**
+	 * Waits until WooCommerce has matched and shown a variation for the
+	 * options chosen, by the shopper or as the product's defaults on page load.
+	 */
+	async waitForVariation(): Promise< void > {
 		// The class, not the disabled attribute: WooCommerce's variation script only toggles the class.
-		await expect( form.getByRole( 'button', { name: /add to cart/i } ) ).not.toHaveClass( /\bdisabled\b/ );
+		await expect( this.form().getByRole( 'button', { name: /add to cart/i } ) ).not.toHaveClass( /\bdisabled\b/ );
 	}
 
 	/**
