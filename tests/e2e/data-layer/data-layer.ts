@@ -130,6 +130,16 @@ export class DataLayer {
 	}
 
 	/**
+	 * Every entry pushed so far, in order: for a case about what comes before
+	 * what (login_state ahead of the GTM snippet's `gtm.js`). A snapshot.
+	 */
+	async entries(): Promise< DataLayerEvent[] > {
+		return this.page.evaluate(
+			() => [ ...( ( window as unknown as { dataLayer?: DataLayerEvent[] } ).dataLayer ?? [] ) ]
+		);
+	}
+
+	/**
 	 * The `varGtmServerSide` config the plugin localized into the page: the
 	 * settings it rendered with, which the frontend script pushes from.
 	 */

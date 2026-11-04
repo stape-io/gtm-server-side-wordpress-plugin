@@ -91,5 +91,7 @@ export type DataLayerEvent = {
 	cart_state?: CartState;
 	/** Present only with user data on; `[]` for a guest. */
 	user_data?: Record< string, unknown > | [];
+	/** Pushed on every page, ahead of the GTM snippet, in an entry of its own with no `event`. */
+	login_state?: 'logged-in' | 'logged-out';
 	[ key: string ]: unknown;
 };
