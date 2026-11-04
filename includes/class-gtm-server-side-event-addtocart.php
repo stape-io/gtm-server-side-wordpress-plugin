@@ -77,6 +77,7 @@ class GTM_Server_Side_Event_AddToCart {
 		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
 
 		add_filter( 'woocommerce_cart_item_remove_link', array( $this, 'woocommerce_cart_item_remove_link' ), 10, 2 );
+		add_action( 'woocommerce_blocks_loaded', array( $this, 'register_cart_item_endpoint_data' ) );
 		add_filter( 'woocommerce_loop_add_to_cart_args', array( $this, 'woocommerce_loop_add_to_cart_args' ), 10, 2 );
 		add_filter( 'woocommerce_blocks_product_grid_item_html', array( $this, 'woocommerce_blocks_product_grid_item_html' ), 10, 3 );
 		add_action( 'woocommerce_after_add_to_cart_button', array( $this, 'woocommerce_after_add_to_cart_button' ) );
@@ -414,6 +415,61 @@ class GTM_Server_Side_Event_AddToCart {
 		$link             = str_replace( '<a ', '<a ' . join( ' ', $attrs ), $link );
 
 		return $link;
+	}
+
+	/**
+	 * Hook: woocommerce_blocks_loaded.
+	 *
+	 * The Cart and Mini-Cart blocks render their lines in React, with no remove
+	 * link to carry the data attributes, so each Store API cart item carries the
+	 * item data instead. assets/js/javascript.js reads it in the blocks' remove
+	 * and quantity actions.
+	 *
+	 * @return void
+	 */
+	public function register_cart_item_endpoint_data() {
+		if ( ! function_exists( 'woocommerce_store_api_register_endpoint_data' ) ) {
+			return;
+		}
+
+		woocommerce_store_api_register_endpoint_data(
+			array(
+				'endpoint'        => \Automattic\WooCommerce\StoreApi\Schemas\V1\CartItemSchema::IDENTIFIER,
+				'namespace'       => 'gtm_server_side',
+				'data_callback'   => array( $this, 'get_cart_item_endpoint_data' ),
+				'schema_callback' => array( $this, 'get_cart_item_endpoint_schema' ),
+				'schema_type'     => ARRAY_A,
+			)
+		);
+	}
+
+	/**
+	 * Store API cart item data: the item as the classic remove link carries it.
+	 *
+	 * @param  array $cart_item Cart item.
+	 * @return array
+	 */
+	public function get_cart_item_endpoint_data( $cart_item ) {
+		$data = $this->get_item( isset( $cart_item['data'] ) ? $cart_item['data'] : null );
+		$data = apply_filters( 'gtm_server_side_before_html_data_attributes', $data, 'remove_from_cart', 'woocommerce_store_api_cart_item' );
+
+		return array( 'item' => $data );
+	}
+
+	/**
+	 * Store API cart item data schema.
+	 *
+	 * @return array
+	 */
+	public function get_cart_item_endpoint_schema() {
+		return array(
+			'item' => array(
+				'description' => __( 'The cart item as the GTM Server Side data layer reports it.', 'gtm-server-side' ),
+				'type'        => 'object',
+				'context'     => array( 'view', 'edit' ),
+				'readonly'    => true,
+			),
+		);
 	}
 
 	/**

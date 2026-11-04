@@ -169,6 +169,13 @@ jQuery( document ).ready(
 
 var pluginGtmServerSide = {
 	/**
+	 * The cart lines the Store API last sent, by cart item key:
+	 * { quantity, item }, item being the plugin's item for the line. null until
+	 * a cart has been seen. See observeStoreApi().
+	 */
+	storeApiCartLines: null,
+
+	/**
 	 * Add built at click time that has not been pushed yet, with the moment it
 	 * was built. See trackAddToCart().
 	 */
@@ -484,8 +491,10 @@ var pluginGtmServerSide = {
 	 * Remove from cart
 	 *
 	 * @param object item
+	 * @param string value ecommerce.value, sent only when given: the classic
+	 *                     cart's remove sends none (DEV-12686).
 	 */
-	removeFromCart: function ( item ) {
+	removeFromCart: function ( item, value ) {
 		item.quantity = item.quantity || 1;
 		var eventData = {
 			'event': this.getDataLayerEventName( 'remove_from_cart' ),
@@ -496,6 +505,10 @@ var pluginGtmServerSide = {
 				],
 			},
 		};
+
+		if ( undefined !== value ) {
+			eventData.ecommerce.value = value;
+		}
 
 		if ( varGtmServerSide.user_data ) {
 			eventData.user_data = {};
@@ -512,6 +525,267 @@ var pluginGtmServerSide = {
 
 		dataLayer.push( { ecommerce: null } );
 		dataLayer.push( eventData );
+	},
+
+	/**
+	 * Watch the Store API for the Cart and Mini-Cart blocks' remove and
+	 * quantity changes.
+	 *
+	 * The blocks post `cart/update-item` and `cart/remove-item` (on their own
+	 * or inside a `batch`) and get the whole cart back. The event is the
+	 * difference between that cart and the one last seen: an increase is an
+	 * add_to_cart, a decrease or a remove is a remove_from_cart, each for the
+	 * quantity that changed. Every cart the page receives, the blocks' own
+	 * cart loads included, replaces the lines last seen, so a line's baseline
+	 * is always what the server last said. A product button posts `add-item`,
+	 * which the click already pushed, so it only refreshes the lines.
+	 */
+	observeStoreApi: function () {
+		var self     = this;
+		var original = window.fetch;
+
+		window.fetch = function ( input, init ) {
+			var promise = original.apply( this, arguments );
+
+			try {
+				self.trackStoreApiCall( input, init, promise );
+			} catch ( e ) {
+				// Tracking must not change what the caller gets back.
+			}
+
+			return promise;
+		};
+	},
+
+	/**
+	 * Read a fetch() call and, once answered, track the cart it returns.
+	 *
+	 * @param mixed input What fetch() was given: a URL or a Request.
+	 * @param object init fetch() options.
+	 * @param Promise promise The caller's response promise, left untouched.
+	 */
+	trackStoreApiCall: function ( input, init, promise ) {
+		var isRequest = input && 'object' === typeof input && 'string' === typeof input.url;
+		var route     = this.getStoreApiRoute( isRequest ? input.url : String( input ) );
+		if ( ! route ) {
+			return;
+		}
+
+		if ( null === this.storeApiCartLines ) {
+			this.storeApiCartLines = this.getPreloadedStoreApiCartLines();
+		}
+
+		var self = this;
+		// Both blocks pass the body as a JSON string in init.
+		var request = {
+			route: route,
+			body: init && 'string' === typeof init.body ? this.parseJson( init.body ) : null,
+		};
+
+		promise.then(
+			function ( response ) {
+				return response.ok ? response.clone().json() : null;
+			}
+		).then(
+			function ( response ) {
+				self.trackStoreApiResponse( request, response );
+			}
+		).catch(
+			function () {
+				// A response that is not JSON, or a failed request: nothing to track.
+			}
+		);
+	},
+
+	/**
+	 * Track a Store API response, or each 2xx sub-response of a batch.
+	 *
+	 * @param object request { route, body }.
+	 * @param object response Decoded response body.
+	 */
+	trackStoreApiResponse: function ( request, response ) {
+		if ( 'batch' !== request.route ) {
+			this.trackStoreApiCart( request, response );
+
+			return;
+		}
+
+		var requests  = ( request.body && request.body.requests ) || [];
+		var responses = ( response && response.responses ) || [];
+		for ( var i = 0; i < requests.length; i++ ) {
+			var sub = responses[ i ];
+			if ( ! sub || sub.status < 200 || sub.status >= 300 ) {
+				continue;
+			}
+
+			this.trackStoreApiCart(
+				{
+					route: this.getStoreApiRoute( requests[ i ].path || '' ),
+					body: requests[ i ].body,
+				},
+				sub.body
+			);
+		}
+	},
+
+	/**
+	 * Push what a cart line change did and remember the cart that came back.
+	 *
+	 * @param object request { route, body }.
+	 * @param object cart Store API cart.
+	 */
+	trackStoreApiCart: function ( request, cart ) {
+		if ( ! cart || ! Array.isArray( cart.items ) ) {
+			return;
+		}
+
+		var key  = request.body && request.body.key;
+		var line = key && this.storeApiCartLines && this.storeApiCartLines[ key ];
+
+		if ( line && 'cart/update-item' === request.route ) {
+			var next     = cart.items.find( function ( cartItem ) {
+				return cartItem.key === key;
+			} );
+			var quantity = next ? parseInt( next.quantity, 10 ) : 0;
+			var delta    = quantity - line.quantity;
+			var item     = Object.assign( {}, line.item );
+
+			if ( delta > 0 ) {
+				item.quantity = delta;
+				this.pushAddToCart( item );
+			} else if ( delta < 0 ) {
+				item.quantity = -delta;
+				this.removeFromCart( item, this.getItemValue( item ) );
+			}
+		} else if ( line && 'cart/remove-item' === request.route ) {
+			var removed = Object.assign( { quantity: line.quantity }, line.item );
+			this.removeFromCart( removed, this.getItemValue( removed ) );
+		}
+
+		this.storeApiCartLines = this.getStoreApiCartLines( cart );
+	},
+
+	/**
+	 * An item's price x quantity, formatted as every event's ecommerce.value.
+	 *
+	 * @param object item Item with price and quantity.
+	 * @returns string
+	 */
+	getItemValue: function ( item ) {
+		return ( ( parseFloat( item.price ) || 0 ) * item.quantity ).toFixed( 2 );
+	},
+
+	/**
+	 * The cart the Cart block was rendered with, for a page where no cart
+	 * has been fetched yet: the block hydrates its data store from the page
+	 * instead of loading the cart.
+	 *
+	 * @returns object|null The lines, or null when the page has no such cart.
+	 */
+	getPreloadedStoreApiCartLines: function () {
+		try {
+			var cart = window.wp.data.select( 'wc/store/cart' ).getCartData();
+			if ( ! Array.isArray( cart.items ) || ! cart.items.some( this.hasStoreApiCartItemData ) ) {
+				return null;
+			}
+
+			return this.getStoreApiCartLines( cart );
+		} catch ( e ) {
+			return null;
+		}
+	},
+
+	/**
+	 * The lines of a Store API cart, by cart item key.
+	 *
+	 * @param object cart Store API cart.
+	 * @returns object
+	 */
+	getStoreApiCartLines: function ( cart ) {
+		var lines = {};
+		for ( var cartItem of cart.items ) {
+			if ( ! cartItem.key || ! this.hasStoreApiCartItemData( cartItem ) ) {
+				continue;
+			}
+
+			lines[ cartItem.key ] = {
+				quantity: parseInt( cartItem.quantity, 10 ) || 0,
+				item: this.getStoreApiCartItem( cartItem ),
+			};
+		}
+
+		return lines;
+	},
+
+	/**
+	 * Whether the server put the plugin's item data on a Store API cart item.
+	 *
+	 * @param object cartItem Store API cart item.
+	 * @returns bool
+	 */
+	hasStoreApiCartItemData: function ( cartItem ) {
+		var data = cartItem && cartItem.extensions && cartItem.extensions.gtm_server_side;
+
+		return !! ( data && data.item );
+	},
+
+	/**
+	 * Copy of the item data the server put on a Store API cart item.
+	 *
+	 * The server runs the item through the filters that build the classic
+	 * remove link's data attributes, so its keys are attribute names
+	 * (image-url). They are camel-cased as the browser's dataset does for the
+	 * classic link (imageUrl), to keep the payload identical.
+	 *
+	 * @param object cartItem Store API cart item.
+	 * @returns object
+	 */
+	getStoreApiCartItem: function ( cartItem ) {
+		var data = cartItem.extensions.gtm_server_side.item;
+		var item = {};
+		for ( var key in data ) {
+			item[ key.replace( /-([a-z])/g, function ( m, c ) {
+				return c.toUpperCase();
+			} ) ] = data[ key ];
+		}
+
+		return item;
+	},
+
+	/**
+	 * The Store API route of a URL, without its version: `cart/update-item`,
+	 * `batch`. Covers pretty permalinks and the `rest_route` query of plain
+	 * ones.
+	 *
+	 * @param string url URL or path.
+	 * @returns string|null null for a URL outside the Store API.
+	 */
+	getStoreApiRoute: function ( url ) {
+		var path;
+		try {
+			var parsed = new URL( url, window.location.href );
+			path       = parsed.searchParams.get( 'rest_route' ) || parsed.pathname;
+		} catch ( e ) {
+			return null;
+		}
+
+		var match = /\/wc\/store(?:\/v\d+)?\/(.+?)\/?$/.exec( path );
+
+		return match ? match[1] : null;
+	},
+
+	/**
+	 * Decode JSON, or null when it is not JSON.
+	 *
+	 * @param string text JSON text.
+	 * @returns mixed
+	 */
+	parseJson: function ( text ) {
+		try {
+			return JSON.parse( text );
+		} catch ( e ) {
+			return null;
+		}
 	},
 
 	/**
@@ -807,3 +1081,11 @@ var pluginGtmServerSide = {
 		);
 	}
 };
+
+/**
+ * Cart and Mini-Cart blocks: they render no remove link and post their changes
+ * to the Store API, so the cart they get back is the only signal. Watched from
+ * here, not on ready: the Mini-Cart is a script module, which runs before
+ * ready and loads the cart as it starts, and that load is the first baseline.
+ */
+pluginGtmServerSide.observeStoreApi();
