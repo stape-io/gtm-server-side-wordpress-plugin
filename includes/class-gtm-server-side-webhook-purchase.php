@@ -65,12 +65,7 @@ class GTM_Server_Side_Webhook_Purchase {
 			'user_data' => GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order ),
 		);
 
-		$customer_id                          = (int) $order->get_customer_id();
-		$request['user_data']['new_customer'] = 'true';
-
-		if ( $customer_id > 0 && ! GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $customer_id ) ) {
-			$request['user_data']['new_customer'] = 'false';
-		}
+		$request['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer_order( $order ) ? 'true' : 'false';
 
 		$request_cookies = GTM_Server_Side_Helpers::get_request_cookies();
 		if ( ! empty( $request_cookies ) ) {
