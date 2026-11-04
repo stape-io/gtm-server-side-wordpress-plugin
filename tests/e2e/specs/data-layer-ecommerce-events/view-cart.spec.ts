@@ -1,4 +1,36 @@
 import { expect, test } from '../../fixtures';
+import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
+
+test( 'The cart page pushes view_cart listing every cart line with its quantity, with value and cart_total = cart total @Ta58d5065', async ( {
+	cartPage,
+	dataLayer,
+	homePage,
+	product,
+	saleProduct,
+} ) => {
+	await homePage.addToCart( saleProduct, 4 );
+	await homePage.addToCart( product, 2 );
+
+	await cartPage.goto();
+	const viewCart = await dataLayer.expectPushedOnce( 'view_cart' );
+
+	expect( withoutCartState( viewCart ) ).toEqual( {
+		// Spelled out rather than resolved, so a dropped suffix fails here.
+		event: 'view_cart_stape',
+		ecomm_pagetype: 'basket',
+		// Not covered here: its own case pins it to the number of lines.
+		cart_quantity: expect.any( Number ),
+		// Pinned rather than computed: 4 x 35.00 + 2 x 20.00.
+		cart_total: '180.00',
+		ecommerce: {
+			...expectedEcommerce( [
+				expectedItem( saleProduct, { quantity: 4, index: 1 } ),
+				expectedItem( product, { quantity: 2, index: 2 } ),
+			] ),
+			value: '180.00',
+		},
+	} );
+} );
 
 test( 'view_cart cart_quantity is the number of lines, not units @T2c541fc7', async ( {
 	cartPage,
