@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import type { CreatedCustomer } from '../api/customers';
+import type { BillingDetails, CreatedCustomer } from '../api/customers';
 import type { CreatedCategory, CreatedProduct, CreatedVariation } from '../api/products';
 import type { CartState, CartStateLine, DataLayerEvent, Ecommerce, EcommerceItem } from './types';
 
@@ -149,6 +149,39 @@ export function expectedUserData( customer: CreatedCustomer ): Record< string, s
 		billing_city: customer.billing.city,
 		billing_email: customer.email,
 		billing_phone: customer.billing.phone,
+	};
+}
+
+/**
+ * `user_data` of a guest's purchase: the checkout's billing details, which
+ * it also uses as the shipping address, in the store's country and state.
+ * `newCustomer` is what the plugin decides from the guest's earlier orders,
+ * so the spec passes it in.
+ */
+export function expectedGuestOrderUserData(
+	buyer: BillingDetails,
+	{ newCustomer }: { newCustomer: 'true' | 'false' }
+): Record< string, string > {
+	const { firstName, lastName, address, postcode, city, phone } = buyer;
+	return {
+		billing_first_name: firstName,
+		billing_last_name: lastName,
+		billing_address: address,
+		billing_postcode: postcode,
+		billing_country: 'US',
+		billing_state: 'CA',
+		billing_city: city,
+		billing_email: buyer.email,
+		billing_phone: phone,
+		shipping_first_name: firstName,
+		shipping_last_name: lastName,
+		shipping_address: address,
+		shipping_postcode: postcode,
+		shipping_country: 'US',
+		shipping_state: 'CA',
+		shipping_city: city,
+		shipping_phone: phone,
+		new_customer: newCustomer,
 	};
 }
 

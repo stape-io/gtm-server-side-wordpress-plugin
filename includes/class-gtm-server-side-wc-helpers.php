@@ -319,6 +319,42 @@ class GTM_Server_Side_WC_Helpers {
 	}
 
 	/**
+	 * Check whether the order is its buyer's first: by the account's order
+	 * count for a registered customer, by an earlier order with the same
+	 * billing email for a guest.
+	 *
+	 * @param  WC_Order $order Order.
+	 * @return bool
+	 */
+	public function is_new_customer_order( $order ) {
+		$customer_id = (int) $order->get_customer_id();
+		if ( $customer_id > 0 ) {
+			return (bool) $this->is_new_customer( $customer_id );
+		}
+
+		$email = $order->get_billing_email();
+		if ( empty( $email ) ) {
+			return true;
+		}
+
+		// A Checkout block draft is a checkout in progress, not an order.
+		$statuses = array_diff( array_keys( wc_get_order_statuses() ), array( 'wc-checkout-draft' ) );
+
+		$earlier_orders = wc_get_orders(
+			array(
+				'type'          => 'shop_order',
+				'billing_email' => $email,
+				'status'        => $statuses,
+				'exclude'       => array( $order->get_id() ),
+				'limit'         => 1,
+				'return'        => 'ids',
+			)
+		);
+
+		return empty( $earlier_orders );
+	}
+
+	/**
 	 * Return data layer categories
 	 *
 	 * @param  array $category_ids Categories ids.

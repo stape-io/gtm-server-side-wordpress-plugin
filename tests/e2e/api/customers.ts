@@ -31,6 +31,7 @@ export type BillingDetails = {
 	address: string;
 	city: string;
 	postcode: string;
+	phone: string;
 };
 
 /**
@@ -48,6 +49,7 @@ export function buildGuestBuyer(): BillingDetails {
 		address: '1 Market St',
 		city: 'San Francisco',
 		postcode: '94105',
+		phone: '+14155550100',
 	};
 }
 
