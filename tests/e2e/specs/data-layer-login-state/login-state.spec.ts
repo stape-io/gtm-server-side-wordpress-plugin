@@ -5,8 +5,7 @@ import { expect, test } from '../../fixtures';
  * ahead of every loader, so GTM has it before gtm.js and every event after.
  */
 
-// eslint-disable-next-line playwright/valid-title -- no Testomat case yet
-test( 'A logged-out visitor gets one login_state "logged-out" entry, pushed before gtm.js', async ( {
+test( 'A logged-out visitor gets one login_state "logged-out" entry, pushed before gtm.js @T56f4e88c', async ( {
 	homePage,
 	dataLayer,
 } ) => {
@@ -22,8 +21,7 @@ test( 'A logged-out visitor gets one login_state "logged-out" entry, pushed befo
 	expect( loginStateAt, 'login_state comes before gtm.js' ).toBeLessThan( gtmJsAt );
 } );
 
-// eslint-disable-next-line playwright/valid-title -- no Testomat case yet
-test( 'A logged-in customer gets login_state "logged-in", with user data off', async ( {
+test( 'A logged-in customer gets login_state "logged-in", with user data off @T8f7af11c', async ( {
 	myAccountPage,
 	homePage,
 	dataLayer,
