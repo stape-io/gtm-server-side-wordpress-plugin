@@ -57,7 +57,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
 | `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
-| `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
+| `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()` / `expectPushedTimes()` |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
 | `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`) |
@@ -151,7 +151,9 @@ The rest is up to the author and the review.
 - **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event,
   on a duplicate one and on one that isn't preceded by `{ ecommerce: null }`.
   Every event the plugin pushes (PHP and JS, including login, register and
-  home) clears `ecommerce` first, so the check has no opt-out.
+  home) clears `ecommerce` first, so the check has no opt-out. An event a
+  case expects more than once on one page (a `view_item` per variation the
+  shopper picks) uses `expectPushedTimes()`, the same check for an exact count.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.

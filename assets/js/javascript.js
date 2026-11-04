@@ -91,6 +91,28 @@ jQuery( document ).ready(
 		);
 
 		/**
+		 * The shopper changed an option of a variable product. WooCommerce has
+		 * already matched the variation for an inline form, so the decision
+		 * waits for found_variation's own tick to end (see
+		 * onFoundVariation()).
+		 */
+		jQuery( document ).on(
+			'woocommerce_variation_has_changed',
+			'.variations_form',
+			function () {
+				jQuery( this ).data( 'gtm_variation_changed', true );
+			}
+		);
+
+		jQuery( document ).on(
+			'found_variation',
+			'.variations_form',
+			function ( e, variation ) {
+				pluginGtmServerSide.onFoundVariation( jQuery( this ), variation );
+			}
+		);
+
+		/**
 		 * Add over AJAX without WooCommerce's own handler: a theme or plugin that
 		 * AJAX-ifies an add-to-cart link or form.cart posts it and then triggers
 		 * added_to_cart to refresh the fragments. The click left the item pending;
@@ -317,6 +339,21 @@ var pluginGtmServerSide = {
 			item.quantity = $elQty.val();
 		}
 
+		var itemVariant = this.getChosenVariant( $elForm );
+		if ( itemVariant ) {
+			item.item_variant = itemVariant;
+		}
+
+		this.trackAddToCart( item, el );
+	},
+
+	/**
+	 * The options chosen in a variable product's form, as item_variant.
+	 *
+	 * @param object $elForm Form.
+	 * @returns string
+	 */
+	getChosenVariant: function ( $elForm ) {
 		var variations = [];
 		$elForm.find( '[name^=attribute_] option:selected' ).each(
 			function () {
@@ -324,11 +361,91 @@ var pluginGtmServerSide = {
 			}
 		);
 
-		if ( variations.length ) {
-			item.item_variant = variations.join( ',' );
+		return variations.join( ',' );
+	},
+
+	/**
+	 * Push view_item for the variation the shopper picked.
+	 *
+	 * WooCommerce also finds a variation when the page opens with default
+	 * options, before the shopper did anything; the page's own view_item
+	 * covers that view, so only a variation found after an option changed
+	 * counts. WooCommerce marks the change right after it finds the variation
+	 * of an inline form, hence the deferral. Finding the variation pushed last
+	 * again (a select re-set to the same value, a clear and the same choice)
+	 * pushes nothing.
+	 *
+	 * @param object $elForm Variations form.
+	 * @param object variation Variation data, with the item from
+	 *                         GTM_Server_Side_Event_ViewItem::woocommerce_available_variation().
+	 */
+	onFoundVariation: function ( $elForm, variation ) {
+		var self = this;
+
+		if ( ! variation || ! variation.gtm_item ) {
+			return;
 		}
 
-		this.trackAddToCart( item, el );
+		// A product page only: a variation form elsewhere (a quick view in a
+		// grid) is not the view the event reports as ecomm_pagetype product.
+		if ( ! jQuery( document.body ).hasClass( 'single-product' ) ) {
+			return;
+		}
+
+		setTimeout(
+			function () {
+				if ( ! $elForm.data( 'gtm_variation_changed' ) ) {
+					return;
+				}
+
+				if ( $elForm.data( 'gtm_viewed_variation_id' ) === variation.variation_id ) {
+					return;
+				}
+				$elForm.data( 'gtm_viewed_variation_id', variation.variation_id );
+
+				var item        = Object.assign( {}, variation.gtm_item );
+				var itemVariant = self.getChosenVariant( $elForm );
+				if ( itemVariant ) {
+					item.item_variant = itemVariant;
+				}
+
+				self.pushViewItem( item );
+			},
+			0
+		);
+	},
+
+	/**
+	 * Push view_item, shaped as GTM_Server_Side_Event_ViewItem prints it.
+	 *
+	 * @param object item Item.
+	 */
+	pushViewItem: function ( item ) {
+		var eventData = {
+			'event':          this.getDataLayerEventName( 'view_item' ),
+			'ecomm_pagetype': 'product',
+			'ecommerce': {
+				'currency': varGtmServerSide.currency,
+				'value':    item.price,
+				'items':    [ item ],
+			},
+		};
+
+		if ( varGtmServerSide.user_data ) {
+			eventData.user_data = {};
+			for ( var key in varGtmServerSide.user_data  ) {
+				eventData.user_data[ key ] = varGtmServerSide.user_data[ key ];
+			}
+		}
+
+		if ( 'yes' === varGtmServerSide.is_custom_event_name ) {
+			this._sendStateCartDataAjax( eventData );
+
+			return;
+		}
+
+		dataLayer.push( { ecommerce: null } );
+		dataLayer.push( eventData );
 	},
 
 	pushGroupProduct: function ( $elForm, el ) {
