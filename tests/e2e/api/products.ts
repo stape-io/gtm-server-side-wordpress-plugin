@@ -119,15 +119,24 @@ export type CreatedVariation = {
 
 /**
  * The variable product of the Testomat cases (Cap Hoodie): Color and Size,
- * both used for variations. The Red variation sets no Size, so a shopper picks
- * any; it is also the cheaper one.
+ * both used for variations. The Red variation is "Any Size", so a shopper picks
+ * S or M; it is also the cheaper one.
  */
 const VARIABLE_ATTRIBUTES = [
 	{ name: 'Color', options: [ 'Red', 'Blue' ], variation: true, visible: true },
 	{ name: 'Size', options: [ 'S', 'M' ], variation: true, visible: true },
 ];
 const VARIATIONS: Array< { sku: string; regular_price: string; attributes: VariationAttribute[] } > = [
-	{ sku: 'red', regular_price: '30.00', attributes: [ { name: 'Color', option: 'Red' } ] },
+	{
+		sku: 'red',
+		regular_price: '30.00',
+		// An empty option is what makes it "Any Size": left out, WooCommerce
+		// offers only the sizes other variations use (M).
+		attributes: [
+			{ name: 'Color', option: 'Red' },
+			{ name: 'Size', option: '' },
+		],
+	},
 	{
 		sku: 'blue-m',
 		regular_price: '32.00',

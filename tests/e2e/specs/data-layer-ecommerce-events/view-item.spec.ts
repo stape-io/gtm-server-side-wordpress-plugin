@@ -119,8 +119,44 @@ test( "view_item category fields follow the first category's parent chain (item_
 	expect( item ).not.toHaveProperty( 'item_category5' );
 } );
 
-// eslint-disable-next-line playwright/valid-title -- no Testomat case yet: QA creates it (see DEV-12487's PR) and appends its @T<id>.
-test( 'Choosing a variation pushes view_item with the variation\'s id, SKU, price and item_variant incl. the value chosen for an "Any" attribute', async ( {
+test( "Choosing a variation on a variable product page pushes view_item with the variation's ID, SKU and price @T99154667", async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	const [ red, blueM ] = variableProduct.variations;
+
+	await productPage.goto( variableProduct );
+	await dataLayer.expectPushedOnce( 'view_item' );
+
+	await productPage.chooseOptions( { Color: 'Blue', Size: 'M' } );
+	await expect( productPage.variationPrice( '32.00' ) ).toBeVisible();
+	const [ , viewBlueM ] = await dataLayer.expectPushedTimes( 'view_item', 2, { quietMs: 3000 } );
+
+	// The case is about the variation's id, SKU and price; the whole event
+	// belongs to the case of the "Any" attribute.
+	expect( viewBlueM.ecommerce ).toEqual( {
+		currency: 'USD',
+		value: '32.00',
+		items: [ expect.objectContaining( { item_id: String( blueM.id ), item_sku: blueM.sku, price: '32.00' } ) ],
+	} );
+
+	await productPage.chooseOptions( { Color: 'Red', Size: 'S' } );
+	await expect( productPage.variationPrice( '30.00' ) ).toBeVisible();
+	const viewItems = await dataLayer.expectPushedTimes( 'view_item', 3, { quietMs: 3000 } );
+	expect( viewItems[ 2 ].ecommerce?.items ).toEqual( [
+		expect.objectContaining( { item_id: String( red.id ), item_sku: red.sku, price: '30.00' } ),
+	] );
+
+	// The same variation again: nothing more.
+	await productPage.clearOptions();
+	await productPage.chooseOptions( { Color: 'Red', Size: 'S' } );
+	await dataLayer.expectPushedTimes( 'view_item', 3, { quietMs: 3000 } );
+} );
+
+test( 'Choosing a variation pushes view_item with the variation\'s id, SKU, price and item_variant incl. the value chosen for an "Any" attribute @T0c54fed6', async ( {
 	productPage,
 	dataLayer,
 	catalog,
@@ -133,9 +169,10 @@ test( 'Choosing a variation pushes view_item with the variation\'s id, SKU, pric
 	await productPage.goto( variableProduct );
 	await dataLayer.expectPushedOnce( 'view_item' );
 	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+	await expect( productPage.variationPrice( '30.00' ) ).toBeVisible();
 
 	// The page's own view_item first, then the one for the choice.
-	const [ , viewVariation ] = await dataLayer.expectPushedTimes( 'view_item', 2 );
+	const [ , viewVariation ] = await dataLayer.expectPushedTimes( 'view_item', 2, { quietMs: 3000 } );
 
 	// Shaped as the page's own view_item, with the variation as the item.
 	expect( withoutCartState( viewVariation ) ).toEqual( {
@@ -150,38 +187,7 @@ test( 'Choosing a variation pushes view_item with the variation\'s id, SKU, pric
 	} );
 } );
 
-// eslint-disable-next-line playwright/valid-title -- no Testomat case yet: QA creates it (see DEV-12487's PR) and appends its @T<id>.
-test( 'Switching to another variation pushes view_item for it, and choosing the same variation again pushes none', async ( {
-	productPage,
-	dataLayer,
-	catalog,
-	category,
-} ) => {
-	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
-	const [ red, blueM ] = variableProduct.variations;
-
-	await productPage.goto( variableProduct );
-	await dataLayer.expectPushedOnce( 'view_item' );
-	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
-	await dataLayer.expectPushedTimes( 'view_item', 2 );
-	await productPage.chooseOptions( { Color: 'Blue' } );
-	await dataLayer.expectPushedTimes( 'view_item', 3 );
-	await productPage.chooseOptions( { Color: 'Red' } );
-	await dataLayer.expectPushedTimes( 'view_item', 4 );
-
-	// The same value again: WooCommerce matches Red once more.
-	await productPage.chooseOptions( { Size: 'M' } );
-	const viewItems = await dataLayer.expectPushedTimes( 'view_item', 4, { quietMs: 2000 } );
-
-	expect( viewItems.slice( 1 ).map( ( viewItem ) => viewItem.ecommerce?.items ) ).toEqual( [
-		[ expectedVariationItem( variableProduct, red, { item_name: `${ variableProduct.name } - Red`, item_variant: 'Red,M' } ) ],
-		[ expectedVariationItem( variableProduct, blueM, { item_name: `${ variableProduct.name } - Blue, M`, item_variant: 'Blue,M' } ) ],
-		[ expectedVariationItem( variableProduct, red, { item_name: `${ variableProduct.name } - Red`, item_variant: 'Red,M' } ) ],
-	] );
-} );
-
-// eslint-disable-next-line playwright/valid-title -- no Testomat case yet: QA creates it (see DEV-12487's PR) and appends its @T<id>.
-test( 'A variation preselected by the product\'s default options pushes no view_item of its own on page load', async ( {
+test( 'A variation preselected by the product\'s default options pushes no view_item of its own on page load @T869874c7', async ( {
 	productPage,
 	dataLayer,
 	catalog,
@@ -200,10 +206,12 @@ test( 'A variation preselected by the product\'s default options pushes no view_
 
 	await productPage.goto( variableProduct );
 	// WooCommerce matched the preselected Blue / M, as it does for a shopper's choice.
-	await productPage.waitForVariation();
+	await expect( productPage.option( 'Color' ) ).toHaveValue( 'Blue' );
+	await expect( productPage.option( 'Size' ) ).toHaveValue( 'M' );
+	await expect( productPage.variationPrice( '32.00' ) ).toBeVisible();
 
 	// Only the page's own view_item, still the parent at its lowest price.
-	const viewItem = await dataLayer.expectPushedOnce( 'view_item', { quietMs: 2000 } );
+	const viewItem = await dataLayer.expectPushedOnce( 'view_item', { quietMs: 3000 } );
 	expect( withoutCartState( viewItem ) ).toEqual( {
 		event: 'view_item_stape',
 		ecomm_pagetype: 'product',

@@ -99,6 +99,25 @@ export class ProductPage {
 	}
 
 	/**
+	 * Clicks a variable product's "Clear" link and waits until no variation
+	 * is chosen: "Add to cart" is styled disabled again.
+	 */
+	async clearOptions(): Promise< void > {
+		await this.form().getByRole( 'link', { name: 'Clear options' } ).click();
+		await expect( this.form().getByRole( 'button', { name: /add to cart/i } ) ).toHaveClass( /\bdisabled\b/ );
+	}
+
+	/** A variable product's attribute field, by its label. */
+	option( attribute: string ): Locator {
+		return this.form().getByLabel( attribute );
+	}
+
+	/** The price of the variation the form shows, in the store's currency ($). */
+	variationPrice( price: string ): Locator {
+		return this.form().getByText( `$${ price }`, { exact: true } );
+	}
+
+	/**
 	 * Sets the quantity of one child of a grouped product. Every child's field
 	 * is named "Product quantity", so the row is found by the child's link.
 	 */
