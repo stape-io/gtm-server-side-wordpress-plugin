@@ -19,6 +19,7 @@ import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
 import { ShopPage } from '../pages/shop-page';
+import { WpLoginPage } from '../pages/wp-login-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
@@ -39,11 +40,13 @@ import {
 	buildGuestBuyer,
 	buildNewCustomer,
 	createCustomer,
+	createUser,
 	deleteAccount,
 	deleteAccountsOf,
 	findAccountId,
 	type BillingDetails,
 	type CreatedCustomer,
+	type CreatedUser,
 	type NewCustomer,
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
@@ -122,6 +125,11 @@ type Catalog = {
 	 * every order it placed, whatever email the checkout gave them.
 	 */
 	createCustomer: () => Promise< CreatedCustomer >;
+	/**
+	 * A throwaway user with one role (`editor`, say), for a case about staff,
+	 * who log in on wp-login.php (wpLoginPage.logIn()). Deleted after the test.
+	 */
+	createUser: ( role: string ) => Promise< CreatedUser >;
 };
 
 type PhpErrors = {
@@ -194,6 +202,7 @@ type ShopFixtures = {
 	adminSettingsPage: AdminSettingsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
+	wpLoginPage: WpLoginPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
@@ -393,6 +402,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	productSearchPage: async ( { page }, use ) => {
 		await use( new ProductSearchPage( page ) );
 	},
+	wpLoginPage: async ( { page }, use ) => {
+		await use( new WpLoginPage( page ) );
+	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
 		await use( async ( more ) => {
@@ -533,6 +545,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 					await deleteOrdersOfCustomer( requestUtils, created.id );
 					await deleteAccount( requestUtils, created.id );
 				} );
+				return created;
+			},
+			createUser: async ( role ) => {
+				const created = await createUser( requestUtils, role );
+				deletions.push( () => deleteAccount( requestUtils, created.id ) );
 				return created;
 			},
 		} );

@@ -120,6 +120,30 @@ export async function createCustomer( requestUtils: RequestUtils ): Promise< Cre
 	return { id: created.id, ...customer };
 }
 
+/** A WordPress user created over REST with one role, for the login form on wp-login.php. */
+export type CreatedUser = {
+	id: number;
+	username: string;
+	email: string;
+	password: string;
+};
+
+/** A user with `role` (`editor`, say) and an email unique per call, like a customer's. */
+export async function createUser( requestUtils: RequestUtils, role: string ): Promise< CreatedUser > {
+	const unique = uniqueSuffix();
+	const user: Omit< CreatedUser, 'id' > = {
+		username: `e2e-${ role }-${ unique }`,
+		email: `${ CUSTOMER_EMAIL_PREFIX }${ unique }@example.test`,
+		password: randomUUID(),
+	};
+	const created: { id: number } = await requestUtils.rest( {
+		path: '/wp/v2/users',
+		method: 'POST',
+		data: { ...user, roles: [ role ] },
+	} );
+	return { id: created.id, ...user };
+}
+
 /*
  * Accounts the browser registers, on My Account or at checkout. REST never
  * creates them, so they are found again by email, which is unique per test.
@@ -137,8 +161,12 @@ async function findAccounts( requestUtils: RequestUtils, email: string ): Promis
 	return found.filter( ( account ) => account.email.startsWith( email ) ).map( ( account ) => account.id );
 }
 
+/**
+ * Through core's endpoint: WooCommerce's deletes customers and subscribers
+ * only, and a test may create staff (createUser()).
+ */
 export async function deleteAccount( requestUtils: RequestUtils, id: number ): Promise< void > {
-	await requestUtils.rest( { path: `/wc/v3/customers/${ id }`, method: 'DELETE', params: { force: 'true' } } );
+	await requestUtils.rest( { path: `/wp/v2/users/${ id }`, method: 'DELETE', params: { force: 'true', reassign: 'false' } } );
 }
 
 /** The ID of the account registered with this email, as `wp user get <email> --field=ID` prints it. */
