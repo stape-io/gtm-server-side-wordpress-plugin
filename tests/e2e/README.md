@@ -351,6 +351,9 @@ decision of its own: name it in the plan before making it.
   with `storeOptions( { sameOriginApiKey } )`; a key ending in `:test` sends
   the proxy to `*.stape.test`, which `mu-plugins/stub-same-origin-upstream.php`
   answers with the URL it was sent.
+  A General-tab case in wp-admin whose Baseline has the proxy off turns the
+  switch off in the form first (`adminSettingsPage.turnSameOriginOff()`):
+  with it on and no API key, the form refuses every save on its own.
 
 ### Test plugins
 
