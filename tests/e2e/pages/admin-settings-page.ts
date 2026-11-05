@@ -63,4 +63,10 @@ export class AdminSettingsPage {
 		// eslint-disable-next-line playwright/no-raw-locators -- no accessible name (see above); the id is the option the field saves.
 		return this.page.locator( '#gtm_server_side_data_layer_user_data' );
 	}
+
+	/** Data Layer tab: "Decorate dataLayer event name". */
+	get decorateEventNameCheckbox(): Locator {
+		// eslint-disable-next-line playwright/no-raw-locators -- no accessible name (see above); the id is the option the field saves.
+		return this.page.locator( '#gtm_server_side_data_layer_custom_event_name' );
+	}
 }

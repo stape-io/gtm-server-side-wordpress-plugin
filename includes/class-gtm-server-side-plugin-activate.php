@@ -33,13 +33,10 @@ class GTM_Server_Side_Plugin_Activate {
 	 * @return void
 	 */
 	private function install() {
-		if ( empty( get_option( GTM_SERVER_SIDE_FIELD_PLACEMENT ) ) ) {
-			update_option( GTM_SERVER_SIDE_FIELD_PLACEMENT, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE );
-		}
-
-		if ( empty( get_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME ) ) ) {
-			update_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
-		}
+		// add_option() writes only when the option doesn't exist yet, so a value
+		// the admin saved, '' for an unchecked box included, survives reactivation.
+		add_option( GTM_SERVER_SIDE_FIELD_PLACEMENT, GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE );
+		add_option( GTM_SERVER_SIDE_FIELD_DATA_LAYER_CUSTOM_EVENT_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES );
 
 		GTM_Server_Side_Same_Origin_Proxy::flush_rules();
 	}
