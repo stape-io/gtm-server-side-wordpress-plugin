@@ -161,6 +161,15 @@ export class DataLayer {
 	}
 
 	/**
+	 * Whether `window.dataLayer` exists, which entries() can't tell from an
+	 * empty one: for a case about a page nothing has created it on yet
+	 * (placement "Disable", no server-rendered event).
+	 */
+	async exists(): Promise< boolean > {
+		return this.page.evaluate( () => typeof ( window as unknown as { dataLayer?: unknown } ).dataLayer !== 'undefined' );
+	}
+
+	/**
 	 * The `varGtmServerSide` config the plugin localized into the page: the
 	 * settings it rendered with, which the frontend script pushes from.
 	 */
