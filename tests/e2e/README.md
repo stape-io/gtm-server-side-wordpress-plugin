@@ -245,8 +245,8 @@ The rest is up to the author and the review.
   release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
   The preflight check uses the base test and skips this fixture.
   A case that lists a known defect's error under "Not covered here" (the
-  `dataLayer is not defined` of DEV-12902, with placement "Disable") lets
-  exactly that uncaught error through with
+  `dataLayer is not defined` of DEV-12902, with placement "Disable" or for a
+  user whose role is excluded) lets exactly that uncaught error through with
   `test.use( { knownPageErrors: [ { message, ticket } ] } )`, in a
   `test.describe` of its own. A listed error that never happens fails the
   test, naming its ticket: the defect looks fixed, so the entry goes, and
@@ -358,6 +358,12 @@ decision of its own: name it in the plan before making it.
     checkout `guestBuyer.email` (`checkoutPage.fillContactEmail()`): it is
     unique, and the preflight deletes the orders killed runs left behind
     with a guest's or a test customer's email (`purgeTestOrders()`).
+  - A case whose user has other roles (the folder's Snip Editor, or a user
+    with several) creates it the same way with every role it has,
+    `catalog.createCustomer( { roles: [ 'customer', 'editor' ] } )`, and
+    logs it in through My Account too. Test accounts are deleted through
+    WordPress's users endpoint, since WooCommerce's refuses an account
+    without the customer role.
 - **A new private window, or a deleted cookie jar, is `newSession()`**: the
   test's browser forgets its cookies, the `storeOptions()` and `testPlugins`
   ones included, so set those again after it.

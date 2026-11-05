@@ -44,6 +44,7 @@ import {
 	findAccountId,
 	type BillingDetails,
 	type CreatedCustomer,
+	type CustomerOptions,
 	type NewCustomer,
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
@@ -125,10 +126,11 @@ type Catalog = {
 	createTaxRate: ( options: TaxRateOptions ) => Promise< CreatedTaxRate >;
 	/**
 	 * A throwaway customer account with a billing address, for a case that
-	 * starts logged in (myAccountPage.logIn()). Deleted after the test with
+	 * starts logged in (myAccountPage.logIn()); with `roles`, an account with
+	 * those roles instead (see CustomerOptions). Deleted after the test with
 	 * every order it placed, whatever email the checkout gave them.
 	 */
-	createCustomer: () => Promise< CreatedCustomer >;
+	createCustomer: ( options?: CustomerOptions ) => Promise< CreatedCustomer >;
 };
 
 type OptionWrites = {
@@ -703,8 +705,8 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				deletions.push( () => deleteTaxRate( requestUtils, created ) );
 				return created;
 			},
-			createCustomer: async () => {
-				const created = await createCustomer( requestUtils );
+			createCustomer: async ( options ) => {
+				const created = await createCustomer( requestUtils, options );
 				deletions.push( async () => {
 					await deleteOrdersOfCustomer( requestUtils, created.id );
 					await deleteAccount( requestUtils, created.id );

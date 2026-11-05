@@ -77,8 +77,20 @@ export type CreatedCustomer = {
 	};
 };
 
+export type CustomerOptions = {
+	/**
+	 * The account's roles instead of WooCommerce's `customer`, all of them
+	 * (`[ 'editor' ]`, or `[ 'customer', 'editor' ]` for a user with several).
+	 * Empty or left out, the account is a customer.
+	 */
+	roles?: string[];
+};
+
 /** A customer with an email unique per call, like a guest buyer's. */
-export async function createCustomer( requestUtils: RequestUtils ): Promise< CreatedCustomer > {
+export async function createCustomer(
+	requestUtils: RequestUtils,
+	options: CustomerOptions = {}
+): Promise< CreatedCustomer > {
 	const unique = uniqueSuffix();
 	const customer: Omit< CreatedCustomer, 'id' > = {
 		email: `${ CUSTOMER_EMAIL_PREFIX }${ unique }@example.test`,
@@ -115,6 +127,11 @@ export async function createCustomer( requestUtils: RequestUtils ): Promise< Cre
 			},
 		},
 	} );
+	if ( options.roles?.length ) {
+		// WooCommerce's endpoint only makes customers; WordPress's replaces the
+		// account's roles with the list it is given.
+		await requestUtils.rest( { path: `/wp/v2/users/${ created.id }`, method: 'POST', data: { roles: options.roles } } );
+	}
 	return { id: created.id, ...customer };
 }
 
@@ -135,8 +152,16 @@ async function findAccounts( requestUtils: RequestUtils, email: string ): Promis
 	return found.filter( ( account ) => account.email.startsWith( email ) ).map( ( account ) => account.id );
 }
 
+/**
+ * Through WordPress's endpoint, not WooCommerce's, which answers 403 for an
+ * account without the customer role (an editor createCustomer() made).
+ */
 export async function deleteAccount( requestUtils: RequestUtils, id: number ): Promise< void > {
-	await requestUtils.rest( { path: `/wc/v3/customers/${ id }`, method: 'DELETE', params: { force: 'true' } } );
+	await requestUtils.rest( {
+		path: `/wp/v2/users/${ id }`,
+		method: 'DELETE',
+		params: { force: 'true', reassign: 'false' },
+	} );
 }
 
 /** The ID of the account registered with this email, as `wp user get <email> --field=ID` prints it. */
