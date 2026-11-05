@@ -6,6 +6,7 @@
     "build": "tsc -p tsconfig.build.json && esbuild .build/index.js --bundle --format=iife --target=es5 --minify --legal-comments=none --outfile=assets/js/service-worker-patch.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "check:release": "node bin/check-release.mjs",
     "env:start": "wp-env start",
     "env:stop": "wp-env stop",
     "env:destroy": "wp-env destroy",
