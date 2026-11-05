@@ -71,3 +71,32 @@ test( 'Removing an item in the Mini-Cart block drawer pushes one remove_from_car
 
 	await phpErrors.expectNone();
 } );
+
+test( 'Removing a line in the classic cart pushes one remove_from_cart with the line\'s item, quantity and value @T20d63258', async ( {
+	catalog,
+	classicCartPage,
+	dataLayer,
+	homePage,
+	product,
+} ) => {
+	const cartPage = await catalog.createClassicCartPage();
+	// Quantity 2, not 1: the plugin falls back to 1 when it reads none, so
+	// only 2 shows that it reads the line's quantity.
+	await homePage.addToCart( product, 2 );
+
+	await classicCartPage.goto( cartPage );
+	await classicCartPage.remove( product );
+
+	const removeFromCart = await dataLayer.expectPushedOnce( 'remove_from_cart', { quietMs: 3000 } );
+
+	expect( withoutCartState( removeFromCart ) ).toEqual( {
+		event: 'remove_from_cart_stape',
+		ecommerce: {
+			...expectedEcommerce( [
+				expectedItem( product, { quantity: 2, index: 1 } ),
+			] ),
+			// Pinned rather than computed: 2 x 20.00.
+			value: '40.00',
+		},
+	} );
+} );

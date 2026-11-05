@@ -141,7 +141,7 @@ jQuery( document ).ready(
 				}
 
 				pluginGtmServerSide.removeFromCart(
-					pluginGtmServerSide.getGtmItemData( $thisbutton.data() )
+					pluginGtmServerSide.getGtmItemData( $thisbutton.get( 0 ).dataset )
 				);
 			}
 		);
@@ -160,7 +160,7 @@ jQuery( document ).ready(
 				}
 
 				pluginGtmServerSide.removeFromCart(
-					pluginGtmServerSide.getGtmItemData( $el.data() )
+					pluginGtmServerSide.getGtmItemData( e.currentTarget.dataset )
 				);
 			}
 		);
@@ -490,24 +490,20 @@ var pluginGtmServerSide = {
 	 * Remove from cart
 	 *
 	 * @param object item
-	 * @param string value ecommerce.value, sent only when given: the classic
-	 *                     cart's remove sends none (DEV-12686).
 	 */
-	removeFromCart: function ( item, value ) {
-		item.quantity = item.quantity || 1;
+	removeFromCart: function ( item ) {
+		item.index    = 1;
+		item.quantity = parseInt( item.quantity, 10 ) || 1;
 		var eventData = {
 			'event': this.getDataLayerEventName( 'remove_from_cart' ),
 			'ecommerce': {
 				'currency': varGtmServerSide.currency,
+				'value': this.getItemValue( item ),
 				'items': [
 					item,
 				],
 			},
 		};
-
-		if ( undefined !== value ) {
-			eventData.ecommerce.value = value;
-		}
 
 		if ( varGtmServerSide.user_data ) {
 			eventData.user_data = {};
@@ -653,11 +649,11 @@ var pluginGtmServerSide = {
 				this.pushAddToCart( item );
 			} else if ( delta < 0 ) {
 				item.quantity = -delta;
-				this.removeFromCart( item, this.getItemValue( item ) );
+				this.removeFromCart( item );
 			}
 		} else if ( line && 'cart/remove-item' === request.route ) {
 			var removed = Object.assign( { quantity: line.quantity }, line.item );
-			this.removeFromCart( removed, this.getItemValue( removed ) );
+			this.removeFromCart( removed );
 		}
 
 		this.storeApiCartLines = this.getStoreApiCartLines( cart );
