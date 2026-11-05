@@ -48,7 +48,8 @@ import {
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { clearLoaderCache, LOADER_CACHE_COOKIE, readLoaderCache, type LoaderCacheValues } from '../api/loader-cache';
-import { restoreSameOriginBaseline } from '../api/same-origin';
+import { deleteOutgoingHttp, OUTGOING_HTTP_COOKIE, readOutgoingHttp, type OutgoingRequest } from '../api/outgoing-http';
+import { readSiteState, restoreSiteState } from '../api/site-state';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -225,17 +226,14 @@ type LoaderCache = {
 	clear: () => Promise< void >;
 };
 
-/** The General tab, for a serial test that saves it in wp-admin. */
-type GeneralSettings = {
+type OutgoingHttp = {
 	/**
-	 * Saves the General tab's baseline back after the test, in wp-admin, so
-	 * the save hooks run as they did for the test: the Web GTM ID GTM-TESTID,
-	 * no sGTM URL or identifier. Then turns the same-origin proxy back on,
-	 * which wp-admin can't save without an API key (restoreSameOriginBaseline()),
-	 * and clears the loader cache. The options the tab saved stay, empty, where
-	 * the case's clean-up deletes them: the pages render the same.
+	 * The HTTP requests WordPress sent while serving this test's browser
+	 * requests so far, oldest first (mu-plugins/record-outgoing-http.php): a
+	 * webhook, a Customer Match upload, a request for the custom loader. Not
+	 * the ones cron or a requestUtils REST call sends: those carry no cookie.
 	 */
-	restoreAfterTest: () => void;
+	requests: () => Promise< OutgoingRequest[] >;
 };
 
 type SameOriginProxy = {
@@ -282,15 +280,14 @@ type ShopFixtures = {
 	sameOriginProxy: SameOriginProxy;
 	/** See LoaderCache. */
 	loaderCache: LoaderCache;
-	/** See GeneralSettings. Only for a test in the serial project: the save changes every page. */
-	generalSettings: GeneralSettings;
 	/** See TestPlugins. */
 	testPlugins: TestPlugins;
 	/**
 	 * Starts a new session in this test's browser, as a new private window
 	 * would: the browser forgets its cookies, and with them the WooCommerce
 	 * session and the storeOptions() and testPlugins cookies set so far. It
-	 * keeps the phpErrors and optionWrites ones, which a spec can't set again.
+	 * keeps the phpErrors, optionWrites and outgoingHttp ones, which a spec
+	 * can't set again.
 	 */
 	newSession: () => Promise< void >;
 	/**
@@ -310,6 +307,8 @@ type ShopFixtures = {
 	phpErrors: PhpErrors;
 	/** See OptionWrites. Starts recording before the first page load. */
 	optionWrites: OptionWrites;
+	/** See OutgoingHttp. Starts recording before the first page load. */
+	outgoingHttp: OutgoingHttp;
 	/**
 	 * Billing details for a guest checkout, unique to this test. The orders
 	 * placed with them, and the account the checkout creates with them when
@@ -354,6 +353,15 @@ type ShopFixtures = {
 	 */
 	pageErrors: void;
 	/**
+	 * Automatic in the serial project: reads the site-wide state a serial test
+	 * may change before the test, and puts it back after it
+	 * (mu-plugins/site-state.php): the plugin's settings and what they derive
+	 * (custom loader, loader cache), the rewrite rules, the active plugins, the
+	 * plugin's cron events. Fails the test when what came back differs. A
+	 * parallel test changes none of it, so it does nothing there.
+	 */
+	siteState: void;
+	/**
 	 * Option: uncaught errors pageErrors lets through, set with `test.use()` for
 	 * a case that lists a known defect's error under "Not covered here". Only
 	 * an uncaught error from the plugin with exactly that message is let
@@ -395,6 +403,20 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		{ auto: true },
 	],
 	knownPageErrors: [ [], { option: true } ],
+	siteState: [
+		async ( { requestUtils }, use, testInfo ) => {
+			if ( testInfo.project.name !== 'serial' ) {
+				await use();
+				return;
+			}
+			const before = await readSiteState( requestUtils );
+			await use();
+			// After a failed test too, which may have stopped half-way.
+			const after = await restoreSiteState( requestUtils, before );
+			expect( after, 'The site state right after putting it back' ).toEqual( before );
+		},
+		{ auto: true },
+	],
 	pageErrors: [
 		async ( { page, pluginDir, knownPageErrors }, use ) => {
 			const errors: string[] = [];
@@ -484,8 +506,8 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	adminNewOrderPage: async ( { page }, use ) => {
 		await use( new AdminNewOrderPage( page ) );
 	},
-	adminSettingsPage: async ( { page }, use ) => {
-		await use( new AdminSettingsPage( page ) );
+	adminSettingsPage: async ( { page }, use, testInfo ) => {
+		await use( new AdminSettingsPage( page, testInfo.project.name === 'serial' ) );
 	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );
@@ -522,7 +544,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		await use( async () => {
 			const context = page.context();
 			const kept = ( await context.cookies() ).filter( ( cookie ) =>
-				[ PHP_ERRORS_COOKIE, OPTION_WRITES_COOKIE ].includes( cookie.name )
+				[ PHP_ERRORS_COOKIE, OPTION_WRITES_COOKIE, OUTGOING_HTTP_COOKIE ].includes( cookie.name )
 			);
 			await context.clearCookies();
 			await context.addCookies( kept );
@@ -564,31 +586,6 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		if ( scope ) {
 			await clearLoaderCache( page.request, scope );
 		}
-	},
-	generalSettings: async ( { page, loginAsAdmin, adminSettingsPage }, use, testInfo ) => {
-		let restore = false;
-		await use( {
-			restoreAfterTest: () => {
-				if ( testInfo.project.name !== 'serial' ) {
-					throw new Error( "Saving the General tab changes every page: tag the test { tag: '@serial' }." );
-				}
-				restore = true;
-			},
-		} );
-		if ( ! restore ) {
-			return;
-		}
-		await loginAsAdmin();
-		await adminSettingsPage.goto( 'general' );
-		// Hidden while the proxy is on: then the test never got to save the tab.
-		if ( await adminSettingsPage.webContainerUrlInput.isVisible() ) {
-			await adminSettingsPage.webContainerIdInput.fill( 'GTM-TESTID' );
-			await adminSettingsPage.webContainerUrlInput.fill( '' );
-			await adminSettingsPage.webIdentifierInput.fill( '' );
-			await adminSettingsPage.save();
-		}
-		await restoreSameOriginBaseline( page.request );
-		await clearLoaderCache( page.request );
 	},
 	sameOriginProxy: async ( { page }, use ) => {
 		await use( {
@@ -641,6 +638,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 		} );
 		await call( 'DELETE' );
+	},
+	outgoingHttp: async ( { page, baseURL, requestUtils }, use ) => {
+		const token = randomUUID();
+		await page.context().addCookies( [ { name: OUTGOING_HTTP_COOKIE, value: token, url: baseURL } ] );
+		await use( { requests: () => readOutgoingHttp( requestUtils, token ) } );
+		await deleteOutgoingHttp( requestUtils, token );
 	},
 	guestBuyer: async ( { requestUtils }, use ) => {
 		const buyer = buildGuestBuyer();

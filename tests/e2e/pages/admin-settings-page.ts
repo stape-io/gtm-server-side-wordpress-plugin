@@ -2,7 +2,11 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 /** The plugin's settings page in wp-admin, for a browser logged in as the admin (loginAsAdmin()). */
 export class AdminSettingsPage {
-	constructor( private readonly page: Page ) {}
+	/** `serial`: the test runs in the serial project, the only one that may save (see save()). */
+	constructor(
+		private readonly page: Page,
+		private readonly serial: boolean
+	) {}
 
 	/** Opens the settings on the tab `tab` names in its URL; General has none. */
 	async goto( tab: 'general' | 'data-layer' ): Promise< void > {
@@ -10,8 +14,15 @@ export class AdminSettingsPage {
 		await this.page.goto( `/wp-admin/options-general.php?page=gtm-server-side-admin-settings${ query }` );
 	}
 
-	/** Clicks "Save Changes" and waits for the settings page it reloads into. */
+	/**
+	 * Clicks "Save Changes" and waits for the settings page it reloads into.
+	 * The save writes the database every page reads, so only a serial test
+	 * may make it; the siteState fixture puts it back after the test.
+	 */
 	async save(): Promise< void > {
+		if ( ! this.serial ) {
+			throw new Error( "Saving the settings changes every page: tag the test { tag: '@serial' }." );
+		}
 		await this.page.getByRole( 'button', { name: 'Save Changes' } ).click();
 		await this.page.waitForURL( /[?&]settings-updated=true/ );
 	}

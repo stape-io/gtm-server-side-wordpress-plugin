@@ -119,15 +119,12 @@ test( 'The identifier prefix and encoded Web GTM ID stay the same on every page 
 } );
 
 test( 'Saving a new identifier or Web GTM ID in wp-admin changes the loader URL on the next page view @T0d32d39a', { tag: '@serial' }, async ( {
-	generalSettings,
 	loginAsAdmin,
 	newSession,
 	adminSettingsPage,
 	loaderCache,
 	storefrontPage,
 } ) => {
-	generalSettings.restoreAfterTest();
-
 	// The preconditions, saved where the case's WP-CLI writes them. The case's
 	// baseline has the same-origin proxy off; the e2e store keeps it half set
 	// up, and the tab hides the sGTM URL and identifier while it is on.

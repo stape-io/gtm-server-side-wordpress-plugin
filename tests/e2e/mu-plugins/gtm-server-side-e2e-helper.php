@@ -40,6 +40,8 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'gtm_server_side_data_layer_ecommerce',
 	'gtm_server_side_data_layer_user_data',
 	'gtm_server_side_placement',
+	'gtm_server_side_gtm_exclude_roles',
+	'gtm_server_side_gtm_exclude_list_roles',
 	'gtm_server_side_web_container_url',
 	'gtm_server_side_web_identifier',
 	'gtm_server_side_cookie_keeper',
@@ -54,6 +56,14 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'woocommerce_prices_include_tax',
 	'woocommerce_enable_myaccount_registration',
 	'woocommerce_enable_signup_and_login_from_checkout',
+);
+
+/**
+ * Options stored as an array: the cookie gives them as a JSON list of
+ * strings, the way wp-admin saves them (the excluded user roles).
+ */
+const GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS = array(
+	'gtm_server_side_gtm_exclude_list_roles',
 );
 
 /**
@@ -109,11 +119,19 @@ function gtm_server_side_e2e_cookie_options(): array {
 		return array();
 	}
 
-	// Strings only, as stored options are: a false from pre_option_<name>
-	// would mean "don't override", and an array isn't an option value here.
+	// Values of the type the option is stored as: a string, or for an array
+	// option a list of strings. A false from pre_option_<name> would mean
+	// "don't override", and a value of another type isn't what the plugin
+	// ever reads from the database.
 	return array_filter(
 		array_intersect_key( $options, array_flip( GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS ) ),
-		'is_string'
+		static function ( $value, string $name ): bool {
+			if ( ! in_array( $name, GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS, true ) ) {
+				return is_string( $value );
+			}
+			return is_array( $value ) && array_values( $value ) === $value && array_filter( $value, 'is_string' ) === $value;
+		},
+		ARRAY_FILTER_USE_BOTH
 	);
 }
 

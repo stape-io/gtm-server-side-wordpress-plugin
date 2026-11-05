@@ -32,6 +32,16 @@ type StoreOptionValues = {
 	 */
 	placement: 'code' | 'gtm_consent' | 'plugin' | 'disable';
 	/**
+	 * The General tab's "Exclude user roles" (`yes` on; `''` is how wp-admin
+	 * saves the unticked checkbox) and the roles it excludes, a list of role
+	 * slugs (`[ 'editor' ]`), stored as an array: the helper takes it as one
+	 * (GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS). Not set on the baseline store.
+	 * Nothing runs when they are saved, and the snippet reads them on every
+	 * request of a logged-in user (GTM_Server_Side_Tracking_Code::wp_head()).
+	 */
+	excludeRoles: 'yes' | '';
+	excludedRoles: string[];
+	/**
 	 * The General tab's sGTM URL ("Server GTM container URL"), the Stape
 	 * container identifier and Cookie Keeper (`yes`): not set on the baseline
 	 * store. Saving any of them makes the plugin fetch a custom loader from the
@@ -130,6 +140,8 @@ export const STORE_OPTIONS = {
 	dataLayerEcommerce: 'gtm_server_side_data_layer_ecommerce',
 	userData: 'gtm_server_side_data_layer_user_data',
 	placement: 'gtm_server_side_placement',
+	excludeRoles: 'gtm_server_side_gtm_exclude_roles',
+	excludedRoles: 'gtm_server_side_gtm_exclude_list_roles',
 	webContainerUrl: 'gtm_server_side_web_container_url',
 	webIdentifier: 'gtm_server_side_web_identifier',
 	cookieKeeper: 'gtm_server_side_cookie_keeper',
@@ -147,6 +159,9 @@ export const STORE_OPTIONS = {
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;
+
+/** The settings stored as an array: their value is a list of strings. */
+export const ARRAY_STORE_OPTIONS: readonly StoreOption[] = [ 'excludedRoles' ];
 
 export type StoreOptions = Partial< StoreOptionValues >;
 

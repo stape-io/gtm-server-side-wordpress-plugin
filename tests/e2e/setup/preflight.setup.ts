@@ -2,6 +2,7 @@ import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright'
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCoupons } from '../api/coupons';
 import { purgeLoaderCaches } from '../api/loader-cache';
+import { purgeOutgoingHttp } from '../api/outgoing-http';
 import { purgeTestAccounts } from '../api/customers';
 import { purgeTestOrders } from '../api/orders';
 import { purgeTestPages } from '../api/pages';
@@ -10,6 +11,7 @@ import { purgeTestTaxRates } from '../api/taxes';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
 import {
+	ARRAY_STORE_OPTIONS,
 	STORE_OPTIONS,
 	STORE_OPTIONS_COOKIE,
 	STORE_OPTIONS_HEADER,
@@ -29,9 +31,9 @@ import {
  * ran and hide what they would have said.
  *
  * Also removes the products, pages, coupons, tax rates, guest orders,
- * registered accounts and isolated loader caches killed runs left behind, and records the WordPress,
- * WooCommerce and theme versions on the test, so a report says what it ran
- * against.
+ * registered accounts, isolated loader caches and recorded outgoing requests
+ * killed runs left behind, and records the WordPress, WooCommerce and theme
+ * versions on the test, so a report says what it ran against.
  */
 
 const THEME = 'twentytwentyfive';
@@ -49,6 +51,7 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	await purgeTestOrders( requestUtils );
 	await purgeTestAccounts( requestUtils );
 	await purgeLoaderCaches( page.request );
+	await purgeOutgoingHttp( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -61,10 +64,13 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	// overrides nothing off a local environment, nor an option missing from its
 	// own list. Ask it to override every STORE_OPTIONS key and read back which
 	// ones it did.
-	// Any value will do: the header only names the options overridden, and
-	// the probe renders no page with them.
+	// Any value of the option's type will do: the header only names the
+	// options overridden, and the probe renders no page with them.
 	const everyOption = Object.fromEntries(
-		Object.keys( STORE_OPTIONS ).map( ( key ) => [ key, 'yes' ] )
+		Object.keys( STORE_OPTIONS ).map( ( key ) => [
+			key,
+			ARRAY_STORE_OPTIONS.includes( key as keyof typeof STORE_OPTIONS ) ? [ 'yes' ] : 'yes',
+		] )
 	) as StoreOptions;
 	const probe = await page.request.get( STORE_OPTIONS_PROBE, {
 		headers: { Cookie: `${ STORE_OPTIONS_COOKIE }=${ storeOptionsCookieValue( everyOption ) }` },

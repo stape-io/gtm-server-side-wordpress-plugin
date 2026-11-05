@@ -14,7 +14,7 @@
     "env:e2e:stop": "wp-env --config=.wp-env.e2e.json stop",
     "env:e2e:destroy": "wp-env --config=.wp-env.e2e.json destroy",
     "env:e2e:logs": "wp-env --config=.wp-env.e2e.json logs",
-    "test:e2e": "npm run test:e2e:parallel; status=$?; npm run test:e2e:serial && exit $status",
+    "test:e2e": "sh -c 'npm run test:e2e:parallel; status=$?; npm run test:e2e:serial -- \"$@\" && exit $status' --",
     "test:e2e:parallel": "playwright test",
     "test:e2e:serial": "E2E_SERIAL=1 playwright test",
     "test:e2e:ui": "playwright test --ui",

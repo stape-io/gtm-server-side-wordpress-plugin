@@ -430,12 +430,24 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   any `update_option()`, `add_option()` or `delete_option()` of a setting it
   watches (Cookie Keeper) on the test's browser requests. Add a setting to
   its `GTM_SERVER_SIDE_E2E_RECORDED_OPTIONS` when a case needs it.
+- **What the plugin sends from PHP** (a webhook to the sGTM URL, a Customer
+  Match upload, a request for the custom loader) is what
+  `outgoingHttp.requests()` returns (`record-outgoing-http.php`): every
+  `wp_remote_*()` call made while serving the test's browser requests, with
+  its URL, method, headers, body and what answered it, oldest first. Each
+  test has its own records, so a spec running next to others asserts exactly
+  the requests it caused. Give the plugin a URL on a test host
+  (`https://<anything>.stape.test/...`, as `storeOptions()` overrides): a
+  request there that no other test plugin answers gets an empty 200, so
+  nothing leaves the machine. A request sent with no test's cookie (cron, a
+  `requestUtils` REST call) isn't recorded: what a case does as the store
+  admin goes through the test's own browser, after `loginAsAdmin()`.
 - **Two test plugins are always on**, since what they guard against needs
   no test's cookie. `block-stape-api.php` answers every request to the Stape
   API with an error: saving the General tab in wp-admin, and the loader cron,
   which runs with no cookie, would otherwise send the placeholder identifiers
-  to it. `same-origin-baseline.php` only acts on its own query arg
-  (`restoreSameOriginBaseline()`, see Store settings).
+  to it. `site-state.php` only answers its own REST route, for the
+  `siteState` fixture (see Store settings).
 - **A third-party plugin under test** (GTM4WP, say) is installed through
   `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 
@@ -470,7 +482,10 @@ when it is not the first.
 
    It overrides reads only, and only for requests the browser makes. To add a
    setting, add it to `STORE_OPTIONS` in `fixtures/store-options.ts` and to
-   the helper's `GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS`, after checking that:
+   the helper's `GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS` (and, for a
+   setting stored as an array, such as the excluded user roles, to
+   `ARRAY_STORE_OPTIONS` and the helper's `GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS`:
+   its value is then a list of strings), after checking that:
    - what the test checks doesn't depend on what runs when the option is
      saved (`update_option_<name>` hooks), since an override never saves it.
      Saving the sGTM URL, container ID or Cookie Keeper rebuilds the custom
@@ -510,14 +525,23 @@ when it is not the first.
    `dependencies`: Playwright skips a dependent project when any test it
    depends on fails.
 
-   A spec that saves the General tab restores it with
-   `generalSettings.restoreAfterTest()`, which saves the baseline back in
-   wp-admin, so the save hooks run again. The tab hides the sGTM URL and
-   identifier while the same-origin proxy is on, which it is on the e2e
-   store, so the spec turns it off first
-   (`adminSettingsPage.setSameOriginProxy( false )`, the case's baseline);
-   wp-admin can't save it on again without an API key, so the teardown turns
-   it back on through `mu-plugins/same-origin-baseline.php`.
+   A serial test restores nothing itself. The automatic `siteState` fixture
+   reads the site-wide state before it and puts it back after it, failed or
+   not (`mu-plugins/site-state.php`): the plugin's options and transients
+   (its settings, the custom loader and its error, the loader cache), the
+   rewrite rules (the same-origin proxy path's), the active plugins and the
+   plugin's cron events. The rows go back raw, so no save hook runs on the
+   way back; what the hooks derived comes back with the settings instead.
+   Content isn't part of it: the fixtures that create content delete it. A
+   serial case that changes some other site-wide state (a WooCommerce
+   setting, say) adds its option to the plugin's
+   `GTM_SERVER_SIDE_E2E_SITE_STATE_OPTIONS`.
+
+   `adminSettingsPage.save()` refuses to save in the parallel project. The
+   General tab hides the sGTM URL and identifier while the same-origin proxy
+   is on, which it is on the e2e store, so a spec that saves them turns it off
+   first (`adminSettingsPage.setSameOriginProxy( false )`, the case's
+   baseline).
 
 ## Testomat
 
