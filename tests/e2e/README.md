@@ -376,8 +376,11 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   fixture, which sets its cookie: `flatRateShipping()`
   (`flat-rate-shipping.php`), `markOrderConfirmationPage()` for a shop's own
   thank-you page (`order-confirmation-page.php`, in place of a case's
-  store-wide filter), and `endEmailVerificationGrace()`, for a guest order
-  link opened more than 10 minutes later (`email-verification-grace.php`).
+  store-wide filter), `endEmailVerificationGrace()`, for a guest order
+  link opened more than 10 minutes later (`email-verification-grace.php`),
+  and `cmpStandIn()`, the "CMP stand-in" fixtures of the GTM snippet
+  injection folder, which push a stored consent choice before the plugin's
+  consent script (`cmp-stand-in.php`).
 - **A third-party plugin under test** (GTM4WP, say) is installed through
   `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 
