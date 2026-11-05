@@ -1,17 +1,12 @@
 import { expect, test } from '../../fixtures';
+import { SGTM_URL, GTM_START, ENCODED_TESTID, ABCDEFGH_LOADER, API_LOADER } from '../../data-layer/gtm-snippet';
 
-const SGTM_URL = 'https://sgtm.example.test';
-const GTM_START = '<!-- Google Tag Manager -->';
-
-/** `id=GTM-TESTID` and `id=GTM-OTHER1`, base64-encoded and URL-encoded, as the cases give them. */
-const ENCODED_TESTID = 'aWQ9R1RNLVRFU1RJRA%3D%3D';
 const ENCODED_OTHER1 = 'aWQ9R1RNLU9USEVSMQ%3D%3D';
 
 /**
  * The identifier snippet's loader URL for `abcdefgh`, `<PREFIX>` captured:
  * 1-5 letters or digits (that it doesn't end in `kp` or `gt` is checked apart).
  */
-const ABCDEFGH_LOADER = /j\.src="https:\/\/sgtm\.example\.test\/([A-Za-z0-9]{1,5})abcdefgh\.js\?"/;
 
 /** The same for the identifier case 0d32d39a saves, `zyxwvuts`. */
 const ZYXWVUTS_LOADER = /j\.src="https:\/\/sgtm\.example\.test\/([A-Za-z0-9]{1,5})zyxwvuts\.js\?"/;
@@ -25,9 +20,6 @@ const ZYXWVUTS_LOADER = /j\.src="https:\/\/sgtm\.example\.test\/([A-Za-z0-9]{1,5
 const ABCDEFGH_CONTAINER_ARGUMENT = new RegExp(
 	`'dataLayer','(([A-Za-z0-9]{1,8})=${ ENCODED_TESTID }(?:&amp;|&)(cgm=nmB|asq=2|tl=dr|type=e8dc4081|sort=asc|sort=desc))'\\);</script>`
 );
-
-/** The Fake API loader of the folder's fixtures, stored as a loader fetched from the Stape API. */
-const API_LOADER = '<script>/*API-LOADER*/window.dataLayer=window.dataLayer||[];window.snipApiLoader=1;</script>';
 
 test( 'With an sGTM URL and no identifier, the default snippet loads `gtm.js?id=GTM-TESTID` from the sGTM URL @T54396725', async ( {
 	product,

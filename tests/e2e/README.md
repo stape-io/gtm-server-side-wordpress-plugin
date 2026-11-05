@@ -18,9 +18,10 @@ npm run lint:e2e        # the spec rules a machine can check
 `npm run test:e2e:parallel` (plain `playwright test`, and `test:e2e:ui` /
 `test:e2e:debug`) runs the parallel specs only, and `npm run test:e2e:serial`
 (`E2E_SERIAL=1`) the serial ones only: a run never has both, so a serial spec
-can't change a setting under a parallel one. Pass Playwright arguments
-(`--grep`, a file) to one of those two: `test:e2e` hands them to the serial
-run only.
+can't change a setting under a parallel one. Playwright arguments (`--grep`,
+a file) given to `test:e2e` go to both runs, and a run they leave without
+tests passes (`--pass-with-no-tests`): `npm run test:e2e -- placement-modes`
+runs that spec's parallel tests, then its serial ones.
 
 `npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
 
@@ -67,7 +68,8 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
-| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`) |
+| `data-layer/gtm-snippet.ts`  | What the GTM snippet specs look for in a page's source (sGTM URL, snippet markers) |
+| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`); clients of the test plugins' REST routes (site state, loader cache, recorded requests) |
 | `setup/preflight.setup.ts`   | Runs before every run: checks the store, purges leftovers            |
 | `mu-plugins/`                | Test-only WordPress plugins, must-use, in the e2e site only (see Test plugins) |
 
@@ -112,8 +114,10 @@ The rest is up to the author and the review.
   one only when it does something, such as `test.use()` or a lock shared by
   its tests.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
-- **Tests are independent.** No serial mode, no state shared between tests,
-  no order they rely on.
+- **Tests are independent.** No `test.describe.configure( { mode: 'serial' } )`,
+  no state shared between tests, no order they rely on. (The `serial`
+  project in Store settings is another thing: it runs tests one at a time,
+  each still independent.)
 - **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
   never from `@playwright/test` directly.
 
@@ -273,6 +277,7 @@ no helper functions inside spec files):
 | Generating test data that isn't stored (a guest buyer)   | `api/`, with a fixture to hand it out     |
 | A page, or a part of one                                 | `pages/`, one class per page              |
 | An expected payload                                      | `data-layer/expected.ts`                  |
+| A snippet marker or setting several snippet specs share  | `data-layer/gtm-snippet.ts`               |
 | Wiring into tests, with clean-up                         | `fixtures/index.ts`                       |
 | A setting to override per test                           | `fixtures/store-options.ts` (see below)   |
 | Code that has to run inside WordPress for a test         | `mu-plugins/` (see Test plugins)          |
@@ -561,7 +566,10 @@ when it is not the first.
    `validationError( '<field id>' )`. The case's `jQuery( … ).valid()` in
    the console is `isValid( field )`, and its `wp option get` is
    `storedOption( '<option>' )`, the database's value whatever
-   `storeOptions()` overrides.
+   `storeOptions()` overrides. It reads the plugin's own options only
+   (`gtm_server_side_*`, which the site state covers), and its type refuses
+   any other name: for one outside the state it would answer `undefined`, as
+   for a missing row, so "not saved" would pass whatever was saved.
 
 ## Testomat
 

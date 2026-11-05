@@ -1,6 +1,6 @@
 import { expect, test } from '../../fixtures';
+import { GTM_START } from '../../data-layer/gtm-snippet';
 
-const GTM_START = '<!-- Google Tag Manager -->';
 const GTM_END = '<!-- End Google Tag Manager -->';
 
 test( '"Add web GTM script onto every page" prints the default GTM snippet exactly once in the page head on every storefront page type @Tbb2a0460', async ( {

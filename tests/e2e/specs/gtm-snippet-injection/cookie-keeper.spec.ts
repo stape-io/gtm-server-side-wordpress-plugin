@@ -1,13 +1,8 @@
 import { expect, test } from '../../fixtures';
-
-const SGTM_URL = 'https://sgtm.example.test';
-const GTM_START = '<!-- Google Tag Manager -->';
+import { SGTM_URL, GTM_START, ENCODED_TESTID, ABCDEFGH_LOADER } from '../../data-layer/gtm-snippet';
 
 /** The cases' Cookie Keeper setup. */
 const COOKIE_KEEPER = { webContainerUrl: SGTM_URL, webIdentifier: 'abcdefgh', cookieKeeper: 'yes' } as const;
-
-/** `id=GTM-TESTID`, base64-encoded and URL-encoded, as the cases give it. */
-const ENCODED_TESTID = 'aWQ9R1RNLVRFU1RJRA%3D%3D';
 
 /** The folder's Browser user agents. */
 const SAFARI_17_4 =
@@ -24,9 +19,6 @@ const SAFARI_16_3 =
 const COOKIE_KEEPER_VARIABLES = new RegExp(
 	`o="https://sgtm\\.example\\.test",a="",i="([A-Za-z0-9]{1,5})abcdefgh",c="(([A-Za-z0-9]{1,8})=${ ENCODED_TESTID }(?:&amp;|&)(cgm=nmB|asq=2|tl=dr|type=e8dc4081|sort=asc|sort=desc))",g="cookie",v="_sbp"`
 );
-
-/** The identifier snippet's loader URL for `abcdefgh`, `<PREFIX>` captured. */
-const ABCDEFGH_LOADER = /j\.src="https:\/\/sgtm\.example\.test\/([A-Za-z0-9]{1,5})abcdefgh\.js\?"/;
 
 /** A new `_sbp`, as `curl -D -` prints it after `Set-Cookie: `, with its value and expiry captured. */
 const SBP_SET =

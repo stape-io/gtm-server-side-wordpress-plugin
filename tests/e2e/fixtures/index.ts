@@ -50,7 +50,7 @@ import {
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { clearLoaderCache, LOADER_CACHE_COOKIE, readLoaderCache, type LoaderCacheValues } from '../api/loader-cache';
 import { deleteOutgoingHttp, OUTGOING_HTTP_COOKIE, readOutgoingHttp, type OutgoingRequest } from '../api/outgoing-http';
-import { readSiteState, readStoredOption, restoreSiteState } from '../api/site-state';
+import { readSiteState, readStoredOption, restoreSiteState, type PluginOptionName } from '../api/site-state';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -287,7 +287,7 @@ type ShopFixtures = {
 	 * holds it, whatever storeOptions() overrides for the browser, or
 	 * undefined when there is no such row (see readStoredOption()).
 	 */
-	storedOption: ( name: string ) => Promise< string | undefined >;
+	storedOption: ( name: PluginOptionName ) => Promise< string | undefined >;
 	/** See TestPlugins. */
 	testPlugins: TestPlugins;
 	/**

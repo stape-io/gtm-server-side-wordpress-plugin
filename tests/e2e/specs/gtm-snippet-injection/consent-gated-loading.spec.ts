@@ -1,17 +1,9 @@
 import { expect, test } from '../../fixtures';
+import { SGTM_URL, ABCDEFGH_LOADER, API_LOADER, CONSENT_SCRIPT } from '../../data-layer/gtm-snippet';
 
-const SGTM_URL = 'https://sgtm.example.test';
 const GTM_JS = 'https://www.googletagmanager.com/gtm.js?id=GTM-TESTID';
 
-/** The consent script's own marker, and the GTM block's script it releases. */
-const CONSENT_SCRIPT = 'gtmVariable:"dataLayer"';
 const GATED_LOADER = '<script type="text/plain" id="custom-loader">';
-
-/** The identifier snippet's loader URL for `abcdefgh`, `<PREFIX>` captured. */
-const ABCDEFGH_LOADER = /j\.src="https:\/\/sgtm\.example\.test\/([A-Za-z0-9]{1,5})abcdefgh\.js\?"/;
-
-/** The Fake API loader of the folder's fixtures, stored as a loader fetched from the Stape API. */
-const API_LOADER = '<script>/*API-LOADER*/window.dataLayer=window.dataLayer||[];window.snipApiLoader=1;</script>';
 
 test( 'In consent mode, GTM isn\'t loaded before a consent grant: the loader is `type="text/plain"` and no gtm.js request is made @T7e64098c', async ( {
 	product,

@@ -12,6 +12,9 @@ export type SiteState = {
 	cron: Record< string, unknown >;
 };
 
+/** The options readStoredOption() can read: the plugin's, which the state covers. */
+export type PluginOptionName = `gtm_server_side_${ string }`;
+
 const PATH = '/gtm-e2e/v1/site-state';
 
 async function call( requestUtils: RequestUtils, method: 'GET' | 'PUT', data?: SiteState ): Promise< SiteState > {
@@ -35,7 +38,7 @@ export function readSiteState( requestUtils: RequestUtils ): Promise< SiteState 
  * row: `wp option get`'s "Could not get … Does it exist?". Only options the
  * state covers (`gtm_server_side_*`).
  */
-export async function readStoredOption( requestUtils: RequestUtils, name: string ): Promise< string | undefined > {
+export async function readStoredOption( requestUtils: RequestUtils, name: PluginOptionName ): Promise< string | undefined > {
 	return ( await readSiteState( requestUtils ) ).options[ name ]?.[ 0 ];
 }
 

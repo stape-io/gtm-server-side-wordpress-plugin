@@ -1,7 +1,5 @@
 import { expect, test } from '../../fixtures';
-
-const GTM_START = '<!-- Google Tag Manager -->';
-const CONSENT_SCRIPT = 'gtmVariable:"dataLayer"';
+import { GTM_START, CONSENT_SCRIPT } from '../../data-layer/gtm-snippet';
 
 /** The cases' setting: "Exclude GTM for user roles" on, for editors. */
 const EXCLUDE_EDITORS = { excludeRoles: 'yes' as const, excludedRoles: [ 'editor' ] };
