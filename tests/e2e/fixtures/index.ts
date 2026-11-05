@@ -16,6 +16,7 @@ import { MyAccountPage } from '../pages/my-account-page';
 import { ClassicLoopPage } from '../pages/classic-loop-page';
 import { CART_STATE_ACTION } from '../pages/product-listing';
 import { OrderReceivedPage } from '../pages/order-received-page';
+import { PluginsPage } from '../pages/plugins-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
@@ -53,6 +54,8 @@ import {
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
+import { deleteStoredOption, readSiteState, restoreSiteState, type PluginOptionName } from '../api/site-state';
+import { SERIAL_PROJECT } from './projects';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
@@ -211,6 +214,7 @@ type ShopFixtures = {
 	contentPage: ContentPage;
 	adminNewOrderPage: AdminNewOrderPage;
 	adminSettingsPage: AdminSettingsPage;
+	pluginsPage: PluginsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
 	wpLoginPage: WpLoginPage;
@@ -293,6 +297,20 @@ type ShopFixtures = {
 	 * when the page navigates away.
 	 */
 	pageErrors: void;
+	/**
+	 * Automatic in the serial project: reads the site-wide state a serial test
+	 * may change before the test, and puts it back after it
+	 * (mu-plugins/site-state.php): the plugin's settings and what they derive
+	 * (custom loader, loader cache), the rewrite rules, the active plugins, the
+	 * plugin's cron events. Fails the test when what came back differs. A
+	 * parallel test changes none of it, so it does nothing there.
+	 */
+	siteState: void;
+	/**
+	 * A case's `wp option delete` for one of the plugin's options. Serial
+	 * tests only: it changes what every page reads, and siteState puts it back.
+	 */
+	deleteStoredOption: ( name: PluginOptionName ) => Promise< void >;
 };
 
 type WorkerFixtures = {
@@ -362,6 +380,26 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		},
 		{ auto: true },
 	],
+	siteState: [
+		async ( { requestUtils }, use, testInfo ) => {
+			if ( testInfo.project.name !== SERIAL_PROJECT ) {
+				await use();
+				return;
+			}
+			const before = await readSiteState( requestUtils );
+			await use();
+			// After a failed test too, which may have stopped half-way.
+			const after = await restoreSiteState( requestUtils, before );
+			expect( after, 'The site state right after putting it back' ).toEqual( before );
+		},
+		{ auto: true },
+	],
+	deleteStoredOption: async ( { requestUtils }, use, testInfo ) => {
+		await use( async ( name ) => {
+			expect( testInfo.project.name, 'deleteStoredOption() outside the serial project' ).toBe( SERIAL_PROJECT );
+			await deleteStoredOption( requestUtils, name );
+		} );
+	},
 	dataLayer: async ( { page }, use ) => {
 		await use( new DataLayer( page ) );
 	},
@@ -409,6 +447,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	},
 	adminSettingsPage: async ( { page }, use ) => {
 		await use( new AdminSettingsPage( page ) );
+	},
+	pluginsPage: async ( { page }, use ) => {
+		await use( new PluginsPage( page ) );
 	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );
