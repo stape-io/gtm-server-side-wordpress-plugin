@@ -1,13 +1,24 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page, type Response } from '@playwright/test';
 import type { CreatedProduct } from '../api/products';
 
 /** The store's front page. */
 export class HomePage {
+	/** The page goto() opened, as the server sent it. */
+	private landing: Response | null = null;
+
 	constructor( private readonly page: Page ) {}
 
 	/** Opens `/`, or `/?<query>` with `query` (a UTM link, say). */
 	async goto( query?: Record< string, string > ): Promise< void > {
-		await this.page.goto( query ? `/?${ new URLSearchParams( query ).toString() }` : '/' );
+		this.landing = await this.page.goto( query ? `/?${ new URLSearchParams( query ).toString() }` : '/' );
+	}
+
+	/** The HTML of the page goto() opened, as View Source shows it: before any script ran. */
+	async source(): Promise< string > {
+		if ( ! this.landing ) {
+			throw new Error( 'Call goto() first: source() is the HTML of the page it opens.' );
+		}
+		return this.landing.text();
 	}
 
 	/**

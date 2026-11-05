@@ -114,3 +114,33 @@ test( 'view_cart cart_total includes tax when prices are entered inclusive of ta
 	// Gross, not the 16.00 net.
 	expect( viewCart.cart_total ).toBe( '20.00' );
 } );
+
+test( 'view_cart item_variant for a variation added with an "Any" attribute includes the chosen value @Ta97f8897', async ( {
+	cartPage,
+	catalog,
+	category,
+	dataLayer,
+	productPage,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	// Red comes first and sets no Size, so the shopper picks one (see VARIATIONS in api/products.ts).
+	const [ red ] = variableProduct.variations;
+	await productPage.goto( variableProduct );
+	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+	await productPage.addToCart();
+
+	await cartPage.goto();
+	const viewCart = await dataLayer.expectPushedOnce( 'view_cart' );
+
+	expect( viewCart.event ).toBe( 'view_cart_stape' );
+	expect( viewCart.ecommerce?.items ).toEqual( [
+		expect.objectContaining( {
+			// The M comes from what the shopper chose: the variation itself says only Red.
+			item_variant: 'Red,M',
+			item_id: String( red.id ),
+			item_sku: red.sku,
+			price: '30.00',
+			quantity: 1,
+		} ),
+	] );
+} );
