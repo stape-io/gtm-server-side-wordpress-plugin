@@ -162,10 +162,17 @@ class GTM_Server_Side_Tracking_Code {
 	/**
 	 * Print GTM Consent Loader Code.
 	 *
+	 * Releases the `#custom-loader` element printed after it once the latest
+	 * consent state grants `ad_storage` or `analytics_storage`, the way Google
+	 * merges `consent default|update` commands: per key, the last value wins.
+	 * A consent tool that restores a stored grant in `wp_head` before this
+	 * script (CookieYes) is found by the start-up scan, while the element
+	 * isn't parsed yet, so the release then waits for DOMContentLoaded.
+	 *
 	 * @return void
 	 */
 	private function print_gtm_consent_loader() {
-		echo '<script>!function(){"use strict";for(var t={window:window,gtmVariable:"dataLayer",onConsentGranted:function(){var t,e,n;t="custom-loader",(t=document.getElementById(t))&&"text/plain"===t.type&&(t.type="text/javascript",n=t.cloneNode(!0),null!=(e=t.parentNode))&&e.replaceChild(n,t)}},e=t.window,n=t.gtmVariable,a=t.onConsentGranted,r=((t=e)[n]||(t[n]=[]),!1),o=t[n],d=function(){r||(r=!0,a())},i=function(t){return!(!t||"consent"!==t[0]||-1===["default","update"].indexOf(t[1])||!(t=t[2])||"object"!=typeof t||"granted"!==t.ad_storage&&"granted"!==t.analytics_storage)},u=o.push,l=(o.push=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];var n=u.apply(o,t);return i(t[0])&&d(),n},t[n]),c=l.length-1;0<=c;c--){var p=l[c];if(i(p))return d()}}();</script>';
+		echo '<script>!function(){"use strict";var t={window:window,gtmVariable:"dataLayer",onConsentGranted:function(){var t,e,n;t="custom-loader",(t=document.getElementById(t))&&"text/plain"===t.type&&(t.type="text/javascript",n=t.cloneNode(!0),null!=(e=t.parentNode))&&e.replaceChild(n,t)}},e=t.window,n=t.gtmVariable,a=t.onConsentGranted,o=e[n]=e[n]||[],s={},r=!1,d=!1,u=o.push;function c(t){var e=t&&"consent"===t[0]&&("default"===t[1]||"update"===t[1])&&t[2];e&&"object"==typeof e&&(e.ad_storage&&(s.ad_storage=e.ad_storage),e.analytics_storage&&(s.analytics_storage=e.analytics_storage))}function i(){r||"granted"!==s.ad_storage&&"granted"!==s.analytics_storage||(document.getElementById("custom-loader")?(r=!0,a()):"loading"!==document.readyState||d||(d=!0,document.addEventListener("DOMContentLoaded",i)))}for(var l=0;l<o.length;l++)c(o[l]);o.push=function(){for(var t=u.apply(o,arguments),e=0;e<arguments.length;e++)c(arguments[e]);return i(),t},i()}();</script>';
 	}
 
 	/**

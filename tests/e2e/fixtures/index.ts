@@ -7,6 +7,7 @@ import { AdminSettingsPage } from '../pages/admin-settings-page';
 import { CartPage } from '../pages/cart-page';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
+import { GtmLoader } from '../pages/gtm-loader';
 import { ClassicCartPage } from '../pages/classic-cart-page';
 import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
@@ -61,6 +62,7 @@ const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
 const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
 const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
 const NO_EMAIL_VERIFICATION_GRACE_COOKIE = 'gtm_e2e_no_email_verification_grace';
+const CMP_STAND_IN_COOKIE = 'gtm_e2e_cmp_stand_in';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -164,6 +166,13 @@ type TestPlugins = {
 	 * the order email opened later (email-verification-grace.php).
 	 */
 	endEmailVerificationGrace: () => Promise< void >;
+	/**
+	 * Plays a consent platform restoring the visitor's stored choice in
+	 * wp_head, before the plugin's consent script (cmp-stand-in.php): a
+	 * `granted` analytics_storage default, or a `granted-denied` default
+	 * grant followed by an update denying both storages.
+	 */
+	cmpStandIn: ( choice: 'granted' | 'granted-denied' ) => Promise< void >;
 };
 
 /** Orders the guestBuyer fixture doesn't clean up, and what a case does to them as the store admin. */
@@ -194,6 +203,8 @@ type ShopFixtures = {
 	classicLoopPage: ClassicLoopPage;
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
+	/** The GTM snippet behind the consent gate, and the gtm.js requests the page made since the test began. */
+	gtmLoader: GtmLoader;
 	miniCart: MiniCart;
 	myAccountPage: MyAccountPage;
 	shopPage: ShopPage;
@@ -378,6 +389,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	homePage: async ( { page }, use ) => {
 		await use( new HomePage( page ) );
 	},
+	gtmLoader: async ( { page }, use ) => {
+		await use( new GtmLoader( page ) );
+	},
 	miniCart: async ( { page }, use ) => {
 		await use( new MiniCart( page ) );
 	},
@@ -421,6 +435,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			flatRateShipping: ( cost ) => setCookie( FLAT_RATE_COOKIE, cost ),
 			markOrderConfirmationPage: ( created ) => setCookie( CONFIRMATION_PAGE_COOKIE, String( created.id ) ),
 			endEmailVerificationGrace: () => setCookie( NO_EMAIL_VERIFICATION_GRACE_COOKIE, '1' ),
+			cmpStandIn: ( choice ) => setCookie( CMP_STAND_IN_COOKIE, choice ),
 		} );
 	},
 	newSession: async ( { page }, use ) => {
