@@ -7,6 +7,7 @@ import { purgeTestAccounts } from '../api/customers';
 import { purgeTestOrders } from '../api/orders';
 import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
+import { readStoredOption } from '../api/site-state';
 import { purgeTestTaxRates } from '../api/taxes';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
@@ -208,6 +209,18 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 		config?.user_data,
 		`gtm_server_side_data_layer_user_data is on in the database. ${ FIX }`
 	).toBeUndefined();
+
+	// The General tab validation specs start with no excluded roles: the role
+	// list hidden, none of its roles ticked. Missing or empty, as a store
+	// whose General tab was saved without them keeps them.
+	expect(
+		( await readStoredOption( requestUtils, 'gtm_server_side_gtm_exclude_roles' ) ) ?? '',
+		`"Exclude GTM for user roles" (gtm_server_side_gtm_exclude_roles) is on in the database. ${ FIX }`
+	).toBe( '' );
+	expect(
+		[ '', 'a:0:{}' ],
+		`Roles are excluded in the database (gtm_server_side_gtm_exclude_list_roles). ${ FIX }`
+	).toContain( ( await readStoredOption( requestUtils, 'gtm_server_side_gtm_exclude_list_roles' ) ) ?? '' );
 
 	// eslint-disable-next-line playwright/no-raw-locators -- a <meta> tag has no role or text to find it by.
 	const wordpress = await page

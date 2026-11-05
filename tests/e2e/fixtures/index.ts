@@ -50,7 +50,7 @@ import {
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { clearLoaderCache, LOADER_CACHE_COOKIE, readLoaderCache, type LoaderCacheValues } from '../api/loader-cache';
 import { deleteOutgoingHttp, OUTGOING_HTTP_COOKIE, readOutgoingHttp, type OutgoingRequest } from '../api/outgoing-http';
-import { readSiteState, restoreSiteState } from '../api/site-state';
+import { readSiteState, readStoredOption, restoreSiteState } from '../api/site-state';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -282,6 +282,12 @@ type ShopFixtures = {
 	sameOriginProxy: SameOriginProxy;
 	/** See LoaderCache. */
 	loaderCache: LoaderCache;
+	/**
+	 * The case's `wp option get <name>`: the plugin's option as the database
+	 * holds it, whatever storeOptions() overrides for the browser, or
+	 * undefined when there is no such row (see readStoredOption()).
+	 */
+	storedOption: ( name: string ) => Promise< string | undefined >;
 	/** See TestPlugins. */
 	testPlugins: TestPlugins;
 	/**
@@ -569,6 +575,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 		} );
 		await Promise.all( created.map( ( id ) => deleteOrder( requestUtils, id ) ) );
+	},
+	storedOption: async ( { requestUtils }, use ) => {
+		await use( ( name ) => readStoredOption( requestUtils, name ) );
 	},
 	loaderCache: async ( { page, baseURL }, use ) => {
 		let scope: string | undefined;
