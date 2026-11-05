@@ -61,7 +61,7 @@ class GTM_Server_Side_WC_Helpers {
 	 * Return formatted product to data layer.
 	 *
 	 * @param  WC_Product $product WC Product.
-	 * @param  array      $args Parameters.
+	 * @param  array      $args Parameters. `variation`: the attributes the shopper chose, keyed `attribute_*`.
 	 * @return array
 	 */
 	public function get_data_layer_item( $product, array $args = array() ) {
@@ -70,6 +70,7 @@ class GTM_Server_Side_WC_Helpers {
 			array(
 				'add_categories' => true,
 				'add_variations' => true,
+				'variation'      => array(),
 			)
 		);
 
@@ -85,7 +86,7 @@ class GTM_Server_Side_WC_Helpers {
 
 		if ( true === $args['add_variations'] ) {
 			if ( 'variation' === $product->get_type() ) {
-				$result['item_variant'] = implode( ',', $this->get_product_variations( $product ) );
+				$result['item_variant'] = implode( ',', $this->get_product_variations( $product, $args['variation'] ) );
 			}
 		}
 
@@ -119,7 +120,7 @@ class GTM_Server_Side_WC_Helpers {
 				continue;
 			}
 
-			$array = $this->get_data_layer_item( $product );
+			$array = $this->get_data_layer_item( $product, array( 'variation' => $this->get_order_item_variation( $item_loop, $product ) ) );
 
 			$subtotal = $item_loop->get_subtotal();
 			$total    = $item_loop->get_total();
@@ -156,7 +157,8 @@ class GTM_Server_Side_WC_Helpers {
 				continue;
 			}
 
-			$array             = $this->get_data_layer_item( $product );
+			$variation         = isset( $product_loop['variation'] ) && is_array( $product_loop['variation'] ) ? $product_loop['variation'] : array();
+			$array             = $this->get_data_layer_item( $product, array( 'variation' => $variation ) );
 			$array['quantity'] = intval( $product_loop['quantity'] );
 			$array['index']    = $index++;
 
@@ -420,13 +422,51 @@ class GTM_Server_Side_WC_Helpers {
 	}
 
 	/**
-	 * Return product variations.
+	 * Return the attributes an order line was bought with, keyed `attribute_*`.
 	 *
-	 * @param  WC_Product_Variation $product Product.
+	 * WooCommerce saves the shopper's choice for each variation attribute as
+	 * line meta, keyed without the `attribute_` prefix.
+	 *
+	 * @param  WC_Order_Item_Product $item Order line.
+	 * @param  WC_Product            $product Its product.
 	 * @return array
 	 */
-	public function get_product_variations( $product ) {
-		return $this->get_variation_attribute_labels( $product->get_variation_attributes() );
+	private function get_order_item_variation( $item, $product ) {
+		if ( 'variation' !== $product->get_type() ) {
+			return array();
+		}
+
+		$variation = array();
+		foreach ( array_keys( $product->get_variation_attributes() ) as $key ) {
+			$variation[ $key ] = (string) $item->get_meta( str_replace( 'attribute_', '', $key ) );
+		}
+		return $variation;
+	}
+
+	/**
+	 * Return product variations.
+	 *
+	 * A variation's own attribute is empty for an "Any …" attribute, so its
+	 * value comes from the attributes the shopper chose.
+	 *
+	 * @param  WC_Product_Variation $product Product.
+	 * @param  array                $variation Chosen attributes, keyed `attribute_*`.
+	 * @return array
+	 */
+	public function get_product_variations( $product, array $variation = array() ) {
+		$attributes = array();
+		foreach ( $product->get_variation_attributes() as $key => $value ) {
+			if ( '' === (string) $value && isset( $variation[ $key ] ) ) {
+				$value = $variation[ $key ];
+			}
+
+			if ( '' === (string) $value ) {
+				continue;
+			}
+
+			$attributes[ $key ] = $value;
+		}
+		return $this->get_variation_attribute_labels( $attributes );
 	}
 
 	/**

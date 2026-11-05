@@ -313,14 +313,10 @@ class GTM_Server_Side_Event_AddToCart {
 				continue;
 			}
 
-			$array             = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_item( $product );
+			$variation         = isset( $item['variation'] ) && is_array( $item['variation'] ) ? $item['variation'] : array();
+			$array             = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_item( $product, array( 'variation' => $variation ) );
 			$array['quantity'] = isset( $item['quantity'] ) ? intval( $item['quantity'] ) : 1;
 			$array['index']    = $index++;
-
-			$item_variant = $this->get_item_variant( $product, isset( $item['variation'] ) ? $item['variation'] : array() );
-			if ( '' !== $item_variant ) {
-				$array['item_variant'] = $item_variant;
-			}
 
 			$result[] = $array;
 		}
@@ -351,42 +347,6 @@ class GTM_Server_Side_Event_AddToCart {
 		}
 
 		return $result;
-	}
-
-	/**
-	 * Return the variant label for a stashed product.
-	 *
-	 * A variation's own attributes are empty for an "Any …" attribute, so the
-	 * value the shopper chose is taken from the attributes the add-to-cart
-	 * request carried instead.
-	 *
-	 * @param  WC_Product $product Added product.
-	 * @param  array      $variation Chosen variation attributes.
-	 * @return string
-	 */
-	private function get_item_variant( $product, $variation ) {
-		if ( 'variation' !== $product->get_type() ) {
-			return '';
-		}
-
-		$variation  = is_array( $variation ) ? $variation : array();
-		$attributes = array();
-
-		foreach ( $product->get_variation_attributes() as $key => $value ) {
-			if ( '' === $value || null === $value ) {
-				$value = isset( $variation[ $key ] ) ? $variation[ $key ] : '';
-			}
-
-			if ( '' === $value ) {
-				continue;
-			}
-
-			$attributes[ $key ] = $value;
-		}
-
-		$labels = GTM_Server_Side_WC_Helpers::instance()->get_variation_attribute_labels( $attributes );
-
-		return implode( ',', $labels );
 	}
 
 	/**
