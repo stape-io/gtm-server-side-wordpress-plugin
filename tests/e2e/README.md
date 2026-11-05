@@ -16,12 +16,14 @@ npm run lint:e2e        # the spec rules a machine can check
 ```
 
 `npm run test:e2e:parallel` (plain `playwright test`, and `test:e2e:ui` /
-`test:e2e:debug`) runs the parallel specs only, and `npm run test:e2e:serial`
-(`E2E_SERIAL=1`) the serial ones only: a run never has both, so a serial spec
-can't change a setting under a parallel one. Playwright arguments (`--grep`,
-a file) given to `test:e2e` go to both runs, and a run they leave without
-tests passes (`--pass-with-no-tests`): `npm run test:e2e -- placement-modes`
-runs that spec's parallel tests, then its serial ones.
+`test:e2e:debug`) runs the parallel specs only, in the `parallel` project, and
+`npm run test:e2e:serial` (`E2E_SERIAL=1`) the serial ones only, in the
+`serial` project (both Chromium; the names are in `fixtures/projects.ts`):
+a run never has both, so a serial spec can't change a setting under a
+parallel one. Playwright arguments (`--grep`, a file) given to `test:e2e` go
+to both runs, and a run they leave without tests passes
+(`--pass-with-no-tests`): `npm run test:e2e -- placement-modes` runs that
+spec's parallel tests, then its serial ones.
 
 `npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
 

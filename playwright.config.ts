@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+import { PARALLEL_PROJECT, SERIAL_PROJECT } from './tests/e2e/fixtures/projects';
 
 /**
  * Points at the e2e wp-env site started by `npm run env:e2e:start` (see
@@ -81,14 +82,14 @@ export default defineConfig( {
 		},
 		serial
 			? {
-					name: 'serial',
+					name: SERIAL_PROJECT,
 					use: { ...devices[ 'Desktop Chrome' ] },
 					dependencies: [ 'preflight' ],
 					grep: /@serial/,
 					workers: 1,
 			  }
 			: {
-					name: 'chromium',
+					name: PARALLEL_PROJECT,
 					use: { ...devices[ 'Desktop Chrome' ] },
 					dependencies: [ 'preflight' ],
 					grepInvert: /@serial/,

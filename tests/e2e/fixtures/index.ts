@@ -54,6 +54,7 @@ import { readSiteState, readStoredOption, restoreSiteState, type PluginOptionNam
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
+import { SERIAL_PROJECT } from './projects';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
 const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
@@ -413,7 +414,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	knownPageErrors: [ [], { option: true } ],
 	siteState: [
 		async ( { requestUtils }, use, testInfo ) => {
-			if ( testInfo.project.name !== 'serial' ) {
+			if ( testInfo.project.name !== SERIAL_PROJECT ) {
 				await use();
 				return;
 			}
@@ -515,7 +516,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		await use( new AdminNewOrderPage( page ) );
 	},
 	adminSettingsPage: async ( { page }, use, testInfo ) => {
-		await use( new AdminSettingsPage( page, testInfo.project.name === 'serial' ) );
+		await use( new AdminSettingsPage( page, testInfo.project.name === SERIAL_PROJECT ) );
 	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );

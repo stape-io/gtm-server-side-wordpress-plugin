@@ -77,7 +77,8 @@ jobs:
 
       - run: npm ci
 
-      # Only chromium: both of playwright.config.ts's test projects use it.
+      # Only chromium: both of playwright.config.ts's test projects (parallel,
+      # serial) run in it.
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
