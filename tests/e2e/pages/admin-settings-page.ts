@@ -20,11 +20,60 @@ export class AdminSettingsPage {
 	 * may make it; the siteState fixture puts it back after the test.
 	 */
 	async save(): Promise< void > {
+		this.requireSerial();
+		await this.saveButton.click();
+		await this.page.waitForURL( /[?&]settings-updated=true/ );
+	}
+
+	/**
+	 * Clicks "Save Changes" where the tab's script should block the save, and
+	 * returns whether the page reloaded. The script blocks it on the click
+	 * itself; a form it lets through navigates, which the click waits to
+	 * start, so the marker set before it is gone. A save that goes through
+	 * writes the database, so this is serial-only too.
+	 */
+	async clickSave(): Promise< boolean > {
+		this.requireSerial();
+		await this.page.evaluate( () => {
+			( window as SamePageMarker ).gtmE2eSamePage = true;
+		} );
+		await this.saveButton.click();
+		return ! ( await this.page.evaluate( () => ( window as SamePageMarker ).gtmE2eSamePage === true ) );
+	}
+
+	/**
+	 * The message the tab's validation (jQuery Validate) shows for the field
+	 * with id `fieldId`, where the plugin's admin script places it: right
+	 * after the field, or in the message line under the role list for
+	 * "Exclude GTM for user roles". Hidden once the field is valid.
+	 */
+	validationError( fieldId: string ): Locator {
+		// jQuery Validate's error is a label with no role, tied to its field
+		// only by `for`; the places are the admin script's errorPlacement.
+		const place =
+			fieldId === 'gtm_server_side_gtm_exclude_roles'
+				? '.js-gtm-server-side-gtm-exclude-roles-message >'
+				: `#${ fieldId } +`;
+		return this.page.locator( `${ place } label.error[for="${ fieldId }"]` );
+	}
+
+	/**
+	 * Runs the tab's validation on one field, as the cases'
+	 * `jQuery( '#<id>' ).valid()` in the console does: shows or hides its
+	 * message, and returns whether the value passes.
+	 */
+	async isValid( field: Locator ): Promise< boolean > {
+		return field.evaluate( ( element ) => ( window as unknown as { jQuery: JQueryValid } ).jQuery( element ).valid() );
+	}
+
+	private requireSerial(): void {
 		if ( ! this.serial ) {
 			throw new Error( "Saving the settings changes every page: tag the test { tag: '@serial' }." );
 		}
-		await this.page.getByRole( 'button', { name: 'Save Changes' } ).click();
-		await this.page.waitForURL( /[?&]settings-updated=true/ );
+	}
+
+	private get saveButton(): Locator {
+		return this.page.getByRole( 'button', { name: 'Save Changes' } );
 	}
 
 	/** The notice WordPress shows after a save. */
@@ -66,6 +115,57 @@ export class AdminSettingsPage {
 		return this.page.locator( '#gtm_server_side_web_identifier' );
 	}
 
+	/** General tab: "Cookie Keeper", shown while the same-origin proxy is off. */
+	get cookieKeeperCheckbox(): Locator {
+		// eslint-disable-next-line playwright/no-raw-locators -- no accessible name (see above); the id is the option the field saves.
+		return this.page.locator( '#gtm_server_side_cookie_keeper' );
+	}
+
+	/** General tab: "Exclude GTM for user roles". */
+	get excludeRolesCheckbox(): Locator {
+		// eslint-disable-next-line playwright/no-raw-locators -- no accessible name (see above); the id is the option the field saves.
+		return this.page.locator( '#gtm_server_side_gtm_exclude_roles' );
+	}
+
+	/** General tab: the role list under "Exclude GTM for user roles", shown while it is ticked. */
+	get excludedRolesList(): Locator {
+		// eslint-disable-next-line playwright/no-raw-locators -- the list has no role or name; its js- class is the hook the plugin's admin script shows and hides it by.
+		return this.page.locator( '.js-gtm-server-side-gtm-exclude-roles-block' );
+	}
+
+	/**
+	 * Empties "Stape container identifier" with Backspace, key by key, as a
+	 * user does: the tab's script follows the field on keyup only.
+	 */
+	async clearWebIdentifierWithKeyboard(): Promise< void > {
+		const length = ( await this.webIdentifierInput.inputValue() ).length;
+		// press() focuses the field with the caret before its text, where
+		// Backspace deletes nothing.
+		await this.webIdentifierInput.press( 'End' );
+		for ( let key = 0; key < length; key++ ) {
+			await this.webIdentifierInput.press( 'Backspace' );
+		}
+		await expect( this.webIdentifierInput ).toHaveValue( '' );
+	}
+
+	/** One role's checkbox in the list, by the role's name ("Editor"). */
+	excludedRoleCheckbox( name: string ): Locator {
+		return this.excludedRolesList.getByRole( 'checkbox', { name, exact: true } );
+	}
+
+	/** The roles the list offers, in its order, with whether each is ticked. */
+	async excludedRoleOptions(): Promise< Array< { role: string; checked: boolean } > > {
+		const options = [];
+		for ( const checkbox of await this.excludedRolesList.getByRole( 'checkbox' ).all() ) {
+			options.push( {
+				// The label wraps the checkbox, so its text is the role's name.
+				role: ( await checkbox.evaluate( ( element ) => element.closest( 'label' )?.textContent ?? '' ) ).trim(),
+				checked: await checkbox.isChecked(),
+			} );
+		}
+		return options;
+	}
+
 	/**
 	 * General tab: turns the "Same-origin proxy" switch on or off. Off, the
 	 * tab shows the sGTM URL, identifier and Cookie Keeper rows again.
@@ -83,3 +183,9 @@ export class AdminSettingsPage {
 		await expect( this.webContainerUrlInput ).toBeVisible( { visible: ! on } );
 	}
 }
+
+/** What clickSave() leaves on the page's window until it reloads. */
+type SamePageMarker = Window & { gtmE2eSamePage?: boolean };
+
+/** jQuery with the jQuery Validate plugin the settings page loads. */
+type JQueryValid = ( element: Element ) => { valid: () => boolean };

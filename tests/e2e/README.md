@@ -134,7 +134,11 @@ The rest is up to the author and the review.
   `AdminSettingsPage` finds them by their id, the option they save, which the
   plugin's admin script uses too. A switch whose checkbox hides under it
   (the same-origin proxy's) is clicked where the user clicks it, its label:
-  `label[for="<option id>"]`.
+  `label[for="<option id>"]`. The same goes for what the plugin's admin
+  script shows next to them: a block it shows and hides is found by its
+  `js-` class, and a validation message by jQuery Validate's
+  `label.error[for="<option id>"]`, where the script places it
+  (`validationError()`).
 - **Narrow by container:** the product card by its name, then the button in
   it. Never the first "Add to cart" on the page.
 
@@ -548,6 +552,16 @@ when it is not the first.
    is on, which it is on the e2e store, so a spec that saves them turns it off
    first (`adminSettingsPage.setSameOriginProxy( false )`, the case's
    baseline).
+
+   A case whose save the tab's validation should block is serial too: if the
+   validation breaks, the click saves. With the proxy turned off as above
+   (its own empty API key blocks every save on the e2e store), the spec
+   clicks with `adminSettingsPage.clickSave()`, which returns whether the
+   page reloaded, and reads the message under the field with
+   `validationError( '<field id>' )`. The case's `jQuery( … ).valid()` in
+   the console is `isValid( field )`, and its `wp option get` is
+   `storedOption( '<option>' )`, the database's value whatever
+   `storeOptions()` overrides.
 
 ## Testomat
 
