@@ -451,8 +451,7 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		dataLayer.push( { ecommerce: null } );
-		dataLayer.push( eventData );
+		this._pushDataLayerEvent( eventData );
 	},
 
 	pushGroupProduct: function ( $elForm, el ) {
@@ -519,8 +518,7 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		dataLayer.push( { ecommerce: null } );
-		dataLayer.push( eventData );
+		this._pushDataLayerEvent( eventData );
 	},
 
 	/**
@@ -978,12 +976,26 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		dataLayer.push( { ecommerce: null } );
-		dataLayer.push( eventData );
+		this._pushDataLayerEvent( eventData );
 
 		if ( onPushed ) {
 			onPushed();
 		}
+	},
+
+	/**
+	 * Push a data layer event, after clearing the previous ecommerce object.
+	 *
+	 * Only a GTM snippet creates dataLayer, and none is printed with placement
+	 * "Disable" or for an excluded role, so the push creates it if missing: a
+	 * GTM loaded later reads what is already there.
+	 *
+	 * @param object eventData Event.
+	 */
+	_pushDataLayerEvent: function ( eventData ) {
+		window.dataLayer = window.dataLayer || [];
+		window.dataLayer.push( { ecommerce: null } );
+		window.dataLayer.push( eventData );
 	},
 
 	/**
@@ -1018,8 +1030,7 @@ var pluginGtmServerSide = {
 					eventData['cart_state'] = response.data;
 				}
 
-				dataLayer.push( { ecommerce: null } );
-				dataLayer.push( eventData );
+				pluginGtmServerSide._pushDataLayerEvent( eventData );
 
 				if ( onPushed ) {
 					onPushed();

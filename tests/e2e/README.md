@@ -447,11 +447,31 @@ when it is not the first.
    restore the option in the fixture's teardown. No spec needs this yet.
 3. **Serial.** The spec writes something every spec reads: a setting saved
    through wp-admin, an option with an `update_option_<name>` hook, cron.
-   It runs in a `serial` project with `workers: 1`, started as its own CI
-   step after the parallel one and reporting into the same Testomat run.
-   Not through `dependencies`: Playwright skips a dependent project when any
-   test it depends on fails. Not set up yet; the first spec that needs it
-   adds the project and the CI step.
+   The test carries `{ tag: '@serial' }` (not in its title, which stays the
+   case's), in its suite's file, and runs in the `serial` project with
+   `workers: 1`: `npm run test:e2e:serial`, started as its own CI step after
+   the parallel one, even when that failed, and reporting into the same
+   Testomat run (`TESTOMATIO_RUN`, finished last). Not through
+   `dependencies`: Playwright skips a dependent project when any test it
+   depends on fails.
+
+   A serial test restores nothing itself. The automatic `siteState` fixture
+   reads the site-wide state before it and puts it back after it, failed or
+   not (`mu-plugins/site-state.php`): the plugin's options and transients
+   (its settings, the custom loader and its error, the loader cache), the
+   rewrite rules (the same-origin proxy path's), the active plugins and the
+   plugin's cron events. The rows go back raw, so no save hook runs on the
+   way back; what the hooks derived comes back with the settings instead.
+   Content isn't part of it: the fixtures that create content delete it. A
+   serial case that changes some other site-wide state (a WooCommerce
+   setting, say) adds its option to the plugin's
+   `GTM_SERVER_SIDE_E2E_SITE_STATE_OPTIONS`.
+
+   A case that deactivates and activates the plugin does it on the Plugins
+   screen (`pluginsPage`), which runs the plugin's real hooks. Its
+   `wp option delete` of one of the plugin's options is
+   `deleteStoredOption( '<option>' )`, which refuses to run outside the
+   serial project.
 
 ## Testomat
 

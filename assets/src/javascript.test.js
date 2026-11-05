@@ -134,7 +134,7 @@ function loadPlugin( { ajaxAddToCart = false, customEventName = false } = {} ) {
 		console,
 		URL,
 		Date,
-		window: { location: { href: 'https://shop.test/shop/' } },
+		location: { href: 'https://shop.test/shop/' },
 		setTimeout( fn ) {
 			timers.push( fn );
 		},
@@ -148,6 +148,9 @@ function loadPlugin( { ajaxAddToCart = false, customEventName = false } = {} ) {
 	if ( ajaxAddToCart ) {
 		sandbox.wc_add_to_cart_params = {};
 	}
+	// As in a browser, window is the global object: window.dataLayer and a
+	// bare dataLayer are one array.
+	sandbox.window = sandbox;
 	vm.createContext( sandbox );
 	vm.runInContext( SOURCE, sandbox, { filename: 'javascript.js' } );
 	return sandbox;
