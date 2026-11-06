@@ -64,9 +64,13 @@ jQuery( document ).ready(
 			}
 		);
 
+		/**
+		 * Scoped to the form so a plugin that unbinds the bare button selector
+		 * to replace WooCommerce's handler does not remove this one too.
+		 */
 		jQuery( document ).on(
 			'click',
-			'.single_add_to_cart_button:not(.disabled)',
+			'form.cart .single_add_to_cart_button:not(.disabled), form.wc-block-add-to-cart-with-options .single_add_to_cart_button:not(.disabled)',
 			function ( e ) {
 				// The "Add to Cart with Options" block's form has the `cart` class
 				// only in its legacy (page-load) mode; otherwise it adds through
