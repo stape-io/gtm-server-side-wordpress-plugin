@@ -7,17 +7,21 @@ import { AdminSettingsPage } from '../pages/admin-settings-page';
 import { CartPage } from '../pages/cart-page';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
+import { GtmLoader } from '../pages/gtm-loader';
 import { ClassicCartPage } from '../pages/classic-cart-page';
 import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
+import { MiniCart } from '../pages/mini-cart';
 import { MyAccountPage } from '../pages/my-account-page';
 import { ClassicLoopPage } from '../pages/classic-loop-page';
 import { CART_STATE_ACTION } from '../pages/product-listing';
 import { OrderReceivedPage } from '../pages/order-received-page';
+import { PluginsPage } from '../pages/plugins-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
 import { ShopPage } from '../pages/shop-page';
+import { WpLoginPage } from '../pages/wp-login-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
@@ -38,16 +42,20 @@ import {
 	buildGuestBuyer,
 	buildNewCustomer,
 	createCustomer,
+	createUser,
 	deleteAccount,
 	deleteAccountsOf,
 	findAccountId,
 	type BillingDetails,
 	type CreatedCustomer,
+	type CreatedUser,
 	type NewCustomer,
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
+import { deleteStoredOption, readSiteState, restoreSiteState, type PluginOptionName } from '../api/site-state';
+import { SERIAL_PROJECT } from './projects';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
@@ -57,6 +65,7 @@ const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
 const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
 const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
 const NO_EMAIL_VERIFICATION_GRACE_COOKIE = 'gtm_e2e_no_email_verification_grace';
+const CMP_STAND_IN_COOKIE = 'gtm_e2e_cmp_stand_in';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -121,6 +130,11 @@ type Catalog = {
 	 * every order it placed, whatever email the checkout gave them.
 	 */
 	createCustomer: () => Promise< CreatedCustomer >;
+	/**
+	 * A throwaway user with one role (`editor`, say), for a case about staff,
+	 * who log in on wp-login.php (wpLoginPage.logIn()). Deleted after the test.
+	 */
+	createUser: ( role: string ) => Promise< CreatedUser >;
 };
 
 type PhpErrors = {
@@ -155,6 +169,13 @@ type TestPlugins = {
 	 * the order email opened later (email-verification-grace.php).
 	 */
 	endEmailVerificationGrace: () => Promise< void >;
+	/**
+	 * Plays a consent platform restoring the visitor's stored choice in
+	 * wp_head, before the plugin's consent script (cmp-stand-in.php): a
+	 * `granted` analytics_storage default, or a `granted-denied` default
+	 * grant followed by an update denying both storages.
+	 */
+	cmpStandIn: ( choice: 'granted' | 'granted-denied' ) => Promise< void >;
 };
 
 /** Orders the guestBuyer fixture doesn't clean up, and what a case does to them as the store admin. */
@@ -185,13 +206,18 @@ type ShopFixtures = {
 	classicLoopPage: ClassicLoopPage;
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
+	/** The GTM snippet behind the consent gate, and the gtm.js requests the page made since the test began. */
+	gtmLoader: GtmLoader;
+	miniCart: MiniCart;
 	myAccountPage: MyAccountPage;
 	shopPage: ShopPage;
 	contentPage: ContentPage;
 	adminNewOrderPage: AdminNewOrderPage;
 	adminSettingsPage: AdminSettingsPage;
+	pluginsPage: PluginsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
+	wpLoginPage: WpLoginPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
@@ -271,6 +297,20 @@ type ShopFixtures = {
 	 * when the page navigates away.
 	 */
 	pageErrors: void;
+	/**
+	 * Automatic in the serial project: reads the site-wide state a serial test
+	 * may change before the test, and puts it back after it
+	 * (mu-plugins/site-state.php): the plugin's settings and what they derive
+	 * (custom loader, loader cache), the rewrite rules, the active plugins, the
+	 * plugin's cron events. Fails the test when what came back differs. A
+	 * parallel test changes none of it, so it does nothing there.
+	 */
+	siteState: void;
+	/**
+	 * A case's `wp option delete` for one of the plugin's options. Serial
+	 * tests only: it changes what every page reads, and siteState puts it back.
+	 */
+	deleteStoredOption: ( name: PluginOptionName ) => Promise< void >;
 };
 
 type WorkerFixtures = {
@@ -340,6 +380,26 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		},
 		{ auto: true },
 	],
+	siteState: [
+		async ( { requestUtils }, use, testInfo ) => {
+			if ( testInfo.project.name !== SERIAL_PROJECT ) {
+				await use();
+				return;
+			}
+			const before = await readSiteState( requestUtils );
+			await use();
+			// After a failed test too, which may have stopped half-way.
+			const after = await restoreSiteState( requestUtils, before );
+			expect( after, 'The site state right after putting it back' ).toEqual( before );
+		},
+		{ auto: true },
+	],
+	deleteStoredOption: async ( { requestUtils }, use, testInfo ) => {
+		await use( async ( name ) => {
+			expect( testInfo.project.name, 'deleteStoredOption() outside the serial project' ).toBe( SERIAL_PROJECT );
+			await deleteStoredOption( requestUtils, name );
+		} );
+	},
 	dataLayer: async ( { page }, use ) => {
 		await use( new DataLayer( page ) );
 	},
@@ -367,6 +427,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	homePage: async ( { page }, use ) => {
 		await use( new HomePage( page ) );
 	},
+	gtmLoader: async ( { page }, use ) => {
+		await use( new GtmLoader( page ) );
+	},
+	miniCart: async ( { page }, use ) => {
+		await use( new MiniCart( page ) );
+	},
 	myAccountPage: async ( { page }, use ) => {
 		await use( new MyAccountPage( page ) );
 	},
@@ -382,11 +448,17 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	adminSettingsPage: async ( { page }, use ) => {
 		await use( new AdminSettingsPage( page ) );
 	},
+	pluginsPage: async ( { page }, use ) => {
+		await use( new PluginsPage( page ) );
+	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );
 	},
 	productSearchPage: async ( { page }, use ) => {
 		await use( new ProductSearchPage( page ) );
+	},
+	wpLoginPage: async ( { page }, use ) => {
+		await use( new WpLoginPage( page ) );
 	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
@@ -404,6 +476,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			flatRateShipping: ( cost ) => setCookie( FLAT_RATE_COOKIE, cost ),
 			markOrderConfirmationPage: ( created ) => setCookie( CONFIRMATION_PAGE_COOKIE, String( created.id ) ),
 			endEmailVerificationGrace: () => setCookie( NO_EMAIL_VERIFICATION_GRACE_COOKIE, '1' ),
+			cmpStandIn: ( choice ) => setCookie( CMP_STAND_IN_COOKIE, choice ),
 		} );
 	},
 	newSession: async ( { page }, use ) => {
@@ -528,6 +601,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 					await deleteOrdersOfCustomer( requestUtils, created.id );
 					await deleteAccount( requestUtils, created.id );
 				} );
+				return created;
+			},
+			createUser: async ( role ) => {
+				const created = await createUser( requestUtils, role );
+				deletions.push( () => deleteAccount( requestUtils, created.id ) );
 				return created;
 			},
 		} );

@@ -1,5 +1,5 @@
 import { expect, test } from '../../fixtures';
-import { expectedOrderUserData, expectedUserData } from '../../data-layer/expected';
+import { expectedGuestOrderUserData, expectedOrderUserData, expectedUserData } from '../../data-layer/expected';
 
 test( "With user data on, a logged-in customer's events carry user_data with profile and billing fields, empty fields omitted @Tbde21463", async ( {
 	storeOptions,
@@ -191,6 +191,36 @@ test( 'A registered customer\'s second order pushes purchase with new_customer "
 	expect( purchase.user_data ).toEqual(
 		expectedOrderUserData( customer, { billingEmail: guestBuyer.email, newCustomer: 'false' } )
 	);
+} );
+
+test( 'A guest purchase carries the order\'s billing/shipping in user_data and new_customer "true", and a repeat guest buyer gets new_customer "false" @Tb5ecc6d9', async ( {
+	storeOptions,
+	homePage,
+	checkoutPage,
+	dataLayer,
+	product,
+	guestBuyer,
+} ) => {
+	await storeOptions( { userData: 'yes' } );
+	await homePage.addToCart( product );
+	await checkoutPage.goto();
+	await checkoutPage.fillBillingDetails( guestBuyer );
+	await checkoutPage.placeOrder();
+
+	const first = await dataLayer.expectPushedOnce( 'purchase' );
+	expect( first.event ).toBe( 'purchase_stape' );
+	expect( first.user_data ).toEqual( expectedGuestOrderUserData( guestBuyer, { newCustomer: 'true' } ) );
+
+	await homePage.addToCart( product );
+	await checkoutPage.goto();
+	// The checkout keeps the first order's details in the guest's session and
+	// shows the address collapsed, so the same data is already filled in.
+	await checkoutPage.fillContactEmail( guestBuyer.email );
+	await checkoutPage.placeOrder();
+
+	const second = await dataLayer.expectPushedOnce( 'purchase' );
+	expect( second.event ).toBe( 'purchase_stape' );
+	expect( second.user_data ).toEqual( expectedGuestOrderUserData( guestBuyer, { newCustomer: 'false' } ) );
 } );
 
 test( "With user data on, sign_up after My Account registration carries the new customer's user_data @Tcfba9598", async ( {
