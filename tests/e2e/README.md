@@ -21,7 +21,7 @@ after `--`), and `lint:e2e` checks the spec rules a machine can check. The
 block has no comments on purpose: WebStorm runs a line of it without a
 shell, so a `# comment` would reach the command as arguments.
 
-Serial tests run in the same run, one at a time, while no other test runs
+Exclusive tests run in the same run, one at a time, while no other test runs
 (see Store settings). Only one run may use the store at a time: a second
 run's preflight deletes the test content the first one is using.
 
@@ -66,7 +66,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
-| `fixtures/serial.ts`         | `SERIAL`, the details of a serial test (see Store settings)          |
+| `fixtures/exclusive.ts`      | `EXCLUSIVE`, the details of an exclusive test (see Store settings)   |
 | `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
@@ -118,9 +118,9 @@ The rest is up to the author and the review.
   its tests.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
 - **Tests are independent.** No `test.describe.configure( { mode: 'serial' } )`,
-  no state shared between tests, no order they rely on. (A serial test, in
-  Store settings, is another thing: it runs while no other test runs, and is
-  still independent.) The nightly CI run checks this: it starts the tests in
+  no state shared between tests, no order they rely on. (An exclusive test,
+  in Store settings, runs while no other test runs, and is still
+  independent.) The nightly CI run checks this: it starts the tests in
   a random order (`--shuffle`). Its log prints `shuffle seed N`, and
   `npm run test:e2e -- --shuffle N` starts them in that order again. With
   more than one worker, which tests end up running side by side can still
@@ -443,7 +443,7 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   an empty cache, as after the case's `wp transient delete`, reads it with
   `loaderCache.read()` (the case's `wp transient get`), and it is deleted
   after the test. Without `isolate()`, `read()` and `clear()` act on the
-  site's transients, for a serial test. After `newSession()`, `isolate()`
+  site's transients, for an exclusive test. After `newSession()`, `isolate()`
   again gives the new session the same cache, as the site's is shared by
   every browser window.
 - **A setting the test overrides is kept** when the plugin never wrote it:
@@ -537,43 +537,43 @@ when it is not the first.
    holding the same lock read. Give all of them the same Playwright test
    lock (`{ lock: '<name>' }`, from one shared list of lock names), and
    restore the option in the fixture's teardown. No spec needs this yet.
-3. **Serial.** The spec writes something every spec reads: a setting saved
+3. **Exclusive.** The spec writes something every spec reads: a setting saved
    through wp-admin, an option with an `update_option_<name>` hook, cron.
-   The test passes `SERIAL` (`fixtures/serial.ts`) as its details,
-   `test( '<case title> @T<id>', SERIAL, … )`, in its suite's file, and runs
-   in the same run as every other test (lint: a spec never writes `'@serial'`
-   or `'-exclusive-'` itself). `SERIAL` carries Playwright's built-in
+   The test passes `EXCLUSIVE` (`fixtures/exclusive.ts`) as its details,
+   `test( '<case title> @T<id>', EXCLUSIVE, … )`, in its suite's file, and runs
+   in the same run as every other test (lint: a spec never writes
+   `'@exclusive'` or `'-exclusive-'` itself). `EXCLUSIVE` carries Playwright's built-in
    exclusive lock, `-exclusive-`: the test starts only once no other test is
    running, and no test starts until it ends. Playwright starts it when the
    workers are free, which in practice is near the end of the run, and runs
-   it whether or not other tests failed. It also carries the `@serial` tag,
+   it whether or not other tests failed. It also carries the `@exclusive` tag,
    which the fixtures read, since a test's locks aren't in `TestInfo`.
 
    Nothing on the store runs in the background between tests: WP-Cron and
    WooCommerce's async requests reach the site through a loopback request,
    which fails inside wp-env (`wp cron test`: "Failed to connect to
-   localhost:8889"). A serial case runs cron itself, so its work ends with
+   localhost:8889"). An exclusive case runs cron itself, so its work ends with
    the test.
 
-   A serial test restores nothing itself. The automatic `siteState` fixture
+   An exclusive test restores nothing itself. The automatic `siteState` fixture
    reads the site-wide state before it and puts it back after it, failed or
    not (`mu-plugins/site-state.php`): the plugin's options and transients
    (its settings, the custom loader and its error, the loader cache), the
    rewrite rules (the same-origin proxy path's), the active plugins and the
    plugin's cron events. The rows go back raw, so no save hook runs on the
    way back; what the hooks derived comes back with the settings instead.
-   Content isn't part of it: the fixtures that create content delete it. A
-   serial case that changes some other site-wide state (a WooCommerce
+   Content isn't part of it: the fixtures that create content delete it. An
+   exclusive case that changes some other site-wide state (a WooCommerce
    setting, say) adds its option to the plugin's
    `GTM_SERVER_SIDE_E2E_SITE_STATE_OPTIONS`.
 
-   `adminSettingsPage.save()` refuses to save in a test without `SERIAL`. The
+   `adminSettingsPage.save()` refuses to save in a test without `EXCLUSIVE`. The
    General tab hides the sGTM URL and identifier while the same-origin proxy
    is on, which it is on the e2e store, so a spec that saves them turns it off
    first (`adminSettingsPage.setSameOriginProxy( false )`, the case's
    baseline).
 
-   A case whose save the tab's validation should block is serial too: if the
+   A case whose save the tab's validation should block is exclusive too: if the
    validation breaks, the click saves. With the proxy turned off as above
    (its own empty API key blocks every save on the e2e store), the spec
    clicks with `adminSettingsPage.clickSave()`, which returns whether the

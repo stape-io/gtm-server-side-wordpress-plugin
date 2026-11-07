@@ -1,5 +1,5 @@
 import { expect, test } from '../../fixtures';
-import { SERIAL } from '../../fixtures/serial';
+import { EXCLUSIVE } from '../../fixtures/exclusive';
 
 const WEB_CONTAINER_ID = 'gtm_server_side_web_container_id';
 const WEB_CONTAINER_URL = 'gtm_server_side_web_container_url';
@@ -11,9 +11,9 @@ const URL_MESSAGE = 'URL must be entered with https:// and without slashes at th
 // the e2e store it is on with no API key, and its own validation would block
 // every save, whatever the field under test holds. Only the form changes; a
 // save the validation lets through writes the database, which is why these
-// tests are serial (siteState puts it back).
+// tests are exclusive (siteState puts it back).
 
-test( 'A Web GTM ID not in `GTM-…` format blocks saving with "Container id must be in GTM-XXXXXX format" @T9a06a029', SERIAL, async ( {
+test( 'A Web GTM ID not in `GTM-…` format blocks saving with "Container id must be in GTM-XXXXXX format" @T9a06a029', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	storedOption,
@@ -33,7 +33,7 @@ test( 'A Web GTM ID not in `GTM-…` format blocks saving with "Container id mus
 	expect( await storedOption( WEB_CONTAINER_ID ) ).toBe( 'GTM-TESTID' );
 } );
 
-test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("This field is required.") @T4520f17e', SERIAL, async ( {
+test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("This field is required.") @T4520f17e', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	storedOption,
@@ -51,7 +51,7 @@ test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("T
 	expect( await storedOption( WEB_CONTAINER_ID ) ).toBe( 'GTM-TESTID' );
 } );
 
-test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "URL must be entered with https:// and without slashes at the end" @T79058af9', SERIAL, async ( {
+test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "URL must be entered with https:// and without slashes at the end" @T79058af9', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	storedOption,
@@ -79,7 +79,7 @@ test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "UR
 	expect( ( await storedOption( WEB_CONTAINER_URL ) ) ?? '' ).toBe( '' );
 } );
 
-test( '"Exclude GTM for user roles" shows the role list only while checked and blocks saving until a role is ticked ("Select at least one role") @T4612154a', SERIAL, async ( {
+test( '"Exclude GTM for user roles" shows the role list only while checked and blocks saving until a role is ticked ("Select at least one role") @T4612154a', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 } ) => {
@@ -113,7 +113,7 @@ test( '"Exclude GTM for user roles" shows the role list only while checked and b
 	await expect( adminSettingsPage.excludedRolesList ).toBeHidden();
 } );
 
-test( 'The Cookie Keeper checkbox is disabled and unchecked while the identifier is empty and becomes available once one is typed @T4c0e7239', SERIAL, async ( {
+test( 'The Cookie Keeper checkbox is disabled and unchecked while the identifier is empty and becomes available once one is typed @T4c0e7239', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 } ) => {

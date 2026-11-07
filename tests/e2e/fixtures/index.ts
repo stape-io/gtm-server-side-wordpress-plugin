@@ -54,7 +54,7 @@ import { readSiteState, readStoredOption, restoreSiteState, type PluginOptionNam
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
-import { SERIAL } from './serial';
+import { EXCLUSIVE } from './exclusive';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
 const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
@@ -362,7 +362,7 @@ type ShopFixtures = {
 	 */
 	pageErrors: void;
 	/**
-	 * Automatic for a serial test (SERIAL, ./serial.ts): reads the site-wide
+	 * Automatic for an exclusive test (EXCLUSIVE, ./exclusive.ts): reads the site-wide
 	 * state it may change before the test, and puts it back after it
 	 * (mu-plugins/site-state.php): the plugin's settings and what they derive
 	 * (custom loader, loader cache), the rewrite rules, the active plugins, the
@@ -414,7 +414,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	knownPageErrors: [ [], { option: true } ],
 	siteState: [
 		async ( { requestUtils }, use, testInfo ) => {
-			if ( ! testInfo.tags.includes( SERIAL.tag ) ) {
+			if ( ! testInfo.tags.includes( EXCLUSIVE.tag ) ) {
 				await use();
 				return;
 			}
@@ -516,7 +516,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		await use( new AdminNewOrderPage( page ) );
 	},
 	adminSettingsPage: async ( { page }, use, testInfo ) => {
-		await use( new AdminSettingsPage( page, testInfo.tags.includes( SERIAL.tag ) ) );
+		await use( new AdminSettingsPage( page, testInfo.tags.includes( EXCLUSIVE.tag ) ) );
 	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );

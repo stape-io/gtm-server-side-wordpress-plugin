@@ -85,9 +85,9 @@ export default tseslint.config(
 				{
 					// A test with the tag but not the lock would save settings next
 					// to the others; one with the lock but not the tag would get no
-					// siteState restore. SERIAL carries both.
-					selector: "Literal[value='@serial'], Literal[value='-exclusive-']",
-					message: 'Mark a serial test with SERIAL from tests/e2e/fixtures/serial.ts: it carries the tag and the exclusive lock together.',
+					// siteState restore. EXCLUSIVE carries both.
+					selector: "Literal[value='@exclusive'], Literal[value='-exclusive-']",
+					message: 'Mark an exclusive test with EXCLUSIVE from tests/e2e/fixtures/exclusive.ts: it carries the tag and the lock together.',
 				},
 			],
 		},

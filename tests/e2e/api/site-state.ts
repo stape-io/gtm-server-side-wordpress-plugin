@@ -1,7 +1,7 @@
 import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 
 /**
- * The site-wide state a serial test may change, read and put back through
+ * The site-wide state an exclusive test may change, read and put back through
  * mu-plugins/site-state.php: the plugin's options and transients, the rewrite
  * rules, the active plugins and the plugin's cron events. The siteState
  * fixture hands it back unchanged; readStoredOption() reads one option's

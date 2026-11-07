@@ -2,10 +2,10 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 /** The plugin's settings page in wp-admin, for a browser logged in as the admin (loginAsAdmin()). */
 export class AdminSettingsPage {
-	/** `serial`: the test is a serial one (SERIAL, fixtures/serial.ts), the only kind that may save (see save()). */
+	/** `exclusive`: the test is an exclusive one (EXCLUSIVE, fixtures/exclusive.ts), the only kind that may save (see save()). */
 	constructor(
 		private readonly page: Page,
-		private readonly serial: boolean
+		private readonly exclusive: boolean
 	) {}
 
 	/** Opens the settings on the tab `tab` names in its URL; General has none. */
@@ -16,11 +16,11 @@ export class AdminSettingsPage {
 
 	/**
 	 * Clicks "Save Changes" and waits for the settings page it reloads into.
-	 * The save writes the database every page reads, so only a serial test
+	 * The save writes the database every page reads, so only an exclusive test
 	 * may make it; the siteState fixture puts it back after the test.
 	 */
 	async save(): Promise< void > {
-		this.requireSerial();
+		this.requireExclusive();
 		await this.saveButton.click();
 		await this.page.waitForURL( /[?&]settings-updated=true/ );
 	}
@@ -30,10 +30,10 @@ export class AdminSettingsPage {
 	 * returns whether the page reloaded. The script blocks it on the click
 	 * itself; a form it lets through navigates, which the click waits to
 	 * start, so the marker set before it is gone. A save that goes through
-	 * writes the database, so this is serial-only too.
+	 * writes the database, so this is exclusive-only too.
 	 */
 	async clickSave(): Promise< boolean > {
-		this.requireSerial();
+		this.requireExclusive();
 		await this.page.evaluate( () => {
 			( window as SamePageMarker ).gtmE2eSamePage = true;
 		} );
@@ -66,9 +66,9 @@ export class AdminSettingsPage {
 		return field.evaluate( ( element ) => ( window as unknown as { jQuery: JQueryValid } ).jQuery( element ).valid() );
 	}
 
-	private requireSerial(): void {
-		if ( ! this.serial ) {
-			throw new Error( 'Saving the settings changes every page: mark the test with SERIAL (fixtures/serial.ts).' );
+	private requireExclusive(): void {
+		if ( ! this.exclusive ) {
+			throw new Error( 'Saving the settings changes every page: mark the test with EXCLUSIVE (fixtures/exclusive.ts).' );
 		}
 	}
 
