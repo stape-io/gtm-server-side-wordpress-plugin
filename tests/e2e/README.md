@@ -120,7 +120,11 @@ The rest is up to the author and the review.
 - **Tests are independent.** No `test.describe.configure( { mode: 'serial' } )`,
   no state shared between tests, no order they rely on. (A serial test, in
   Store settings, is another thing: it runs while no other test runs, and is
-  still independent.)
+  still independent.) The nightly CI run checks this: it starts the tests in
+  a random order (`--shuffle`). Its log prints `shuffle seed N`, and
+  `npm run test:e2e -- --shuffle N` starts them in that order again. With
+  more than one worker, which tests end up running side by side can still
+  differ; `--workers=1` replays the order exactly.
 - **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
   never from `@playwright/test` directly.
 

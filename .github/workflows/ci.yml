@@ -120,8 +120,12 @@ jobs:
       # Results go to Testomat when the TESTOMATIO secret exists (it doesn't on
       # PRs from forks; playwright.config.ts then leaves the reporter out).
       # Cases are matched by the @T{id} tag in each test title.
+      # The nightly run starts the tests in a random order (--shuffle), so a
+      # test that depends on another one's leftovers fails there; the log's
+      # "shuffle seed N" replays that order: npm run test:e2e -- --shuffle N.
+      # PRs keep the fixed order, so their result doesn't depend on chance.
       - name: Run e2e tests
-        run: npm run test:e2e
+        run: npm run test:e2e ${{ github.event_name == 'schedule' && '-- --shuffle' || '' }}
         env:
           TESTOMATIO: ${{ secrets.TESTOMATIO }}
 
