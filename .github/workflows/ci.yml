@@ -62,11 +62,6 @@ jobs:
     # The suite currently takes seconds; the cap is here to stop a hung
     # wp-env or browser from burning a full runner hour.
     timeout-minutes: 15
-    # Results go to Testomat when this secret exists (it doesn't on PRs from
-    # forks; playwright.config.ts then leaves the reporter out). Job-wide, so
-    # the Testomat steps below can skip on it.
-    env:
-      TESTOMATIO: ${{ secrets.TESTOMATIO }}
     steps:
       - uses: actions/checkout@v4
 
@@ -77,8 +72,7 @@ jobs:
 
       - run: npm ci
 
-      # Only chromium: both of playwright.config.ts's test projects (parallel,
-      # serial) run in it.
+      # Only chromium: playwright.config.ts defines no other project.
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
@@ -123,31 +117,13 @@ jobs:
             echo "TESTOMATIO_RUNGROUP_TITLE=Nightly (latest WP and WC)" >> "$GITHUB_ENV"
           fi
 
-      # Cases are matched by the @T{id} tag in each test title. The parallel
-      # and serial steps report into one Testomat run, started here and
-      # finished last.
-      - name: Start the Testomat run
-        if: env.TESTOMATIO != ''
-        run: echo "TESTOMATIO_RUN=$(npx @testomatio/reporter start --format id)" >> "$GITHUB_ENV"
-
+      # Results go to Testomat when the TESTOMATIO secret exists (it doesn't on
+      # PRs from forks; playwright.config.ts then leaves the reporter out).
+      # Cases are matched by the @T{id} tag in each test title.
       - name: Run e2e tests
-        id: parallel
-        run: npm run test:e2e:parallel
+        run: npm run test:e2e
         env:
-          TESTOMATIO_PROCEED: 1
-
-      # The specs that save settings every page reads, one at a time after the
-      # parallel ones (see playwright.config.ts). They run when those failed too,
-      # not when the store never started.
-      - name: Run serial e2e tests
-        if: (success() || failure()) && steps.parallel.outcome != 'skipped'
-        run: npm run test:e2e:serial
-        env:
-          TESTOMATIO_PROCEED: 1
-
-      - name: Finish the Testomat run
-        if: always() && env.TESTOMATIO_RUN != ''
-        run: npx @testomatio/reporter finish
+          TESTOMATIO: ${{ secrets.TESTOMATIO }}
 
       # The HTML report plus the traces kept by retain-on-failure: what makes a
       # red run debuggable without reproducing it locally.
@@ -158,9 +134,7 @@ jobs:
           name: playwright-report
           path: |
             tests/e2e/playwright-report
-            tests/e2e/playwright-report-serial
             tests/e2e/test-results
-            tests/e2e/test-results-serial
           retention-days: 7
           if-no-files-found: ignore
 

@@ -63,8 +63,7 @@ After the plan is approved, with any changes asked for:
    (`npm run test:e2e`). An `eslint-disable` needs a reason after `--`, and
    only where README.md allows one.
 3. Run the new specs next to the existing ones:
-   `npx playwright test --repeat-each=5 --workers=4`, and for serial specs
-   also `npm run test:e2e:serial -- --repeat-each=5`. Every run must pass.
+   `npx playwright test --repeat-each=5 --workers=4`. Every run must pass.
 4. For each new test, break one expected value in the test, confirm the test
    fails on it, and put it back. Change only the test, never the plugin's
    code.

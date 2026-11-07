@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures';
+import { SERIAL } from '../../fixtures/serial';
 import { SGTM_URL, GTM_START, ENCODED_TESTID, ABCDEFGH_LOADER, API_LOADER } from '../../data-layer/gtm-snippet';
 
 const ENCODED_OTHER1 = 'aWQ9R1RNLU9USEVSMQ%3D%3D';
@@ -110,7 +111,7 @@ test( 'The identifier prefix and encoded Web GTM ID stay the same on every page 
 	}
 } );
 
-test( 'Saving a new identifier or Web GTM ID in wp-admin changes the loader URL on the next page view @T0d32d39a', { tag: '@serial' }, async ( {
+test( 'Saving a new identifier or Web GTM ID in wp-admin changes the loader URL on the next page view @T0d32d39a', SERIAL, async ( {
 	loginAsAdmin,
 	newSession,
 	adminSettingsPage,

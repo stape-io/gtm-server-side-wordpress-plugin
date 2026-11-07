@@ -10,20 +10,20 @@ Needs Docker and Node 22.
 ```sh
 npm ci
 npx playwright install chromium
-npm run env:e2e:start   # WordPress + WooCommerce on http://localhost:8889
-npm run test:e2e        # the parallel run, then the serial one (see Store settings)
-npm run lint:e2e        # the spec rules a machine can check
+npm run env:e2e:start
+npm run test:e2e
+npm run lint:e2e
 ```
 
-`npm run test:e2e:parallel` (plain `playwright test`, and `test:e2e:ui` /
-`test:e2e:debug`) runs the parallel specs only, in the `parallel` project, and
-`npm run test:e2e:serial` (`E2E_SERIAL=1`) the serial ones only, in the
-`serial` project (both Chromium; the names are in `fixtures/projects.ts`):
-a run never has both, so a serial spec can't change a setting under a
-parallel one. Playwright arguments (`--grep`, a file) given to `test:e2e` go
-to both runs, and a run they leave without tests passes
-(`--pass-with-no-tests`): `npm run test:e2e -- placement-modes` runs that
-spec's parallel tests, then its serial ones.
+`env:e2e:start` starts WordPress + WooCommerce on http://localhost:8889,
+`test:e2e` runs every spec (plain `playwright test`: pass a file or `--grep`
+after `--`), and `lint:e2e` checks the spec rules a machine can check. The
+block has no comments on purpose: WebStorm runs a line of it without a
+shell, so a `# comment` would reach the command as arguments.
+
+Serial tests run in the same run, one at a time, while no other test runs
+(see Store settings). Only one run may use the store at a time: a second
+run's preflight deletes the test content the first one is using.
 
 `npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
 
@@ -66,6 +66,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
+| `fixtures/serial.ts`         | `SERIAL`, the details of a serial test (see Store settings)          |
 | `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
@@ -117,9 +118,9 @@ The rest is up to the author and the review.
   its tests.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
 - **Tests are independent.** No `test.describe.configure( { mode: 'serial' } )`,
-  no state shared between tests, no order they rely on. (The `serial`
-  project in Store settings is another thing: it runs tests one at a time,
-  each still independent.)
+  no state shared between tests, no order they rely on. (A serial test, in
+  Store settings, is another thing: it runs while no other test runs, and is
+  still independent.)
 - **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
   never from `@playwright/test` directly.
 
@@ -534,13 +535,21 @@ when it is not the first.
    restore the option in the fixture's teardown. No spec needs this yet.
 3. **Serial.** The spec writes something every spec reads: a setting saved
    through wp-admin, an option with an `update_option_<name>` hook, cron.
-   The test carries `{ tag: '@serial' }` (not in its title, which stays the
-   case's), in its suite's file, and runs in the `serial` project with
-   `workers: 1`: `npm run test:e2e:serial`, started as its own CI step after
-   the parallel one, even when that failed, and reporting into the same
-   Testomat run (`TESTOMATIO_RUN`, finished last). Not through
-   `dependencies`: Playwright skips a dependent project when any test it
-   depends on fails.
+   The test passes `SERIAL` (`fixtures/serial.ts`) as its details,
+   `test( '<case title> @T<id>', SERIAL, … )`, in its suite's file, and runs
+   in the same run as every other test (lint: a spec never writes `'@serial'`
+   or `'-exclusive-'` itself). `SERIAL` carries Playwright's built-in
+   exclusive lock, `-exclusive-`: the test starts only once no other test is
+   running, and no test starts until it ends. Playwright starts it when the
+   workers are free, which in practice is near the end of the run, and runs
+   it whether or not other tests failed. It also carries the `@serial` tag,
+   which the fixtures read, since a test's locks aren't in `TestInfo`.
+
+   Nothing on the store runs in the background between tests: WP-Cron and
+   WooCommerce's async requests reach the site through a loopback request,
+   which fails inside wp-env (`wp cron test`: "Failed to connect to
+   localhost:8889"). A serial case runs cron itself, so its work ends with
+   the test.
 
    A serial test restores nothing itself. The automatic `siteState` fixture
    reads the site-wide state before it and puts it back after it, failed or
@@ -554,7 +563,7 @@ when it is not the first.
    setting, say) adds its option to the plugin's
    `GTM_SERVER_SIDE_E2E_SITE_STATE_OPTIONS`.
 
-   `adminSettingsPage.save()` refuses to save in the parallel project. The
+   `adminSettingsPage.save()` refuses to save in a test without `SERIAL`. The
    General tab hides the sGTM URL and identifier while the same-origin proxy
    is on, which it is on the e2e store, so a spec that saves them turns it off
    first (`adminSettingsPage.setSameOriginProxy( false )`, the case's

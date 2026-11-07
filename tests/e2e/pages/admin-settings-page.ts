@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 /** The plugin's settings page in wp-admin, for a browser logged in as the admin (loginAsAdmin()). */
 export class AdminSettingsPage {
-	/** `serial`: the test runs in the serial project, the only one that may save (see save()). */
+	/** `serial`: the test is a serial one (SERIAL, fixtures/serial.ts), the only kind that may save (see save()). */
 	constructor(
 		private readonly page: Page,
 		private readonly serial: boolean
@@ -68,7 +68,7 @@ export class AdminSettingsPage {
 
 	private requireSerial(): void {
 		if ( ! this.serial ) {
-			throw new Error( "Saving the settings changes every page: tag the test { tag: '@serial' }." );
+			throw new Error( 'Saving the settings changes every page: mark the test with SERIAL (fixtures/serial.ts).' );
 		}
 	}
 

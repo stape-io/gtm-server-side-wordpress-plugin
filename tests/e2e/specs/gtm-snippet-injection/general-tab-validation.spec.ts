@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures';
+import { SERIAL } from '../../fixtures/serial';
 
 const WEB_CONTAINER_ID = 'gtm_server_side_web_container_id';
 const WEB_CONTAINER_URL = 'gtm_server_side_web_container_url';
@@ -12,7 +13,7 @@ const URL_MESSAGE = 'URL must be entered with https:// and without slashes at th
 // save the validation lets through writes the database, which is why these
 // tests are serial (siteState puts it back).
 
-test( 'A Web GTM ID not in `GTM-…` format blocks saving with "Container id must be in GTM-XXXXXX format" @T9a06a029', { tag: '@serial' }, async ( {
+test( 'A Web GTM ID not in `GTM-…` format blocks saving with "Container id must be in GTM-XXXXXX format" @T9a06a029', SERIAL, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	storedOption,
@@ -32,7 +33,7 @@ test( 'A Web GTM ID not in `GTM-…` format blocks saving with "Container id mus
 	expect( await storedOption( WEB_CONTAINER_ID ) ).toBe( 'GTM-TESTID' );
 } );
 
-test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("This field is required.") @T4520f17e', { tag: '@serial' }, async ( {
+test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("This field is required.") @T4520f17e', SERIAL, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	storedOption,
@@ -50,7 +51,7 @@ test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("T
 	expect( await storedOption( WEB_CONTAINER_ID ) ).toBe( 'GTM-TESTID' );
 } );
 
-test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "URL must be entered with https:// and without slashes at the end" @T79058af9', { tag: '@serial' }, async ( {
+test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "URL must be entered with https:// and without slashes at the end" @T79058af9', SERIAL, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	storedOption,
@@ -78,7 +79,7 @@ test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "UR
 	expect( ( await storedOption( WEB_CONTAINER_URL ) ) ?? '' ).toBe( '' );
 } );
 
-test( '"Exclude GTM for user roles" shows the role list only while checked and blocks saving until a role is ticked ("Select at least one role") @T4612154a', { tag: '@serial' }, async ( {
+test( '"Exclude GTM for user roles" shows the role list only while checked and blocks saving until a role is ticked ("Select at least one role") @T4612154a', SERIAL, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 } ) => {
@@ -112,7 +113,7 @@ test( '"Exclude GTM for user roles" shows the role list only while checked and b
 	await expect( adminSettingsPage.excludedRolesList ).toBeHidden();
 } );
 
-test( 'The Cookie Keeper checkbox is disabled and unchecked while the identifier is empty and becomes available once one is typed @T4c0e7239', { tag: '@serial' }, async ( {
+test( 'The Cookie Keeper checkbox is disabled and unchecked while the identifier is empty and becomes available once one is typed @T4c0e7239', SERIAL, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 } ) => {
