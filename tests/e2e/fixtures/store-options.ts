@@ -25,17 +25,64 @@ type StoreOptionValues = {
 	/** "Add user data to Data Layer events". Not set on the baseline store. */
 	userData: 'yes' | 'no';
 	/**
+	 * The General tab's GTM placement: `code` ("Add web GTM script onto every
+	 * page") on the baseline store, `gtm_consent`, `plugin` (GTM4WP) or
+	 * `disable`. Nothing runs when it is saved, and the plugin reads it on
+	 * every request, when it loads (GTM_Server_Side_Tracking_Code::init()).
+	 */
+	placement: 'code' | 'gtm_consent' | 'plugin' | 'disable';
+	/**
+	 * The General tab's "Exclude user roles" (`yes` on; `''` is how wp-admin
+	 * saves the unticked checkbox) and the roles it excludes, a list of role
+	 * slugs (`[ 'editor' ]`), stored as an array: the helper takes it as one
+	 * (GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS). Not set on the baseline store.
+	 * Nothing runs when they are saved, and the snippet reads them on every
+	 * request of a logged-in user (GTM_Server_Side_Tracking_Code::wp_head()).
+	 */
+	excludeRoles: 'yes' | '';
+	excludedRoles: string[];
+	/**
+	 * The General tab's sGTM URL ("Server GTM container URL"), the Stape
+	 * container identifier and Cookie Keeper (`yes`): not set on the baseline
+	 * store. Saving any of them makes the plugin fetch a custom loader from the
+	 * Stape API, and saving the identifier clears the loader cache, so a test of
+	 * either saves them in wp-admin instead. The snippet reads them on every
+	 * request (GTM_Server_Side_Tracking_Code::wp_head()).
+	 *
+	 * The cache of the identifier's prefix and the encoded Web GTM ID is
+	 * site-wide and not keyed by the identifier, so a test that overrides the
+	 * identifier gives itself a cache of its own first, loaderCache.isolate().
+	 */
+	webContainerUrl: string;
+	webIdentifier: string;
+	/** `yes` on; `''` is how wp-admin saves the unticked checkbox. */
+	cookieKeeper: 'yes' | '';
+	/**
+	 * The custom loader fetched from the Stape API, the script the plugin
+	 * prints instead of any snippet. Not set on the baseline store; the plugin
+	 * stores it itself, after a save in wp-admin or from its cron, and reads it
+	 * on every request.
+	 */
+	customLoaderFromApi: string;
+	/**
 	 * The same-origin proxy's Stape API key. Saving it only flushes the rewrite
 	 * rules (and, in wp-admin, rebuilds the custom loader); the proxy path's
 	 * rule doesn't depend on the key, and the proxy reads it per request.
 	 *
-	 * The helper applies it to requests under the proxy path only. With the
-	 * key, any other page would switch to same-origin (service worker patch,
-	 * identifier from the key, no Cookie Keeper) while keeping the raw sGTM
-	 * URL, since the same-origin loader exists only after a real save - a state
-	 * no live store has - so elsewhere it renders as without the key.
+	 * The helper applies it to requests under the proxy path only, so a proxy
+	 * test's pages render as without the key. With it and no loader from the
+	 * Stape API, a page prints Google's GTM snippet and drops Cookie Keeper
+	 * (DEV-13426): a test of those pages uses sameOriginApiKeyOnEveryPage.
 	 */
 	sameOriginApiKey: string;
+	/**
+	 * The same-origin API key on every page, not only under the proxy path:
+	 * the helper names it `<option>@every_page`. A live store has this state
+	 * when Stape didn't send the same-origin loader on the save: the page
+	 * prints Google's GTM snippet (DEV-13426), with no Cookie Keeper. For a
+	 * case about those pages; a proxy test uses sameOriginApiKey.
+	 */
+	sameOriginApiKeyOnEveryPage: string;
 	/**
 	 * WooCommerce's product grid ("Products per row" and "Rows per page" in
 	 * the Customizer); a page holds columns x rows products. Not set on the
@@ -92,7 +139,15 @@ type StoreOptionValues = {
 export const STORE_OPTIONS = {
 	dataLayerEcommerce: 'gtm_server_side_data_layer_ecommerce',
 	userData: 'gtm_server_side_data_layer_user_data',
+	placement: 'gtm_server_side_placement',
+	excludeRoles: 'gtm_server_side_gtm_exclude_roles',
+	excludedRoles: 'gtm_server_side_gtm_exclude_list_roles',
+	webContainerUrl: 'gtm_server_side_web_container_url',
+	webIdentifier: 'gtm_server_side_web_identifier',
+	cookieKeeper: 'gtm_server_side_cookie_keeper',
+	customLoaderFromApi: 'gtm_server_side_gtm_custom_loader_from_api',
 	sameOriginApiKey: 'gtm_server_side_same_origin_api_key',
+	sameOriginApiKeyOnEveryPage: 'gtm_server_side_same_origin_api_key@every_page',
 	catalogColumns: 'woocommerce_catalog_columns',
 	catalogRows: 'woocommerce_catalog_rows',
 	ajaxAddToCart: 'woocommerce_enable_ajax_add_to_cart',
@@ -104,6 +159,9 @@ export const STORE_OPTIONS = {
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;
+
+/** The settings stored as an array: their value is a list of strings. */
+export const ARRAY_STORE_OPTIONS: readonly StoreOption[] = [ 'excludedRoles' ];
 
 export type StoreOptions = Partial< StoreOptionValues >;
 
