@@ -38,9 +38,14 @@ web container. The store has no products: create them per journey (Drive).
 The store is mounted from the checkout that started it, as
 `wp-content/plugins/<checkout folder>`, and plugin code changes (PHP and
 `assets/js/`) apply on the next request, with no rebuild. Only one store can
-hold port 8889. Another worktree's store on 8889 serves that worktree's code:
-never drive it, stop it from its own checkout. `.wp-env.json` on port 8888 is
-a person's manual store: leave it alone.
+hold a port. Another worktree's store serves that worktree's code: never drive
+it, stop it from its own checkout. `.wp-env.json` on port 8888 is a person's
+manual store: leave it alone.
+
+When 8889 is taken, start this checkout's store on another port with a
+git-ignored `.wp-env.e2e.override.json` holding `{ "port": 8859 }`, then run
+journeys with `WP_BASE_URL=http://localhost:8859` (doctor finds the port in
+the override file itself and prints that line).
 
 ## Doctor
 
@@ -50,7 +55,8 @@ Run first, and whenever something looks off:
 .claude/skills/verify/scripts/doctor.sh
 ```
 
-Read-only. Checks Docker, that 8889's container mounts this checkout's
+Read-only. Checks Docker, that the store's container (port 8889, or the
+override's or `WP_BASE_URL`'s) mounts this checkout's
 plugin, that `/shop/` answers 200, that the plugin is active with the
 ecommerce data layer on and the e2e helper plugin loaded, and prints the
 version and commit (with `+ uncommitted changes` when the tree is dirty).
@@ -62,6 +68,14 @@ Each `FAIL` line says what to run.
 
    ```bash
    .claude/skills/verify/scripts/product.sh create "E2E verify Mug $RANDOM" 20
+   ```
+
+   For a variable product (Color Red / Blue, Size S / M; Red in any size at
+   30.00, Blue M at 32.00, as the e2e suite's), `create-variable` also prints
+   the two variation ids:
+
+   ```bash
+   .claude/skills/verify/scripts/product.sh create-variable "E2E verify Tee $RANDOM"
    ```
 
 2. Run the journey. Each step is one argument; see the header of
@@ -90,7 +104,7 @@ Each `FAIL` line says what to run.
 
 3. To drive in a visible window, add `--headed`. To read a page as the
    server sent it, before any script ran, use
-   `curl -s http://localhost:8889/<path>` and look for the plugin's
+   `curl -s http://localhost:8889/<path>` (or the store's port) and look for the plugin's
    `dataLayer.push(` lines.
 
 ## Evidence
@@ -125,7 +139,7 @@ Proof standards:
 ## Cleanup
 
 ```bash
-.claude/skills/verify/scripts/product.sh delete <id> ...   # what you created
+.claude/skills/verify/scripts/product.sh delete <id> ...   # what you created, variations go with it
 npm run env:e2e:stop        # only if you started the store
 ```
 
