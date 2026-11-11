@@ -25,6 +25,15 @@ export class MyAccountPage {
 	}
 
 	/**
+	 * Opens My Account and waits until it shows the account pages of a
+	 * logged-in user, for a browser logged in some other way (loginAsAdmin()).
+	 */
+	async expectLoggedIn(): Promise< void > {
+		await this.goto();
+		await expect( this.page.getByRole( 'navigation', { name: 'Account pages' } ) ).toBeVisible();
+	}
+
+	/**
 	 * Registers `email` through the Register form, which asks for nothing else
 	 * while WooCommerce makes up the username and password. The form posts and
 	 * redirects to My Account; waits until it shows the logged-in customer's

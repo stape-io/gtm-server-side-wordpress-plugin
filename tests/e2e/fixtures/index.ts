@@ -18,6 +18,7 @@ import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
 import { ShopPage } from '../pages/shop-page';
+import { StorefrontPage } from '../pages/storefront-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
@@ -43,20 +44,29 @@ import {
 	findAccountId,
 	type BillingDetails,
 	type CreatedCustomer,
+	type CustomerOptions,
 	type NewCustomer,
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
+import { clearLoaderCache, LOADER_CACHE_COOKIE, readLoaderCache, type LoaderCacheValues } from '../api/loader-cache';
+import { deleteOutgoingHttp, OUTGOING_HTTP_COOKIE, readOutgoingHttp, type OutgoingRequest } from '../api/outgoing-http';
+import { readSiteState, readStoredOption, restoreSiteState, type PluginOptionName } from '../api/site-state';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
+import { EXCLUSIVE } from './exclusive';
 
 /** Read by mu-plugins/record-php-errors.php; the PHP side names it GTM_SERVER_SIDE_E2E_PHP_ERRORS_COOKIE. */
 const PHP_ERRORS_COOKIE = 'gtm_e2e_php_errors';
+
+/** Read by mu-plugins/record-option-writes.php; the PHP side names it GTM_SERVER_SIDE_E2E_OPTION_WRITES_COOKIE. */
+const OPTION_WRITES_COOKIE = 'gtm_e2e_option_writes';
 
 /** Read by the test plugins in mu-plugins/ behind the testPlugins fixture; each names its own on the PHP side. */
 const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
 const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
 const NO_EMAIL_VERIFICATION_GRACE_COOKIE = 'gtm_e2e_no_email_verification_grace';
+const CONSENT_PLATFORM_COOKIE = 'gtm_e2e_consent_platform';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -117,10 +127,22 @@ type Catalog = {
 	createTaxRate: ( options: TaxRateOptions ) => Promise< CreatedTaxRate >;
 	/**
 	 * A throwaway customer account with a billing address, for a case that
-	 * starts logged in (myAccountPage.logIn()). Deleted after the test with
+	 * starts logged in (myAccountPage.logIn()); with `roles`, an account with
+	 * those roles instead (see CustomerOptions). Deleted after the test with
 	 * every order it placed, whatever email the checkout gave them.
 	 */
-	createCustomer: () => Promise< CreatedCustomer >;
+	createCustomer: ( options?: CustomerOptions ) => Promise< CreatedCustomer >;
+};
+
+type OptionWrites = {
+	/**
+	 * Asserts the plugin wrote none of the settings
+	 * mu-plugins/record-option-writes.php watches (Cookie Keeper) while
+	 * serving this test's browser requests so far: the case's `wp option get`
+	 * for a setting the test overrides, which lives in a cookie. A delete of a
+	 * setting the database doesn't hold fires no hook, so it goes unseen.
+	 */
+	expectNone: () => Promise< void >;
 };
 
 type PhpErrors = {
@@ -155,6 +177,13 @@ type TestPlugins = {
 	 * the order email opened later (email-verification-grace.php).
 	 */
 	endEmailVerificationGrace: () => Promise< void >;
+	/**
+	 * Plays a consent platform restoring a stored choice: its consent commands
+	 * are in the dataLayer before the plugin's consent script runs
+	 * (consent-platform.php). `granted-then-denied` pushes a default grant of
+	 * ad_storage and analytics_storage, then an update denying both.
+	 */
+	consentPlatform: ( choice: 'granted-then-denied' ) => Promise< void >;
 };
 
 /** Orders the guestBuyer fixture doesn't clean up, and what a case does to them as the store admin. */
@@ -162,6 +191,52 @@ type Orders = {
 	setStatus: ( id: number, status: 'failed' | 'cancelled' ) => Promise< void >;
 	/** Deletes an order with no guest buyer's email (one created in wp-admin) after the test. */
 	deleteAfterTest: ( id: number ) => void;
+};
+
+/**
+ * A JS error a known plugin defect raises, which a case lists under "Not
+ * covered here" because another case, tagged known-defect, is about it.
+ */
+type KnownPageError = {
+	/** The error's message, exactly as the browser reports it. */
+	message: string;
+	/**
+	 * The Jira ticket of the defect. Once it is fixed the error stops, and the
+	 * test fails naming the ticket, so the entry is removed.
+	 */
+	ticket: string;
+};
+
+/**
+ * The loader cache: the identifier's random prefix and the encoded Web GTM ID
+ * the plugin caches site-wide, in two transients that aren't keyed by the
+ * identifier (mu-plugins/loader-cache.php).
+ */
+type LoaderCache = {
+	/**
+	 * Gives this test's browser a cache of its own, empty to begin with, as
+	 * after the case's `wp transient delete`, and deleted after the test. A
+	 * test that overrides the identifier with storeOptions() calls it first:
+	 * the shared cache may hold another test's prefix, and a test clearing it
+	 * would change the loader URL under the others. Called again after
+	 * newSession(), it gives the new session the same cache: the site's is
+	 * the same for every browser window.
+	 */
+	isolate: () => Promise< void >;
+	/** The cached values, as `wp transient get` prints them: this test's own after isolate(), else the site's. */
+	read: () => Promise< LoaderCacheValues >;
+	/** Clears the cache read() reads, as `wp transient delete` does. */
+	clear: () => Promise< void >;
+};
+
+type OutgoingHttp = {
+	/**
+	 * The HTTP requests WordPress sent while serving this test's browser
+	 * requests so far, oldest first (mu-plugins/record-outgoing-http.php): a
+	 * webhook, a Customer Match upload, a request for the custom loader. Not
+	 * the ones cron or a requestUtils REST call sends: those carry no cookie.
+	 */
+	requests: () => Promise< OutgoingRequest[] >;
 };
 
 type SameOriginProxy = {
@@ -192,6 +267,7 @@ type ShopFixtures = {
 	adminSettingsPage: AdminSettingsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
+	storefrontPage: StorefrontPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
@@ -205,13 +281,22 @@ type ShopFixtures = {
 	 * what the proxy did, and anything but a 200 fails the test.
 	 */
 	sameOriginProxy: SameOriginProxy;
+	/** See LoaderCache. */
+	loaderCache: LoaderCache;
+	/**
+	 * The case's `wp option get <name>`: the plugin's option as the database
+	 * holds it, whatever storeOptions() overrides for the browser, or
+	 * undefined when there is no such row (see readStoredOption()).
+	 */
+	storedOption: ( name: PluginOptionName ) => Promise< string | undefined >;
 	/** See TestPlugins. */
 	testPlugins: TestPlugins;
 	/**
 	 * Starts a new session in this test's browser, as a new private window
 	 * would: the browser forgets its cookies, and with them the WooCommerce
 	 * session and the storeOptions() and testPlugins cookies set so far. It
-	 * keeps the phpErrors one, which a spec can't set again.
+	 * keeps the phpErrors, optionWrites and outgoingHttp ones, which a spec
+	 * can't set again.
 	 */
 	newSession: () => Promise< void >;
 	/**
@@ -229,6 +314,10 @@ type ShopFixtures = {
 	 * running at the same time. Starts recording before the first page load.
 	 */
 	phpErrors: PhpErrors;
+	/** See OptionWrites. Starts recording before the first page load. */
+	optionWrites: OptionWrites;
+	/** See OutgoingHttp. Starts recording before the first page load. */
+	outgoingHttp: OutgoingHttp;
 	/**
 	 * Billing details for a guest checkout, unique to this test. The orders
 	 * placed with them, and the account the checkout creates with them when
@@ -256,7 +345,8 @@ type ShopFixtures = {
 	/** A throwaway simple product in `category`, regular 50.00 and on sale at 35.00. */
 	saleProduct: CreatedProduct;
 	/**
-	 * Automatic: answers requests for gtm.js with an empty script. The store is
+	 * Automatic: answers requests for gtm.js, and for the loaders on the sGTM
+	 * URL the snippet specs store, with an empty script. The store is
 	 * configured with a placeholder container, so the real one would only add
 	 * a network dependency and a third-party script writing to the same
 	 * window.dataLayer the specs assert on.
@@ -271,6 +361,23 @@ type ShopFixtures = {
 	 * when the page navigates away.
 	 */
 	pageErrors: void;
+	/**
+	 * Automatic for an exclusive test (EXCLUSIVE, ./exclusive.ts): reads the site-wide
+	 * state it may change before the test, and puts it back after it
+	 * (mu-plugins/site-state.php): the plugin's settings and what they derive
+	 * (custom loader, loader cache), the rewrite rules, the active plugins, the
+	 * plugin's cron events. Fails the test when what came back differs. Any
+	 * other test changes none of it, so it does nothing there.
+	 */
+	siteState: void;
+	/**
+	 * Option: uncaught errors pageErrors lets through, set with `test.use()` for
+	 * a case that lists a known defect's error under "Not covered here". Only
+	 * an uncaught error from the plugin with exactly that message is let
+	 * through; any other error from the plugin still fails the test, and so
+	 * does a listed error that never happened: its defect looks fixed.
+	 */
+	knownPageErrors: KnownPageError[];
 };
 
 type WorkerFixtures = {
@@ -295,23 +402,46 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	],
 	stubGtm: [
 		async ( { page }, use ) => {
-			await page.route( 'https://www.googletagmanager.com/**', ( route ) =>
+			// The sGTM URL the snippet specs store, `https://sgtm.example.test`,
+			// doesn't resolve: answered the same way, so a page doesn't wait on DNS.
+			await page.route( /^https:\/\/(www\.googletagmanager\.com|sgtm\.example\.test)\//, ( route ) =>
 				route.fulfill( { status: 200, contentType: 'text/javascript', body: '' } )
 			);
 			await use();
 		},
 		{ auto: true },
 	],
+	knownPageErrors: [ [], { option: true } ],
+	siteState: [
+		async ( { requestUtils }, use, testInfo ) => {
+			if ( ! testInfo.tags.includes( EXCLUSIVE.tag ) ) {
+				await use();
+				return;
+			}
+			const before = await readSiteState( requestUtils );
+			await use();
+			// After a failed test too, which may have stopped half-way.
+			const after = await restoreSiteState( requestUtils, before );
+			expect( after, 'The site state right after putting it back' ).toEqual( before );
+		},
+		{ auto: true },
+	],
 	pageErrors: [
-		async ( { page, pluginDir }, use ) => {
+		async ( { page, pluginDir, knownPageErrors }, use ) => {
 			const errors: string[] = [];
 			// Only errors from the plugin's own scripts count: WooCommerce, the
 			// theme and other plugins log their own (SCRIPT_DEBUG makes React
 			// warn through console.error), and they change with every release.
+			const seenKnown = new Set< string >();
 			page.on( 'pageerror', ( error ) => {
-				if ( stackUrls( error.stack ).some( ( url ) => isPluginScript( url, pluginDir, page.url() ) ) ) {
-					errors.push( error.message );
+				if ( ! stackUrls( error.stack ).some( ( url ) => isPluginScript( url, pluginDir, page.url() ) ) ) {
+					return;
 				}
+				if ( knownPageErrors.some( ( known ) => known.message === error.message ) ) {
+					seenKnown.add( error.message );
+					return;
+				}
+				errors.push( error.message );
 			} );
 			// "Failed to load resource" lines are judged by URL below instead.
 			page.on( 'console', ( message ) => {
@@ -336,7 +466,13 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				}
 			} );
 			await use();
-			expect( errors, 'JS errors and failed plugin requests on the page' ).toEqual( [] );
+			// Soft, so a known error that changed its message shows up in both lists.
+			expect.soft( errors, 'JS errors and failed plugin requests on the page' ).toEqual( [] );
+			const fixed = knownPageErrors.filter( ( known ) => ! seenKnown.has( known.message ) );
+			expect(
+				fixed,
+				'Known errors that no longer happen: their defects look fixed, so remove them from knownPageErrors (and the known-defect tag from their cases)'
+			).toEqual( [] );
 		},
 		{ auto: true },
 	],
@@ -379,14 +515,20 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	adminNewOrderPage: async ( { page }, use ) => {
 		await use( new AdminNewOrderPage( page ) );
 	},
-	adminSettingsPage: async ( { page }, use ) => {
-		await use( new AdminSettingsPage( page ) );
+	adminSettingsPage: async ( { page }, use, testInfo ) => {
+		await use( new AdminSettingsPage( page, testInfo.tags.includes( EXCLUSIVE.tag ) ) );
 	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );
 	},
 	productSearchPage: async ( { page }, use ) => {
 		await use( new ProductSearchPage( page ) );
+	},
+	storefrontPage: async ( { page, baseURL }, use ) => {
+		if ( ! baseURL ) {
+			throw new Error( 'storefrontPage needs baseURL, which playwright.config.ts sets from WP_BASE_URL.' );
+		}
+		await use( new StorefrontPage( page, baseURL ) );
 	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
@@ -404,12 +546,15 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			flatRateShipping: ( cost ) => setCookie( FLAT_RATE_COOKIE, cost ),
 			markOrderConfirmationPage: ( created ) => setCookie( CONFIRMATION_PAGE_COOKIE, String( created.id ) ),
 			endEmailVerificationGrace: () => setCookie( NO_EMAIL_VERIFICATION_GRACE_COOKIE, '1' ),
+			consentPlatform: ( choice ) => setCookie( CONSENT_PLATFORM_COOKIE, choice ),
 		} );
 	},
 	newSession: async ( { page }, use ) => {
 		await use( async () => {
 			const context = page.context();
-			const kept = ( await context.cookies() ).filter( ( cookie ) => cookie.name === PHP_ERRORS_COOKIE );
+			const kept = ( await context.cookies() ).filter( ( cookie ) =>
+				[ PHP_ERRORS_COOKIE, OPTION_WRITES_COOKIE, OUTGOING_HTTP_COOKIE ].includes( cookie.name )
+			);
 			await context.clearCookies();
 			await context.addCookies( kept );
 		} );
@@ -431,6 +576,28 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 		} );
 		await Promise.all( created.map( ( id ) => deleteOrder( requestUtils, id ) ) );
+	},
+	storedOption: async ( { requestUtils }, use ) => {
+		await use( ( name ) => readStoredOption( requestUtils, name ) );
+	},
+	loaderCache: async ( { page, baseURL }, use ) => {
+		let scope: string | undefined;
+		await use( {
+			isolate: async () => {
+				scope ??= randomUUID();
+				await page.context().addCookies( [ { name: LOADER_CACHE_COOKIE, value: scope, url: baseURL } ] );
+			},
+			read: () => readLoaderCache( page.request ),
+			clear: () => clearLoaderCache( page.request ),
+		} );
+		// By the scope, not the browser's cookies, which newSession() may have
+		// cleared: without the cookie this would clear the site's cache. A
+		// request still on its way that renders a page (a missing image's 404
+		// does) can write the copy again; nothing reads it, and the preflight
+		// purges it next run.
+		if ( scope ) {
+			await clearLoaderCache( page.request, scope );
+		}
 	},
 	sameOriginProxy: async ( { page }, use ) => {
 		await use( {
@@ -463,6 +630,32 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			},
 		} );
 		await call( 'DELETE' );
+	},
+	optionWrites: async ( { page, baseURL, requestUtils }, use ) => {
+		const token = randomUUID();
+		const path = `/gtm-e2e/v1/option-writes/${ token }`;
+		await page.context().addCookies( [ { name: OPTION_WRITES_COOKIE, value: token, url: baseURL } ] );
+		const call = async ( method: 'GET' | 'DELETE' ): Promise< string[] > => {
+			try {
+				return await requestUtils.rest( { path, method } );
+			} catch ( error ) {
+				throw new Error(
+					`Cannot read the option writes this test recorded: is mu-plugins/record-option-writes.php loaded? After a branch switch, restart the store: npm run env:e2e:stop && npm run env:e2e:start. ${ String( error ) }`
+				);
+			}
+		};
+		await use( {
+			expectNone: async () => {
+				expect( await call( 'GET' ), "writes to the watched settings on this test's requests" ).toEqual( [] );
+			},
+		} );
+		await call( 'DELETE' );
+	},
+	outgoingHttp: async ( { page, baseURL, requestUtils }, use ) => {
+		const token = randomUUID();
+		await page.context().addCookies( [ { name: OUTGOING_HTTP_COOKIE, value: token, url: baseURL } ] );
+		await use( { requests: () => readOutgoingHttp( requestUtils, token ) } );
+		await deleteOutgoingHttp( requestUtils, token );
 	},
 	guestBuyer: async ( { requestUtils }, use ) => {
 		const buyer = buildGuestBuyer();
@@ -522,8 +715,8 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 				deletions.push( () => deleteTaxRate( requestUtils, created ) );
 				return created;
 			},
-			createCustomer: async () => {
-				const created = await createCustomer( requestUtils );
+			createCustomer: async ( options ) => {
+				const created = await createCustomer( requestUtils, options );
 				deletions.push( async () => {
 					await deleteOrdersOfCustomer( requestUtils, created.id );
 					await deleteAccount( requestUtils, created.id );

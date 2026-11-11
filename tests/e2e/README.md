@@ -10,10 +10,20 @@ Needs Docker and Node 22.
 ```sh
 npm ci
 npx playwright install chromium
-npm run env:e2e:start   # WordPress + WooCommerce on http://localhost:8889
-npm run test:e2e        # or test:e2e:ui / test:e2e:debug
-npm run lint:e2e        # the spec rules a machine can check
+npm run env:e2e:start
+npm run test:e2e
+npm run lint:e2e
 ```
+
+`env:e2e:start` starts WordPress + WooCommerce on http://localhost:8889,
+`test:e2e` runs every spec (plain `playwright test`: pass a file or `--grep`
+after `--`), and `lint:e2e` checks the spec rules a machine can check. The
+block has no comments on purpose: WebStorm runs a line of it without a
+shell, so a `# comment` would reach the command as arguments.
+
+Exclusive tests run in the same run, one at a time, while no other test runs
+(see Store settings). Only one run may use the store at a time: a second
+run's preflight deletes the test content the first one is using.
 
 `npm run env:e2e:destroy && npm run env:e2e:start` gets you a clean store.
 
@@ -56,11 +66,13 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `specs/`                     | One folder per Testomat folder, one file per suite (see Writing specs) |
 | `fixtures/`                  | The `test` specs import: page objects, `dataLayer`, per-test catalog, `storeOptions()` |
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
+| `fixtures/exclusive.ts`      | `EXCLUSIVE`, the details of an exclusive test (see Store settings)   |
 | `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
 | `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
-| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`) |
+| `data-layer/gtm-snippet.ts`  | What the GTM snippet specs look for in a page's source (sGTM URL, snippet markers) |
+| `api/`                       | Test content: REST setup/teardown, and generated data (`guestBuyer`, `newCustomer`); clients of the test plugins' REST routes (site state, loader cache, recorded requests) |
 | `setup/preflight.setup.ts`   | Runs before every run: checks the store, purges leftovers            |
 | `mu-plugins/`                | Test-only WordPress plugins, must-use, in the e2e site only (see Test plugins) |
 
@@ -105,8 +117,14 @@ The rest is up to the author and the review.
   one only when it does something, such as `test.use()` or a lock shared by
   its tests.
 - **No `test.step`** (lint). A test is one case, read top to bottom.
-- **Tests are independent.** No serial mode, no state shared between tests,
-  no order they rely on.
+- **Tests are independent.** No `test.describe.configure( { mode: 'serial' } )`,
+  no state shared between tests, no order they rely on. (An exclusive test,
+  in Store settings, runs while no other test runs, and is still
+  independent.) The nightly CI run checks this: it starts the tests in
+  a random order (`--shuffle`). Its log prints `shuffle seed N`, and
+  `npm run test:e2e -- --shuffle N` starts them in that order again. With
+  more than one worker, which tests end up running side by side can still
+  differ; `--workers=1` replays the order exactly.
 - **Specs import `test` and `expect` from `tests/e2e/fixtures`** (lint),
   never from `@playwright/test` directly.
 
@@ -125,7 +143,13 @@ The rest is up to the author and the review.
 - **The plugin's own settings fields in wp-admin** have no accessible name
   (no `<label>`, and WordPress's settings table has role=presentation), so
   `AdminSettingsPage` finds them by their id, the option they save, which the
-  plugin's admin script uses too.
+  plugin's admin script uses too. A switch whose checkbox hides under it
+  (the same-origin proxy's) is clicked where the user clicks it, its label:
+  `label[for="<option id>"]`. The same goes for what the plugin's admin
+  script shows next to them: a block it shows and hides is found by its
+  `js-` class, and a validation message by jQuery Validate's
+  `label.error[for="<option id>"]`, where the script places it
+  (`validationError()`).
 - **Narrow by container:** the product card by its name, then the button in
   it. Never the first "Add to cart" on the page.
 
@@ -192,6 +216,22 @@ The rest is up to the author and the review.
 - **View Source** is the HTML the server sent, before any script ran: the
   page object keeps the response of the page it opened and hands it out as
   `source()` (`productPage.source()`, `myAccountPage.source()`).
+- **A case about what every page prints** (the GTM snippet in `<head>`)
+  opens its pages with `storefrontPage.goto( path )`, whatever they show,
+  and reads `storefrontPage.source()`. Its DevTools → Network filter is
+  `storefrontPage.requestedUrls( '<filter text>' )`, the requests of that
+  page load. gtm.js is answered by the automatic `stubGtm` fixture, so a
+  spec checks the request, not the 404 the placeholder container gets. So
+  are the loaders on the case's sGTM URL, `https://sgtm.example.test`, which
+  doesn't resolve.
+- **Cookies and the user agent** go through the same page object.
+  DevTools → Application → Cookies is `storefrontPage.cookie( name )`, and
+  editing a value there is `setCookie( name, value )`. A case's curl that
+  prints `Set-Cookie` is the page the browser opens, with the cookies the case
+  sends set first: `storefrontPage.setCookieHeaders( name )` returns those
+  headers, as curl prints them. DevTools → Network conditions → User agent is
+  `emulateUserAgent( ua )`, which holds for the rest of the test, so one test
+  can switch it between page loads as the case does.
 - **A field no entry may carry** (`user_data` with user data off) is read
   with `dataLayer.entriesWith( 'user_data' )`, which returns every entry
   holding it, events or not, and compared with `[]`. It is a snapshot: the
@@ -219,6 +259,13 @@ The rest is up to the author and the review.
   ignored, as are requests cancelled by a navigation: they change with every
   release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
   The preflight check uses the base test and skips this fixture.
+  A case that lists a known defect's error under "Not covered here" (the
+  `dataLayer is not defined` of DEV-12902, with placement "Disable" or for a
+  user whose role is excluded) lets exactly that uncaught error through with
+  `test.use( { knownPageErrors: [ { message, ticket } ] } )`, in a
+  `test.describe` of its own. A listed error that never happens fails the
+  test, naming its ticket: the defect looks fixed, so the entry goes, and
+  the known-defect case can be automated.
 - **PHP warnings in `debug.log`** are checked with the `phpErrors` fixture,
   not by reading the log, which every test running at the same time writes
   to: `await phpErrors.expectNone()` last, for a case that has the line. It
@@ -237,6 +284,7 @@ no helper functions inside spec files):
 | Generating test data that isn't stored (a guest buyer)   | `api/`, with a fixture to hand it out     |
 | A page, or a part of one                                 | `pages/`, one class per page              |
 | An expected payload                                      | `data-layer/expected.ts`                  |
+| A snippet marker or setting several snippet specs share  | `data-layer/gtm-snippet.ts`               |
 | Wiring into tests, with clean-up                         | `fixtures/index.ts`                       |
 | A setting to override per test                           | `fixtures/store-options.ts` (see below)   |
 | Code that has to run inside WordPress for a test         | `mu-plugins/` (see Test plugins)          |
@@ -326,6 +374,12 @@ decision of its own: name it in the plan before making it.
     checkout `guestBuyer.email` (`checkoutPage.fillContactEmail()`): it is
     unique, and the preflight deletes the orders killed runs left behind
     with a guest's or a test customer's email (`purgeTestOrders()`).
+  - A case whose user has other roles (the folder's Snip Editor, or a user
+    with several) creates it the same way with every role it has,
+    `catalog.createCustomer( { roles: [ 'customer', 'editor' ] } )`, and
+    logs it in through My Account too. Test accounts are deleted through
+    WordPress's users endpoint, since WooCommerce's refuses an account
+    without the customer role.
 - **A new private window, or a deleted cookie jar, is `newSession()`**: the
   test's browser forgets its cookies, the `storeOptions()` and `testPlugins`
   ones included, so set those again after it.
@@ -348,7 +402,10 @@ decision of its own: name it in the plan before making it.
   `/metrics` answers 404. A proxy spec supplies the key for its own requests
   with `storeOptions( { sameOriginApiKey } )`; a key ending in `:test` sends
   the proxy to `*.stape.test`, which `mu-plugins/stub-same-origin-upstream.php`
-  answers with the URL it was sent.
+  answers with the URL it was sent. A case about the pages of a store with
+  same-origin configured uses `sameOriginApiKeyOnEveryPage` (see Store
+  settings) with the path the store has: the case's own path changes no
+  check outside the proxy.
 
 ### Test plugins
 
@@ -374,8 +431,45 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   fixture, which sets its cookie: `flatRateShipping()`
   (`flat-rate-shipping.php`), `markOrderConfirmationPage()` for a shop's own
   thank-you page (`order-confirmation-page.php`, in place of a case's
-  store-wide filter), and `endEmailVerificationGrace()`, for a guest order
-  link opened more than 10 minutes later (`email-verification-grace.php`).
+  store-wide filter), `endEmailVerificationGrace()`, for a guest order
+  link opened more than 10 minutes later (`email-verification-grace.php`),
+  and `consentPlatform()`, a consent platform whose stored choice is in the
+  dataLayer before the plugin's consent script (`consent-platform.php`).
+- **The loader cache is the test's own** after `loaderCache.isolate()`
+  (`loader-cache.php`). The plugin caches the identifier's random prefix and
+  the encoded Web GTM ID in two site-wide transients, not keyed by the
+  identifier, so a test that overrides the identifier with `storeOptions()`
+  would share them with every test doing the same. Isolated, it starts with
+  an empty cache, as after the case's `wp transient delete`, reads it with
+  `loaderCache.read()` (the case's `wp transient get`), and it is deleted
+  after the test. Without `isolate()`, `read()` and `clear()` act on the
+  site's transients, for an exclusive test. After `newSession()`, `isolate()`
+  again gives the new session the same cache, as the site's is shared by
+  every browser window.
+- **A setting the test overrides is kept** when the plugin never wrote it:
+  the case's `wp option get` would read the database, not the test's
+  cookie. `optionWrites.expectNone()` (`record-option-writes.php`) fails on
+  any `update_option()`, `add_option()` or `delete_option()` of a setting it
+  watches (Cookie Keeper) on the test's browser requests. Add a setting to
+  its `GTM_SERVER_SIDE_E2E_RECORDED_OPTIONS` when a case needs it.
+- **What the plugin sends from PHP** (a webhook to the sGTM URL, a Customer
+  Match upload, a request for the custom loader) is what
+  `outgoingHttp.requests()` returns (`record-outgoing-http.php`): every
+  `wp_remote_*()` call made while serving the test's browser requests, with
+  its URL, method, headers, body and what answered it, oldest first. Each
+  test has its own records, so a spec running next to others asserts exactly
+  the requests it caused. Give the plugin a URL on a test host
+  (`https://<anything>.stape.test/...`, as `storeOptions()` overrides): a
+  request there that no other test plugin answers gets an empty 200, so
+  nothing leaves the machine. A request sent with no test's cookie (cron, a
+  `requestUtils` REST call) isn't recorded: what a case does as the store
+  admin goes through the test's own browser, after `loginAsAdmin()`.
+- **Two test plugins are always on**, since what they guard against needs
+  no test's cookie. `block-stape-api.php` answers every request to the Stape
+  API with an error: saving the General tab in wp-admin, and the loader cron,
+  which runs with no cookie, would otherwise send the placeholder identifiers
+  to it. `site-state.php` only answers its own REST route, for the
+  `siteState` fixture (see Store settings).
 - **A third-party plugin under test** (GTM4WP, say) is installed through
   `plugins` in `.wp-env.e2e.json`, like WooCommerce, not here.
 
@@ -410,7 +504,10 @@ when it is not the first.
 
    It overrides reads only, and only for requests the browser makes. To add a
    setting, add it to `STORE_OPTIONS` in `fixtures/store-options.ts` and to
-   the helper's `GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS`, after checking that:
+   the helper's `GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS` (and, for a
+   setting stored as an array, such as the excluded user roles, to
+   `ARRAY_STORE_OPTIONS` and the helper's `GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS`:
+   its value is then a list of strings), after checking that:
    - what the test checks doesn't depend on what runs when the option is
      saved (`update_option_<name>` hooks), since an override never saves it.
      Saving the sGTM URL, container ID or Cookie Keeper rebuilds the custom
@@ -419,15 +516,18 @@ when it is not the first.
      proxy answers 404, so they can't be overridden either. Saving the
      same-origin API key only flushes the rewrite rules (and, in wp-admin,
      rebuilds the loader too), and the rule doesn't depend on the key, so a
-     proxy test can override it;
-   - the override doesn't put the pages in a state no live store has. The
-     same-origin API key would: with it, every page switches to same-origin
-     (service worker patch, identifier from the key, no Cookie Keeper) but
-     keeps the raw sGTM URL, since the same-origin loader exists only after a
-     real save. So the helper applies it to requests under the proxy path
-     only, and any other page renders as without it. An option like that
-     goes into the helper's `GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS`, or a
-     scope of its own;
+     test can override it;
+   - the override doesn't put the pages in a state no live store has, and
+     applies only where the test asks for it. The same-origin API key with
+     no loader from the Stape API is a state a live store has: Stape didn't
+     send the loader on the save. Since DEV-13426 every page then prints
+     Google's GTM snippet, with no Cookie Keeper (the service worker patch
+     comes only with the loader). A proxy test doesn't ask for that change,
+     so `sameOriginApiKey` applies to requests under the proxy path only
+     (the helper's `GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS`) and any
+     other page renders as without it. A case about those pages uses
+     `sameOriginApiKeyOnEveryPage`, the same option on every request (the
+     helper's `GTM_SERVER_SIDE_E2E_EVERY_PAGE_ALIASES`);
    - the code under test reads it during a browser request, not in cron, a
      webhook or a REST call made by `requestUtils` (a request made through the
      test's browser context, `page.request`, carries the cookie).
@@ -437,13 +537,54 @@ when it is not the first.
    holding the same lock read. Give all of them the same Playwright test
    lock (`{ lock: '<name>' }`, from one shared list of lock names), and
    restore the option in the fixture's teardown. No spec needs this yet.
-3. **Serial.** The spec writes something every spec reads: a setting saved
+3. **Exclusive.** The spec writes something every spec reads: a setting saved
    through wp-admin, an option with an `update_option_<name>` hook, cron.
-   It runs in a `serial` project with `workers: 1`, started as its own CI
-   step after the parallel one and reporting into the same Testomat run.
-   Not through `dependencies`: Playwright skips a dependent project when any
-   test it depends on fails. Not set up yet; the first spec that needs it
-   adds the project and the CI step.
+   The test passes `EXCLUSIVE` (`fixtures/exclusive.ts`) as its details,
+   `test( '<case title> @T<id>', EXCLUSIVE, … )`, in its suite's file, and runs
+   in the same run as every other test (lint: a spec never writes
+   `'@exclusive'` or `'-exclusive-'` itself). `EXCLUSIVE` carries Playwright's built-in
+   exclusive lock, `-exclusive-`: the test starts only once no other test is
+   running, and no test starts until it ends. Playwright starts it when the
+   workers are free, which in practice is near the end of the run, and runs
+   it whether or not other tests failed. It also carries the `@exclusive` tag,
+   which the fixtures read, since a test's locks aren't in `TestInfo`.
+
+   Nothing on the store runs in the background between tests: WP-Cron and
+   WooCommerce's async requests reach the site through a loopback request,
+   which fails inside wp-env (`wp cron test`: "Failed to connect to
+   localhost:8889"). An exclusive case runs cron itself, so its work ends with
+   the test.
+
+   An exclusive test restores nothing itself. The automatic `siteState` fixture
+   reads the site-wide state before it and puts it back after it, failed or
+   not (`mu-plugins/site-state.php`): the plugin's options and transients
+   (its settings, the custom loader and its error, the loader cache), the
+   rewrite rules (the same-origin proxy path's), the active plugins and the
+   plugin's cron events. The rows go back raw, so no save hook runs on the
+   way back; what the hooks derived comes back with the settings instead.
+   Content isn't part of it: the fixtures that create content delete it. An
+   exclusive case that changes some other site-wide state (a WooCommerce
+   setting, say) adds its option to the plugin's
+   `GTM_SERVER_SIDE_E2E_SITE_STATE_OPTIONS`.
+
+   `adminSettingsPage.save()` refuses to save in a test without `EXCLUSIVE`. The
+   General tab hides the sGTM URL and identifier while the same-origin proxy
+   is on, which it is on the e2e store, so a spec that saves them turns it off
+   first (`adminSettingsPage.setSameOriginProxy( false )`, the case's
+   baseline).
+
+   A case whose save the tab's validation should block is exclusive too: if the
+   validation breaks, the click saves. With the proxy turned off as above
+   (its own empty API key blocks every save on the e2e store), the spec
+   clicks with `adminSettingsPage.clickSave()`, which returns whether the
+   page reloaded, and reads the message under the field with
+   `validationError( '<field id>' )`. The case's `jQuery( … ).valid()` in
+   the console is `isValid( field )`, and its `wp option get` is
+   `storedOption( '<option>' )`, the database's value whatever
+   `storeOptions()` overrides. It reads the plugin's own options only
+   (`gtm_server_side_*`, which the site state covers), and its type refuses
+   any other name: for one outside the state it would answer `undefined`, as
+   for a missing row, so "not saved" would pass whatever was saved.
 
 ## Testomat
 
@@ -471,9 +612,9 @@ Two limits of the Testomat run to keep in mind:
 To automate a case: copy its title from Testomat and append `@T<id>`. The
 case turns `automated` in Testomat by itself once a CI run reports it. A case
 counts as automated only when the spec asserts every line of its Expected
-result. Cases tagged `known-defect` are not automated for now. The
-`/automate-suite <suite>` skill (`.claude/skills/automate-suite/`) runs the
-whole flow for one Testomat suite.
+result. Cases tagged `known-defect` or `open-question` are not automated for
+now. The `/automate-suite <suite>` skill (`.claude/skills/automate-suite/`)
+runs the whole flow for one Testomat suite.
 
 ## Classic markup
 

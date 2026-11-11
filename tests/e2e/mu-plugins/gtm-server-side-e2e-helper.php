@@ -39,7 +39,15 @@ const GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE = 'gtm_e2e_options';
 const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'gtm_server_side_data_layer_ecommerce',
 	'gtm_server_side_data_layer_user_data',
+	'gtm_server_side_placement',
+	'gtm_server_side_gtm_exclude_roles',
+	'gtm_server_side_gtm_exclude_list_roles',
+	'gtm_server_side_web_container_url',
+	'gtm_server_side_web_identifier',
+	'gtm_server_side_cookie_keeper',
+	'gtm_server_side_gtm_custom_loader_from_api',
 	'gtm_server_side_same_origin_api_key',
+	'gtm_server_side_same_origin_api_key@every_page',
 	'woocommerce_catalog_columns',
 	'woocommerce_catalog_rows',
 	'woocommerce_enable_ajax_add_to_cart',
@@ -51,14 +59,32 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 );
 
 /**
- * Options applied only to requests under the same-origin proxy path. With the
- * API key, any other page would switch to same-origin (service worker patch,
- * identifier from the key, no Cookie Keeper) while keeping the raw sGTM URL,
- * since the same-origin loader exists only after a real save: a state no live
- * store has. Elsewhere the page renders as if the cookie didn't name them.
+ * Options stored as an array: the cookie gives them as a JSON list of
+ * strings, the way wp-admin saves them (the excluded user roles).
+ */
+const GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS = array(
+	'gtm_server_side_gtm_exclude_list_roles',
+);
+
+/**
+ * Options applied only to requests under the same-origin proxy path, so a
+ * proxy test's pages render as without them. With the API key and no loader
+ * fetched from the Stape API, a page prints Google's GTM snippet and deletes
+ * the Cookie Keeper cookie (DEV-13426), which a proxy test doesn't ask for.
  */
 const GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS = array(
 	'gtm_server_side_same_origin_api_key',
+);
+
+/**
+ * Names a cookie may use to override an option on every request, where the
+ * option itself is proxy-path only: `<option>@every_page` => `<option>`. The
+ * same-origin API key with no loader from the Stape API is a state a live
+ * store has when Stape didn't answer the save, so a test of those pages asks
+ * for it. It wins over the proxy-path-only name when the cookie holds both.
+ */
+const GTM_SERVER_SIDE_E2E_EVERY_PAGE_ALIASES = array(
+	'gtm_server_side_same_origin_api_key@every_page' => 'gtm_server_side_same_origin_api_key',
 );
 
 /**
@@ -93,11 +119,19 @@ function gtm_server_side_e2e_cookie_options(): array {
 		return array();
 	}
 
-	// Strings only, as stored options are: a false from pre_option_<name>
-	// would mean "don't override", and an array isn't an option value here.
+	// Values of the type the option is stored as: a string, or for an array
+	// option a list of strings. A false from pre_option_<name> would mean
+	// "don't override", and a value of another type isn't what the plugin
+	// ever reads from the database.
 	return array_filter(
 		array_intersect_key( $options, array_flip( GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS ) ),
-		'is_string'
+		static function ( $value, string $name ): bool {
+			if ( ! in_array( $name, GTM_SERVER_SIDE_E2E_ARRAY_OPTIONS, true ) ) {
+				return is_string( $value );
+			}
+			return is_array( $value ) && array_values( $value ) === $value && array_filter( $value, 'is_string' ) === $value;
+		},
+		ARRAY_FILTER_USE_BOTH
 	);
 }
 
@@ -106,13 +140,26 @@ function gtm_server_side_e2e_cookie_options(): array {
 if ( 'local' === wp_get_environment_type() ) {
 	$gtm_server_side_e2e_options = gtm_server_side_e2e_cookie_options();
 
+	$gtm_server_side_e2e_overrides = array();
 	foreach ( $gtm_server_side_e2e_options as $gtm_server_side_e2e_name => $gtm_server_side_e2e_value ) {
+		if ( isset( GTM_SERVER_SIDE_E2E_EVERY_PAGE_ALIASES[ $gtm_server_side_e2e_name ] ) ) {
+			continue;
+		}
 		if (
 			in_array( $gtm_server_side_e2e_name, GTM_SERVER_SIDE_E2E_PROXY_PATH_ONLY_OPTIONS, true ) &&
 			! gtm_server_side_e2e_is_proxy_request()
 		) {
 			continue;
 		}
+		$gtm_server_side_e2e_overrides[ $gtm_server_side_e2e_name ] = $gtm_server_side_e2e_value;
+	}
+	foreach ( GTM_SERVER_SIDE_E2E_EVERY_PAGE_ALIASES as $gtm_server_side_e2e_alias => $gtm_server_side_e2e_name ) {
+		if ( isset( $gtm_server_side_e2e_options[ $gtm_server_side_e2e_alias ] ) ) {
+			$gtm_server_side_e2e_overrides[ $gtm_server_side_e2e_name ] = $gtm_server_side_e2e_options[ $gtm_server_side_e2e_alias ];
+		}
+	}
+
+	foreach ( $gtm_server_side_e2e_overrides as $gtm_server_side_e2e_name => $gtm_server_side_e2e_value ) {
 		add_filter(
 			'pre_option_' . $gtm_server_side_e2e_name,
 			static function () use ( $gtm_server_side_e2e_value ) {
