@@ -1,5 +1,5 @@
 import { expect, test } from '../../fixtures';
-import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
+import { expectedEcommerce, expectedItem, expectedVariationItem, withoutCartState } from '../../data-layer/expected';
 
 test( 'Add to cart on a block-theme product grid pushes one add_to_cart for the clicked product @T7b4669bf', async ( {
 	categoryPage,
@@ -94,4 +94,39 @@ test( 'A theme/plugin AJAX add that triggers added_to_cart pushes the held add_t
 	// without a new click has nothing to push. The case waits 3 seconds.
 	await productPage.triggerAddedToCart();
 	await dataLayer.expectPushedOnce( 'add_to_cart', { quietMs: 3000 } );
+} );
+
+test( "A theme-AJAX add of a variable product reports the chosen variation's ID, SKU and price @T976f994b", async ( {
+	catalog,
+	category,
+	dataLayer,
+	productPage,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	const [ , blueM ] = variableProduct.variations;
+
+	await productPage.goto( variableProduct );
+	await productPage.holdFormSubmit();
+	await productPage.chooseOptions( { Color: 'Blue', Size: 'M' } );
+	await productPage.setQuantity( 2 );
+	await productPage.clickAddToCart();
+	await productPage.triggerAddedToCart();
+
+	const addToCart = await dataLayer.expectPushedOnce( 'add_to_cart', { quietMs: 3000 } );
+
+	expect( withoutCartState( addToCart ) ).toEqual( {
+		event: 'add_to_cart_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: expectedEcommerce( [
+			expectedVariationItem( variableProduct, blueM, {
+				item_name: `${ variableProduct.name } - Blue, M`,
+				item_variant: 'Blue,M',
+				quantity: 2,
+				index: 1,
+			} ),
+		] ),
+	} );
+
+	const [ , viewBlueM ] = await dataLayer.expectPushedTimes( 'view_item', 2 );
+	expect( addToCart.ecommerce?.items?.[ 0 ]?.item_id ).toBe( viewBlueM.ecommerce?.items?.[ 0 ]?.item_id );
 } );

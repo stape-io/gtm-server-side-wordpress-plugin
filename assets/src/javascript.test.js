@@ -297,3 +297,63 @@ describe( 'flushPendingAddToCart() token cookie (DEV-13298)', () => {
 		expect( sandbox.document.cookie ).toBe( DELETE_COOKIE );
 	} );
 } );
+
+describe( 'pushVariationProduct() item (DEV-14072)', () => {
+	const PARENT_INPUTS = { gtm_item_id: '12', gtm_item_sku: 'hoodie', gtm_price: '30.00' };
+	const BLUE_M        = {
+		variation_id: 14,
+		gtm_item: { item_id: '14', item_sku: 'hoodie-blue-m', item_name: 'Hoodie - Blue, M', price: '32.00' },
+	};
+
+	function variationForm( { foundVariation, variationId } ) {
+		const values = { '[name=variation_id]': variationId, '[name=quantity]': '2' };
+		return {
+			data( key ) {
+				return 'gtm_found_variation' === key ? foundVariation : undefined;
+			},
+			find( sel ) {
+				if ( '[name^=attribute_] option:selected' === sel ) {
+					return { each( fn ) { [ 'Blue', 'M' ].forEach( ( text ) => fn.call( { text } ) ); } };
+				}
+				return { length: sel in values ? 1 : 0, val: () => values[ sel ] };
+			},
+		};
+	}
+
+	function addOverAjax( $form ) {
+		const sandbox = loadPlugin();
+		const plugin  = sandbox.pluginGtmServerSide;
+		sandbox.jQuery = ( arg ) => ( arg && 'string' === typeof arg.text ? { text: () => arg.text } : jQueryShim( arg ) );
+		plugin.convertInputsToObject = () => Object.assign( {}, PARENT_INPUTS );
+
+		const button = makeElement( { tag: 'button', classes: [ 'single_add_to_cart_button' ], inFormCart: true } );
+		plugin.pushVariationProduct( $form, button );
+		plugin.flushPendingAddToCart();
+
+		const pushed = sandbox.dataLayer.filter( ( e ) => e.event === 'add_to_cart' );
+		expect( pushed ).toHaveLength( 1 );
+
+		return pushed[ 0 ].ecommerce;
+	}
+
+	it( 'reports the variation WooCommerce found for the chosen options', () => {
+		const ecommerce = addOverAjax( variationForm( { foundVariation: BLUE_M, variationId: '14' } ) );
+
+		expect( ecommerce.value ).toBe( '64.00' );
+		expect( ecommerce.items ).toEqual( [
+			{ ...BLUE_M.gtm_item, quantity: 2, item_variant: 'Blue,M', index: 1 },
+		] );
+	} );
+
+	it( 'falls back to the parent when the found variation is not the one in the form', () => {
+		const ecommerce = addOverAjax( variationForm( { foundVariation: BLUE_M, variationId: '13' } ) );
+
+		expect( ecommerce.items[ 0 ] ).toMatchObject( { item_id: '12', price: '30.00', quantity: 2 } );
+	} );
+
+	it( 'falls back to the parent when no variation item reached the page', () => {
+		const ecommerce = addOverAjax( variationForm( { foundVariation: undefined, variationId: '14' } ) );
+
+		expect( ecommerce.items[ 0 ] ).toMatchObject( { item_id: '12', price: '30.00', quantity: 2 } );
+	} );
+} );
