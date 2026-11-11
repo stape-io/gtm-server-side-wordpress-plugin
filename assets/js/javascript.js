@@ -108,6 +108,7 @@ jQuery( document ).ready(
 			'found_variation',
 			'.variations_form',
 			function ( e, variation ) {
+				pluginGtmServerSide.rememberFoundVariation( jQuery( this ), variation );
 				pluginGtmServerSide.onFoundVariation( jQuery( this ), variation );
 			}
 		);
@@ -336,10 +337,9 @@ var pluginGtmServerSide = {
 	},
 
 	pushVariationProduct: function ( $elForm, el ) {
-		var item = this.convertInputsToObject(
-			$elForm.find( '[name^=gtm_]' )
+		var item = this.getFoundVariationItem( $elForm ) || this.getGtmItemData(
+			this.convertInputsToObject( $elForm.find( '[name^=gtm_]' ) )
 		);
-		item     = this.getGtmItemData( item );
 
 		var $elQty = $elForm.find( '[name=quantity]' );
 		if ( $elQty.length ) {
@@ -352,6 +352,37 @@ var pluginGtmServerSide = {
 		}
 
 		this.trackAddToCart( item, el );
+	},
+
+	/**
+	 * Keep the variation WooCommerce found for a form, with its item from
+	 * GTM_Server_Side_Event_ViewItem::woocommerce_available_variation().
+	 *
+	 * @param object $elForm Variations form.
+	 * @param object variation Variation data.
+	 */
+	rememberFoundVariation: function ( $elForm, variation ) {
+		if ( variation && variation.gtm_item ) {
+			$elForm.data( 'gtm_found_variation', variation );
+		}
+	},
+
+	/**
+	 * The item of the variation the form holds now, if it is the one found
+	 * last. The form's gtm_* inputs describe the parent product.
+	 *
+	 * @param object $elForm Variations form.
+	 * @returns object|null
+	 */
+	getFoundVariationItem: function ( $elForm ) {
+		var variation   = $elForm.data( 'gtm_found_variation' );
+		var variationId = $elForm.find( '[name=variation_id]' ).val();
+
+		if ( ! variation || String( variation.variation_id ) !== String( variationId ) ) {
+			return null;
+		}
+
+		return Object.assign( {}, variation.gtm_item );
 	},
 
 	/**
