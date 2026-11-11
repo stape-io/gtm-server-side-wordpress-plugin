@@ -42,6 +42,16 @@ export class ClassicCartPage {
 		await this.waitForCartUpdated();
 	}
 
+	/**
+	 * Clicks the remove link (×) on the product's line and waits until
+	 * WooCommerce, which removes it over AJAX, says it is removed.
+	 */
+	async remove( product: CreatedProduct ): Promise< void > {
+		// WooCommerce gives the remove link role=button.
+		await this.page.getByRole( 'button', { name: `Remove ${ product.name } from cart` } ).click();
+		await this.page.getByRole( 'alert' ).filter( { hasText: `${ product.name }” removed.` } ).waitFor();
+	}
+
 	/** The quantity field in the product's line; every line's field is named "Product quantity". */
 	private quantityField( product: CreatedProduct ) {
 		return this.page

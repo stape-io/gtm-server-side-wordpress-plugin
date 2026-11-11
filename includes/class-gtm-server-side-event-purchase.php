@@ -146,21 +146,10 @@ class GTM_Server_Side_Event_Purchase {
 		}
 
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
-			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order );
-
-			$customer_id                             = (int) $order->get_customer_id();
-			$data_layer['user_data']['new_customer'] = 'true';
-
-			if ( $customer_id > 0 && ! GTM_Server_Side_WC_Helpers::instance()->is_new_customer( $customer_id ) ) {
-				$data_layer['user_data']['new_customer'] = 'false';
-			}
+			$data_layer['user_data']                 = GTM_Server_Side_WC_Helpers::instance()->get_order_user_data( $order );
+			$data_layer['user_data']['new_customer'] = GTM_Server_Side_WC_Helpers::instance()->is_new_customer_order( $order ) ? 'true' : 'false';
 		}
-		?>
-		<script type="text/javascript">
-			dataLayer.push( { ecommerce: null } );
-			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
-		</script>
-		<?php
+		GTM_Server_Side_Helpers::print_data_layer_event( $data_layer );
 
 		$order->update_meta_data( self::TRANSACTION_SENT_KEY, wp_date( 'Y-m-d H:i:s' ) );
 		$order->save_meta_data();

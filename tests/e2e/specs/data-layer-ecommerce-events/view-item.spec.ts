@@ -1,5 +1,5 @@
 import { expect, test } from '../../fixtures';
-import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
+import { expectedEcommerce, expectedItem, expectedVariationItem, withoutCartState } from '../../data-layer/expected';
 
 /**
  * Unlike add_to_cart, this event is rendered server-side: the plugin prints it
@@ -117,4 +117,104 @@ test( "view_item category fields follow the first category's parent chain (item_
 	expect( item ).not.toHaveProperty( 'item_category3' );
 	expect( item ).not.toHaveProperty( 'item_category4' );
 	expect( item ).not.toHaveProperty( 'item_category5' );
+} );
+
+test( "Choosing a variation on a variable product page pushes view_item with the variation's ID, SKU and price @T99154667", async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	const [ red, blueM ] = variableProduct.variations;
+
+	await productPage.goto( variableProduct );
+	await dataLayer.expectPushedOnce( 'view_item' );
+
+	await productPage.chooseOptions( { Color: 'Blue', Size: 'M' } );
+	await expect( productPage.variationPrice( '32.00' ) ).toBeVisible();
+	const [ , viewBlueM ] = await dataLayer.expectPushedTimes( 'view_item', 2, { quietMs: 3000 } );
+
+	// The case is about the variation's id, SKU and price; the whole event
+	// belongs to the case of the "Any" attribute.
+	expect( viewBlueM.ecommerce ).toEqual( {
+		currency: 'USD',
+		value: '32.00',
+		items: [ expect.objectContaining( { item_id: String( blueM.id ), item_sku: blueM.sku, price: '32.00' } ) ],
+	} );
+
+	await productPage.chooseOptions( { Color: 'Red', Size: 'S' } );
+	await expect( productPage.variationPrice( '30.00' ) ).toBeVisible();
+	const viewItems = await dataLayer.expectPushedTimes( 'view_item', 3, { quietMs: 3000 } );
+	expect( viewItems[ 2 ].ecommerce?.items ).toEqual( [
+		expect.objectContaining( { item_id: String( red.id ), item_sku: red.sku, price: '30.00' } ),
+	] );
+
+	// The same variation again: nothing more.
+	await productPage.clearOptions();
+	await productPage.chooseOptions( { Color: 'Red', Size: 'S' } );
+	await dataLayer.expectPushedTimes( 'view_item', 3, { quietMs: 3000 } );
+} );
+
+test( 'Choosing a variation pushes view_item with the variation\'s id, SKU, price and item_variant incl. the value chosen for an "Any" attribute @T0c54fed6', async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	// Red comes first and sets no Size, so the shopper picks one (see VARIATIONS in api/products.ts).
+	const [ red ] = variableProduct.variations;
+
+	await productPage.goto( variableProduct );
+	await dataLayer.expectPushedOnce( 'view_item' );
+	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+	await expect( productPage.variationPrice( '30.00' ) ).toBeVisible();
+
+	// The page's own view_item first, then the one for the choice.
+	const [ , viewVariation ] = await dataLayer.expectPushedTimes( 'view_item', 2, { quietMs: 3000 } );
+
+	// Shaped as the page's own view_item, with the variation as the item.
+	expect( withoutCartState( viewVariation ) ).toEqual( {
+		event: 'view_item_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: expectedEcommerce( [
+			expectedVariationItem( variableProduct, red, {
+				item_name: `${ variableProduct.name } - Red`,
+				item_variant: 'Red,M',
+			} ),
+		] ),
+	} );
+} );
+
+test( 'A variation preselected by the product\'s default options pushes no view_item of its own on page load @T869874c7', async ( {
+	productPage,
+	dataLayer,
+	catalog,
+	category,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, {
+		type: 'variable',
+		default_attributes: [
+			{ name: 'Color', option: 'Blue' },
+			{ name: 'Size', option: 'M' },
+		],
+	} );
+	const red = variableProduct.variations.find( ( variation ) =>
+		variation.attributes.some( ( { name, option } ) => name === 'Color' && option === 'Red' )
+	);
+
+	await productPage.goto( variableProduct );
+	// WooCommerce matched the preselected Blue / M, as it does for a shopper's choice.
+	await expect( productPage.option( 'Color' ) ).toHaveValue( 'Blue' );
+	await expect( productPage.option( 'Size' ) ).toHaveValue( 'M' );
+	await expect( productPage.variationPrice( '32.00' ) ).toBeVisible();
+
+	// Only the page's own view_item, still the parent at its lowest price.
+	const viewItem = await dataLayer.expectPushedOnce( 'view_item', { quietMs: 3000 } );
+	expect( withoutCartState( viewItem ) ).toEqual( {
+		event: 'view_item_stape',
+		ecomm_pagetype: 'product',
+		ecommerce: expectedEcommerce( [ expectedItem( variableProduct, { price: red?.regular_price } ) ] ),
+	} );
 } );

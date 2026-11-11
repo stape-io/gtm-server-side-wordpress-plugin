@@ -33,8 +33,8 @@ type Snapshot = {
 	/** That field of every entry pushed so far that has it, in order. */
 	pushed: string[];
 	matches: DataLayerEvent[];
-	/** The entry pushed right before the first match, if any. */
-	beforeFirstMatch: DataLayerEvent | undefined;
+	/** The entry pushed right before each match, if any. */
+	beforeMatches: Array< DataLayerEvent | undefined >;
 };
 
 /**
@@ -67,27 +67,48 @@ export class DataLayer {
 	 * that waits longer for a duplicate. Called again after the event is in,
 	 * it returns at once and only watches for that long.
 	 */
-	async expectPushedOnce( selector: EntrySelector, { quietMs = LATE_PUSH_GRACE_MS }: QuietOptions = {} ): Promise< DataLayerEvent > {
+	async expectPushedOnce( selector: EntrySelector, options: QuietOptions = {} ): Promise< DataLayerEvent > {
+		const [ entry ] = await this.expectPushedTimes( selector, 1, options );
+		return entry;
+	}
+
+	/**
+	 * expectPushedOnce() for an entry a case expects more than once on the
+	 * page, such as a view_item for each variation the shopper picks: waits
+	 * for the `times`-th push, asserts no more come and that each is preceded
+	 * by `{ ecommerce: null }`, and returns them in push order. Called again
+	 * with a higher `times`, it waits for the pushes still missing.
+	 */
+	async expectPushedTimes(
+		selector: EntrySelector,
+		times: number,
+		{ quietMs = LATE_PUSH_GRACE_MS }: QuietOptions = {}
+	): Promise< DataLayerEvent[] > {
 		const { label, value } = await this.snapshot( selector );
 
-		// On timeout, the failure message lists what was pushed instead.
+		// Until it is in, the poll returns everything pushed, so the failure
+		// message lists what came instead.
 		await expect
-			.poll( async () => ( await this.snapshot( selector ) ).pushed, {
-				message: `dataLayer ${ label } was never pushed`,
-			} )
-			.toContain( value );
+			.poll(
+				async () => {
+					const { pushed } = await this.snapshot( selector );
+					return pushed.filter( ( name ) => name === value ).length >= times ? value : pushed;
+				},
+				{ message: times === 1 ? `dataLayer ${ label } was never pushed` : `dataLayer ${ label } was pushed fewer than ${ times } times` }
+			)
+			.toEqual( value );
 
 		// eslint-disable-next-line playwright/no-wait-for-timeout -- watching for a push that must NOT come; there is no event to wait on.
 		await this.page.waitForTimeout( quietMs );
 
-		const { matches, beforeFirstMatch } = await this.snapshot( selector );
-		expect( matches, `dataLayer ${ label } pushed more than once` ).toHaveLength( 1 );
+		const { matches, beforeMatches } = await this.snapshot( selector );
+		expect( matches, times === 1 ? `dataLayer ${ label } pushed more than once` : `dataLayer ${ label } pushed more than ${ times } times` ).toHaveLength( times );
 		expect(
-			beforeFirstMatch,
+			beforeMatches,
 			`dataLayer ${ label } is not preceded by { ecommerce: null }`
-		).toEqual( { ecommerce: null } );
+		).toEqual( Array( times ).fill( { ecommerce: null } ) );
 
-		return matches[ 0 ];
+		return matches;
 	}
 
 	/**
@@ -127,6 +148,25 @@ export class DataLayer {
 				),
 			field
 		);
+	}
+
+	/**
+	 * Every entry pushed so far, in order: for a case about what comes before
+	 * what (login_state ahead of the GTM snippet's `gtm.js`). A snapshot.
+	 */
+	async entries(): Promise< DataLayerEvent[] > {
+		return this.page.evaluate(
+			() => [ ...( ( window as unknown as { dataLayer?: DataLayerEvent[] } ).dataLayer ?? [] ) ]
+		);
+	}
+
+	/**
+	 * Whether `window.dataLayer` exists, which entries() can't tell from an
+	 * empty one: for a case about a page nothing has created it on yet
+	 * (placement "Disable", no server-rendered event).
+	 */
+	async exists(): Promise< boolean > {
+		return this.page.evaluate( () => typeof ( window as unknown as { dataLayer?: unknown } ).dataLayer !== 'undefined' );
 	}
 
 	/**
@@ -177,8 +217,14 @@ export class DataLayer {
 			}
 			const events = w.dataLayer ?? [];
 
-			const matches = events.filter( ( entry ) => entry[ field ] === value );
-			const first = events.findIndex( ( entry ) => entry[ field ] === value );
+			const matches: DataLayerEvent[] = [];
+			const beforeMatches: Array< DataLayerEvent | undefined > = [];
+			events.forEach( ( entry, i ) => {
+				if ( entry[ field ] === value ) {
+					matches.push( entry );
+					beforeMatches.push( i > 0 ? events[ i - 1 ] : undefined );
+				}
+			} );
 
 			return {
 				label,
@@ -187,7 +233,7 @@ export class DataLayer {
 					.map( ( entry ) => entry[ field ] )
 					.filter( ( pushed ): pushed is string => typeof pushed === 'string' ),
 				matches,
-				beforeFirstMatch: first > 0 ? events[ first - 1 ] : undefined,
+				beforeMatches,
 			};
 		}, selector );
 

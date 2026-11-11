@@ -11,6 +11,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      # Stops before anything is published: the tag, plugin header, README
+      # stable tags and changelog must agree, and the package holds only
+      # runtime files.
+      - name: Check the release
+        run: node bin/check-release.mjs "${{ github.ref_name }}"
       - name: Install SVN
         run: sudo apt-get update && sudo apt-get install -y subversion
       - name: Create Release
