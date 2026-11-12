@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.1.0
-Stable tag: 2.3.11
+Stable tag: 2.3.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,10 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.12 =
+* Fixed add_to_cart being sent twice on themes that add to cart over AJAX by posting the product form to the product page, such as Blocksy. WooCommerce added the item before the theme marked the request as AJAX, so the event went out at click time and again on the next page. The add stored for the next page is now skipped once the click-time event is in the data layer; if the shopper leaves before that, the next page still sends it.
+* Fixed add_to_cart not being sent from the product page when a side-cart plugin, such as FunnelKit Cart, replaces WooCommerce's add to cart with its own AJAX handler. These plugins unbind click handlers by the button's selector, which also removed the plugin's own.
 
 = 2.3.11 =
 * Security: hardened the same-origin proxy so it only forwards requests to the configured Stape container. Thanks to Joep van Antwerpen for the responsible disclosure, coordinated by WPScan.
