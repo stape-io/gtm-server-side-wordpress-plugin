@@ -92,8 +92,10 @@ await context.addInitScript( () => {
 			return push.apply( this, entries );
 		};
 	};
-	let dl = [];
-	hook( dl );
+	// No array until a page script assigns one: a page that pushes before
+	// anything creates dataLayer must fail here as it does for a shopper
+	// (a TypeError on undefined rather than "dataLayer is not defined").
+	let dl;
 	Object.defineProperty( window, 'dataLayer', {
 		configurable: true,
 		get: () => dl,

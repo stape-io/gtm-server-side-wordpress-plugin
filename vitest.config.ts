@@ -6,6 +6,6 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig( {
 	test: {
-		include: [ 'assets/src/**/*.test.ts' ],
+		include: [ 'assets/src/**/*.test.{ts,js}' ],
 	},
 } );

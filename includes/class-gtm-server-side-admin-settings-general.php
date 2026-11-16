@@ -189,7 +189,30 @@ class GTM_Server_Side_Admin_Settings_General {
 			GTM_SERVER_SIDE_ADMIN_GROUP_GENERAL
 		);
 
-		register_setting( GTM_SERVER_SIDE_ADMIN_GROUP, GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID );
+		register_setting(
+			GTM_SERVER_SIDE_ADMIN_GROUP,
+			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
+			array(
+				'sanitize_callback' => function( $value ) {
+					$placements_with_gtm = array(
+						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_CODE,
+						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_PLUGIN,
+						GTM_SERVER_SIDE_FIELD_PLACEMENT_VALUE_GTM_CONSENT,
+					);
+					// options.php saves in registration order, so this is the placement submitted with the ID.
+					$placement = GTM_Server_Side_Helpers::get_option_container_placement();
+					if ( '' === trim( (string) $value ) && in_array( $placement, $placements_with_gtm, true ) ) {
+						add_settings_error(
+							GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
+							'gtm_server_side_web_container_id_required',
+							__( 'Web Google Tag Manager ID: This field is required.', 'gtm-server-side' )
+						);
+						return GTM_Server_Side_Helpers::get_raw_gtm_container_id();
+					}
+					return $value;
+				},
+			)
+		);
 		add_settings_field(
 			GTM_SERVER_SIDE_FIELD_WEB_CONTAINER_ID,
 			__( 'Web Google Tag Manager ID', 'gtm-server-side' ),

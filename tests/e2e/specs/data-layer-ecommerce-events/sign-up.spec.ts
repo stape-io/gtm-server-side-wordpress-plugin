@@ -66,3 +66,21 @@ test( 'Creating an account during checkout pushes sign_up on order-received next
 	expect( ( await dataLayer.expectPushedOnce( 'sign_up' ) ).event ).toBe( 'sign_up_stape' );
 	expect( ( await dataLayer.expectPushedOnce( 'purchase' ) ).event ).toBe( 'purchase_stape' );
 } );
+
+test( 'Registering through wp-login.php pushes sign_up on the next storefront page, without a JS error @T7efd6fdb', async ( {
+	storeOptions,
+	wpLoginPage,
+	homePage,
+	dataLayer,
+	newCustomer,
+} ) => {
+	await storeOptions( { usersCanRegister: '1' } );
+
+	// The pageErrors fixture fails the test on the plugin's JS errors on the
+	// "Registration complete" page register() lands on.
+	await wpLoginPage.gotoRegister();
+	await wpLoginPage.register( newCustomer.email );
+
+	await homePage.goto();
+	expect( ( await dataLayer.expectPushedOnce( 'sign_up' ) ).event ).toBe( 'sign_up_stape' );
+} );

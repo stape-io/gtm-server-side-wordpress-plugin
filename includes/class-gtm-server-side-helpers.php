@@ -586,6 +586,19 @@ class GTM_Server_Side_Helpers {
 	}
 
 	/**
+	 * Whether "Exclude GTM for user roles" lists a role of the logged-in user.
+	 *
+	 * @return bool
+	 */
+	public static function is_current_user_gtm_excluded() {
+		if ( ! is_user_logged_in() || ! self::is_enable_gtm_exclude_roles() ) {
+			return false;
+		}
+
+		return (bool) array_intersect( self::get_gtm_exclude_list_roles(), wp_get_current_user()->roles );
+	}
+
+	/**
 	 * Check container placement is code or not.
 	 *
 	 * @return bool
@@ -779,6 +792,26 @@ class GTM_Server_Side_Helpers {
 			<script>
 				document.cookie = '<?php echo esc_attr( $name ); ?>=; max-age=-1; path=<?php echo esc_attr( $options['path'] ); ?>; domain=<?php echo esc_attr( $options['domain'] ); ?>;';
 			</script>
+		<?php
+	}
+
+	/**
+	 * Print a data layer event, after clearing the previous ecommerce object.
+	 *
+	 * Only a GTM snippet creates dataLayer, and none is printed with placement
+	 * "Disable" or for an excluded role, so the push creates it if missing: a
+	 * GTM loaded later reads what is already there.
+	 *
+	 * @param  array $data_layer Event.
+	 * @return void
+	 */
+	public static function print_data_layer_event( $data_layer ) {
+		?>
+		<script type="text/javascript">
+			window.dataLayer = window.dataLayer || [];
+			dataLayer.push( { ecommerce: null } );
+			dataLayer.push(<?php echo self::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
+		</script>
 		<?php
 	}
 

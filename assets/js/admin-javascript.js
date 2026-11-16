@@ -434,7 +434,7 @@ const pluginGtmServerSide = {
 		const val   = jQuery( '.js-gtm_server_side_placement:checked' ).val();
 		const $elCI = jQuery( '#gtm_server_side_web_container_id' );
 
-		if ( [ 'code', 'plugin' ].includes( val ) ) {
+		if ( [ 'code', 'plugin', 'gtm_consent' ].includes( val ) ) {
 			$elCI.rules(
 				'add',
 				{

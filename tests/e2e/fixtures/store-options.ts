@@ -87,6 +87,26 @@ type StoreOptionValues = {
 	 * reads it when the checkout renders and when the Store API places the order.
 	 */
 	checkoutSignup: 'yes' | 'no';
+	/**
+	 * WordPress's "Anyone can register". Off (`0`) on the baseline store; on,
+	 * wp-login.php shows its Register form. Nothing runs when it is saved, and
+	 * wp-login.php reads it on the request that shows or posts the form.
+	 */
+	usersCanRegister: '1' | '0';
+	/**
+	 * The plugin's "GTM web container placement". `code` on the baseline
+	 * store; `disable` adds the plugin's events without printing a GTM
+	 * snippet. Nothing runs when it is saved, and the plugin reads it on
+	 * every request, when it loads (GTM_Server_Side_Tracking_Code::init()).
+	 */
+	placement: 'code' | 'plugin' | 'disable' | 'gtm_consent';
+	/**
+	 * "Exclude GTM for user roles" and the roles it lists. Off on the
+	 * baseline store. Nothing runs when they are saved, and the plugin reads
+	 * them in wp_head, for a logged-in user only.
+	 */
+	gtmExcludeRoles: 'yes' | 'no';
+	gtmExcludeListRoles: string[];
 };
 
 export const STORE_OPTIONS = {
@@ -101,6 +121,10 @@ export const STORE_OPTIONS = {
 	pricesIncludeTax: 'woocommerce_prices_include_tax',
 	myAccountRegistration: 'woocommerce_enable_myaccount_registration',
 	checkoutSignup: 'woocommerce_enable_signup_and_login_from_checkout',
+	usersCanRegister: 'users_can_register',
+	placement: 'gtm_server_side_placement',
+	gtmExcludeRoles: 'gtm_server_side_gtm_exclude_roles',
+	gtmExcludeListRoles: 'gtm_server_side_gtm_exclude_list_roles',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;

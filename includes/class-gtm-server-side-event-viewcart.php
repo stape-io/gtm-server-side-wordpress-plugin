@@ -43,15 +43,18 @@ class GTM_Server_Side_Event_ViewCart {
 			return;
 		}
 
+		$cart_total = GTM_Server_Side_WC_Helpers::instance()->formatted_price(
+			GTM_Server_Side_WC_Helpers::instance()->get_cart_total()
+		);
+
 		$data_layer = array(
 			'event'          => GTM_Server_Side_Helpers::get_data_layer_event_name( 'view_cart' ),
 			'ecomm_pagetype' => 'basket',
 			'cart_quantity'  => count( $cart ),
-			'cart_total'     => GTM_Server_Side_WC_Helpers::instance()->formatted_price(
-				GTM_Server_Side_WC_Helpers::instance()->get_cart_total()
-			),
+			'cart_total'     => $cart_total,
 			'ecommerce'      => array(
 				'currency' => esc_attr( get_woocommerce_currency() ),
+				'value'    => $cart_total,
 				'items'    => GTM_Server_Side_WC_Helpers::instance()->get_cart_data_layer_items( $cart ),
 			),
 		);
@@ -63,11 +66,6 @@ class GTM_Server_Side_Event_ViewCart {
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
 			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
 		}
-		?>
-		<script type="text/javascript">
-			dataLayer.push( { ecommerce: null } );
-			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
-		</script>
-		<?php
+		GTM_Server_Side_Helpers::print_data_layer_event( $data_layer );
 	}
 }

@@ -251,6 +251,40 @@ test( "purchase tax and shipping equal the order's tax and shipping totals @T701
 	expect( purchase.ecommerce?.value ).toBe( '49.00' );
 } );
 
+test( 'A variation line in purchase carries item_variant including the value chosen for an "Any" attribute @T1e57a20d', async ( {
+	catalog,
+	category,
+	checkoutPage,
+	dataLayer,
+	guestBuyer,
+	orderReceivedPage,
+	productPage,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	// Red comes first and sets no Size, so the shopper picks one (see VARIATIONS in api/products.ts).
+	const [ red ] = variableProduct.variations;
+	await productPage.goto( variableProduct );
+	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+	await productPage.addToCart();
+
+	await checkoutPage.goto();
+	await checkoutPage.fillBillingDetails( guestBuyer );
+	await checkoutPage.placeOrder();
+	await orderReceivedPage.orderNumber();
+	const purchase = await dataLayer.expectPushedOnce( 'purchase' );
+
+	expect( purchase.event ).toBe( 'purchase_stape' );
+	expect( purchase.ecommerce?.items ).toEqual( [
+		expect.objectContaining( {
+			// The M comes from the order line: the variation itself says only Red.
+			item_variant: 'Red,M',
+			item_id: String( red.id ),
+			item_sku: red.sku,
+			price: '30.00',
+		} ),
+	] );
+} );
+
 test( "An order created in wp-admin pushes no purchase on the admin's next front-end page @T3d64a13f", async ( {
 	adminNewOrderPage,
 	dataLayer,

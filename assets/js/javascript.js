@@ -95,6 +95,29 @@ jQuery( document ).ready(
 		);
 
 		/**
+		 * The shopper changed an option of a variable product. WooCommerce has
+		 * already matched the variation for an inline form, so the decision
+		 * waits for found_variation's own tick to end (see
+		 * onFoundVariation()).
+		 */
+		jQuery( document ).on(
+			'woocommerce_variation_has_changed',
+			'.variations_form',
+			function () {
+				jQuery( this ).data( 'gtm_variation_changed', true );
+			}
+		);
+
+		jQuery( document ).on(
+			'found_variation',
+			'.variations_form',
+			function ( e, variation ) {
+				pluginGtmServerSide.rememberFoundVariation( jQuery( this ), variation );
+				pluginGtmServerSide.onFoundVariation( jQuery( this ), variation );
+			}
+		);
+
+		/**
 		 * Add over AJAX without WooCommerce's own handler: a theme or plugin that
 		 * AJAX-ifies an add-to-cart link or form.cart posts it and then triggers
 		 * added_to_cart to refresh the fragments. The click left the item pending;
@@ -123,7 +146,7 @@ jQuery( document ).ready(
 				}
 
 				pluginGtmServerSide.removeFromCart(
-					pluginGtmServerSide.getGtmItemData( $thisbutton.data() )
+					pluginGtmServerSide.getGtmItemData( $thisbutton.get( 0 ).dataset )
 				);
 			}
 		);
@@ -142,7 +165,7 @@ jQuery( document ).ready(
 				}
 
 				pluginGtmServerSide.removeFromCart(
-					pluginGtmServerSide.getGtmItemData( $el.data() )
+					pluginGtmServerSide.getGtmItemData( e.currentTarget.dataset )
 				);
 			}
 		);
@@ -150,6 +173,13 @@ jQuery( document ).ready(
 );
 
 var pluginGtmServerSide = {
+	/**
+	 * The cart lines the Store API last sent, by cart item key:
+	 * { quantity, item }, item being the plugin's item for the line. null until
+	 * a cart has been seen. See observeStoreApi().
+	 */
+	storeApiCartLines: null,
+
 	/**
 	 * Add built at click time that has not been pushed yet, with the moment it
 	 * was built. See trackAddToCart().
@@ -311,16 +341,61 @@ var pluginGtmServerSide = {
 	},
 
 	pushVariationProduct: function ( $elForm, el ) {
-		var item = this.convertInputsToObject(
-			$elForm.find( '[name^=gtm_]' )
+		var item = this.getFoundVariationItem( $elForm ) || this.getGtmItemData(
+			this.convertInputsToObject( $elForm.find( '[name^=gtm_]' ) )
 		);
-		item     = this.getGtmItemData( item );
 
 		var $elQty = $elForm.find( '[name=quantity]' );
 		if ( $elQty.length ) {
 			item.quantity = $elQty.val();
 		}
 
+		var itemVariant = this.getChosenVariant( $elForm );
+		if ( itemVariant ) {
+			item.item_variant = itemVariant;
+		}
+
+		this.trackAddToCart( item, el );
+	},
+
+	/**
+	 * Keep the variation WooCommerce found for a form, with its item from
+	 * GTM_Server_Side_Event_ViewItem::woocommerce_available_variation().
+	 *
+	 * @param object $elForm Variations form.
+	 * @param object variation Variation data.
+	 */
+	rememberFoundVariation: function ( $elForm, variation ) {
+		if ( variation && variation.gtm_item ) {
+			$elForm.data( 'gtm_found_variation', variation );
+		}
+	},
+
+	/**
+	 * The item of the variation the form holds now, if it is the one found
+	 * last. The form's gtm_* inputs describe the parent product.
+	 *
+	 * @param object $elForm Variations form.
+	 * @returns object|null
+	 */
+	getFoundVariationItem: function ( $elForm ) {
+		var variation   = $elForm.data( 'gtm_found_variation' );
+		var variationId = $elForm.find( '[name=variation_id]' ).val();
+
+		if ( ! variation || String( variation.variation_id ) !== String( variationId ) ) {
+			return null;
+		}
+
+		return Object.assign( {}, variation.gtm_item );
+	},
+
+	/**
+	 * The options chosen in a variable product's form, as item_variant.
+	 *
+	 * @param object $elForm Form.
+	 * @returns string
+	 */
+	getChosenVariant: function ( $elForm ) {
 		var variations = [];
 		$elForm.find( '[name^=attribute_] option:selected' ).each(
 			function () {
@@ -328,11 +403,90 @@ var pluginGtmServerSide = {
 			}
 		);
 
-		if ( variations.length ) {
-			item.item_variant = variations.join( ',' );
+		return variations.join( ',' );
+	},
+
+	/**
+	 * Push view_item for the variation the shopper picked.
+	 *
+	 * WooCommerce also finds a variation when the page opens with default
+	 * options, before the shopper did anything; the page's own view_item
+	 * covers that view, so only a variation found after an option changed
+	 * counts. WooCommerce marks the change right after it finds the variation
+	 * of an inline form, hence the deferral. Finding the variation pushed last
+	 * again (a select re-set to the same value, a clear and the same choice)
+	 * pushes nothing.
+	 *
+	 * @param object $elForm Variations form.
+	 * @param object variation Variation data, with the item from
+	 *                         GTM_Server_Side_Event_ViewItem::woocommerce_available_variation().
+	 */
+	onFoundVariation: function ( $elForm, variation ) {
+		var self = this;
+
+		if ( ! variation || ! variation.gtm_item ) {
+			return;
 		}
 
-		this.trackAddToCart( item, el );
+		// A product page only: a variation form elsewhere (a quick view in a
+		// grid) is not the view the event reports as ecomm_pagetype product.
+		if ( ! jQuery( document.body ).hasClass( 'single-product' ) ) {
+			return;
+		}
+
+		setTimeout(
+			function () {
+				if ( ! $elForm.data( 'gtm_variation_changed' ) ) {
+					return;
+				}
+
+				if ( $elForm.data( 'gtm_viewed_variation_id' ) === variation.variation_id ) {
+					return;
+				}
+				$elForm.data( 'gtm_viewed_variation_id', variation.variation_id );
+
+				var item        = Object.assign( {}, variation.gtm_item );
+				var itemVariant = self.getChosenVariant( $elForm );
+				if ( itemVariant ) {
+					item.item_variant = itemVariant;
+				}
+
+				self.pushViewItem( item );
+			},
+			0
+		);
+	},
+
+	/**
+	 * Push view_item, shaped as GTM_Server_Side_Event_ViewItem prints it.
+	 *
+	 * @param object item Item.
+	 */
+	pushViewItem: function ( item ) {
+		var eventData = {
+			'event':          this.getDataLayerEventName( 'view_item' ),
+			'ecomm_pagetype': 'product',
+			'ecommerce': {
+				'currency': varGtmServerSide.currency,
+				'value':    item.price,
+				'items':    [ item ],
+			},
+		};
+
+		if ( varGtmServerSide.user_data ) {
+			eventData.user_data = {};
+			for ( var key in varGtmServerSide.user_data  ) {
+				eventData.user_data[ key ] = varGtmServerSide.user_data[ key ];
+			}
+		}
+
+		if ( 'yes' === varGtmServerSide.is_custom_event_name ) {
+			this._sendStateCartDataAjax( eventData );
+
+			return;
+		}
+
+		this._pushDataLayerEvent( eventData );
 	},
 
 	pushGroupProduct: function ( $elForm, el ) {
@@ -373,11 +527,13 @@ var pluginGtmServerSide = {
 	 * @param object item
 	 */
 	removeFromCart: function ( item ) {
-		item.quantity = item.quantity || 1;
+		item.index    = 1;
+		item.quantity = parseInt( item.quantity, 10 ) || 1;
 		var eventData = {
 			'event': this.getDataLayerEventName( 'remove_from_cart' ),
 			'ecommerce': {
 				'currency': varGtmServerSide.currency,
+				'value': this.getItemValue( item ),
 				'items': [
 					item,
 				],
@@ -397,8 +553,268 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		dataLayer.push( { ecommerce: null } );
-		dataLayer.push( eventData );
+		this._pushDataLayerEvent( eventData );
+	},
+
+	/**
+	 * Watch the Store API for the Cart and Mini-Cart blocks' remove and
+	 * quantity changes.
+	 *
+	 * The blocks post `cart/update-item` and `cart/remove-item` (on their own
+	 * or inside a `batch`) and get the whole cart back. The event is the
+	 * difference between that cart and the one last seen: an increase is an
+	 * add_to_cart, a decrease or a remove is a remove_from_cart, each for the
+	 * quantity that changed. Every cart the page receives, the blocks' own
+	 * cart loads included, replaces the lines last seen, so a line's baseline
+	 * is always what the server last said. A product button posts `add-item`,
+	 * which the click already pushed, so it only refreshes the lines.
+	 */
+	observeStoreApi: function () {
+		var self     = this;
+		var original = window.fetch;
+
+		window.fetch = function ( input, init ) {
+			var promise = original.apply( this, arguments );
+
+			try {
+				self.trackStoreApiCall( input, init, promise );
+			} catch ( e ) {
+				// Tracking must not change what the caller gets back.
+			}
+
+			return promise;
+		};
+	},
+
+	/**
+	 * Read a fetch() call and, once answered, track the cart it returns.
+	 *
+	 * @param mixed input What fetch() was given: a URL or a Request.
+	 * @param object init fetch() options.
+	 * @param Promise promise The caller's response promise, left untouched.
+	 */
+	trackStoreApiCall: function ( input, init, promise ) {
+		var isRequest = input && 'object' === typeof input && 'string' === typeof input.url;
+		var route     = this.getStoreApiRoute( isRequest ? input.url : String( input ) );
+		if ( ! route ) {
+			return;
+		}
+
+		if ( null === this.storeApiCartLines ) {
+			this.storeApiCartLines = this.getPreloadedStoreApiCartLines();
+		}
+
+		var self = this;
+		// Both blocks pass the body as a JSON string in init.
+		var request = {
+			route: route,
+			body: init && 'string' === typeof init.body ? this.parseJson( init.body ) : null,
+		};
+
+		promise.then(
+			function ( response ) {
+				return response.ok ? response.clone().json() : null;
+			}
+		).then(
+			function ( response ) {
+				self.trackStoreApiResponse( request, response );
+			}
+		).catch(
+			function () {
+				// A response that is not JSON, or a failed request: nothing to track.
+			}
+		);
+	},
+
+	/**
+	 * Track a Store API response, or each 2xx sub-response of a batch.
+	 *
+	 * @param object request { route, body }.
+	 * @param object response Decoded response body.
+	 */
+	trackStoreApiResponse: function ( request, response ) {
+		if ( 'batch' !== request.route ) {
+			this.trackStoreApiCart( request, response );
+
+			return;
+		}
+
+		var requests  = ( request.body && request.body.requests ) || [];
+		var responses = ( response && response.responses ) || [];
+		for ( var i = 0; i < requests.length; i++ ) {
+			var sub = responses[ i ];
+			if ( ! sub || sub.status < 200 || sub.status >= 300 ) {
+				continue;
+			}
+
+			this.trackStoreApiCart(
+				{
+					route: this.getStoreApiRoute( requests[ i ].path || '' ),
+					body: requests[ i ].body,
+				},
+				sub.body
+			);
+		}
+	},
+
+	/**
+	 * Push what a cart line change did and remember the cart that came back.
+	 *
+	 * @param object request { route, body }.
+	 * @param object cart Store API cart.
+	 */
+	trackStoreApiCart: function ( request, cart ) {
+		if ( ! cart || ! Array.isArray( cart.items ) ) {
+			return;
+		}
+
+		var key  = request.body && request.body.key;
+		var line = key && this.storeApiCartLines && this.storeApiCartLines[ key ];
+
+		if ( line && 'cart/update-item' === request.route ) {
+			var next     = cart.items.find( function ( cartItem ) {
+				return cartItem.key === key;
+			} );
+			var quantity = next ? parseInt( next.quantity, 10 ) : 0;
+			var delta    = quantity - line.quantity;
+			var item     = Object.assign( {}, line.item );
+
+			if ( delta > 0 ) {
+				item.quantity = delta;
+				this.pushAddToCart( item );
+			} else if ( delta < 0 ) {
+				item.quantity = -delta;
+				this.removeFromCart( item );
+			}
+		} else if ( line && 'cart/remove-item' === request.route ) {
+			var removed = Object.assign( { quantity: line.quantity }, line.item );
+			this.removeFromCart( removed );
+		}
+
+		this.storeApiCartLines = this.getStoreApiCartLines( cart );
+	},
+
+	/**
+	 * An item's price x quantity, formatted as every event's ecommerce.value.
+	 *
+	 * @param object item Item with price and quantity.
+	 * @returns string
+	 */
+	getItemValue: function ( item ) {
+		return ( ( parseFloat( item.price ) || 0 ) * item.quantity ).toFixed( 2 );
+	},
+
+	/**
+	 * The cart the Cart block was rendered with, for a page where no cart
+	 * has been fetched yet: the block hydrates its data store from the page
+	 * instead of loading the cart.
+	 *
+	 * @returns object|null The lines, or null when the page has no such cart.
+	 */
+	getPreloadedStoreApiCartLines: function () {
+		try {
+			var cart = window.wp.data.select( 'wc/store/cart' ).getCartData();
+			if ( ! Array.isArray( cart.items ) || ! cart.items.some( this.hasStoreApiCartItemData ) ) {
+				return null;
+			}
+
+			return this.getStoreApiCartLines( cart );
+		} catch ( e ) {
+			return null;
+		}
+	},
+
+	/**
+	 * The lines of a Store API cart, by cart item key.
+	 *
+	 * @param object cart Store API cart.
+	 * @returns object
+	 */
+	getStoreApiCartLines: function ( cart ) {
+		var lines = {};
+		for ( var cartItem of cart.items ) {
+			if ( ! cartItem.key || ! this.hasStoreApiCartItemData( cartItem ) ) {
+				continue;
+			}
+
+			lines[ cartItem.key ] = {
+				quantity: parseInt( cartItem.quantity, 10 ) || 0,
+				item: this.getStoreApiCartItem( cartItem ),
+			};
+		}
+
+		return lines;
+	},
+
+	/**
+	 * Whether the server put the plugin's item data on a Store API cart item.
+	 *
+	 * @param object cartItem Store API cart item.
+	 * @returns bool
+	 */
+	hasStoreApiCartItemData: function ( cartItem ) {
+		var data = cartItem && cartItem.extensions && cartItem.extensions.gtm_server_side;
+
+		return !! ( data && data.item );
+	},
+
+	/**
+	 * Copy of the item data the server put on a Store API cart item.
+	 *
+	 * The server runs the item through the filters that build the classic
+	 * remove link's data attributes, so its keys are attribute names
+	 * (image-url). They are camel-cased as the browser's dataset does for the
+	 * classic link (imageUrl), to keep the payload identical.
+	 *
+	 * @param object cartItem Store API cart item.
+	 * @returns object
+	 */
+	getStoreApiCartItem: function ( cartItem ) {
+		var data = cartItem.extensions.gtm_server_side.item;
+		var item = {};
+		for ( var key in data ) {
+			item[ key.replace( /-([a-z])/g, function ( m, c ) {
+				return c.toUpperCase();
+			} ) ] = data[ key ];
+		}
+
+		return item;
+	},
+
+	/**
+	 * The Store API route of a URL, without its version: `cart/update-item`,
+	 * `batch`. Covers pretty permalinks and the `rest_route` query of plain
+	 * ones.
+	 *
+	 * @param string url URL or path.
+	 * @returns string|null null for a URL outside the Store API.
+	 */
+	getStoreApiRoute: function ( url ) {
+		var path;
+		try {
+			var parsed = new URL( url, window.location.href );
+			path       = parsed.searchParams.get( 'rest_route' ) || parsed.pathname;
+		} catch ( e ) {
+			return null;
+		}
+
+		var match = /\/wc\/store(?:\/v\d+)?\/(.+?)\/?$/.exec( path );
+
+		return match ? match[1] : null;
+	},
+
+	/**
+	 * Decode JSON, or null when it is not JSON.
+	 *
+	 * @param string text JSON text.
+	 * @returns mixed
+	 */
+	parseJson: function ( text ) {
+		try {
+			return JSON.parse( text );
+		} catch ( e ) {
+			return null;
+		}
 	},
 
 	/**
@@ -595,12 +1011,26 @@ var pluginGtmServerSide = {
 			return;
 		}
 
-		dataLayer.push( { ecommerce: null } );
-		dataLayer.push( eventData );
+		this._pushDataLayerEvent( eventData );
 
 		if ( onPushed ) {
 			onPushed();
 		}
+	},
+
+	/**
+	 * Push a data layer event, after clearing the previous ecommerce object.
+	 *
+	 * Only a GTM snippet creates dataLayer, and none is printed with placement
+	 * "Disable" or for an excluded role, so the push creates it if missing: a
+	 * GTM loaded later reads what is already there.
+	 *
+	 * @param object eventData Event.
+	 */
+	_pushDataLayerEvent: function ( eventData ) {
+		window.dataLayer = window.dataLayer || [];
+		window.dataLayer.push( { ecommerce: null } );
+		window.dataLayer.push( eventData );
 	},
 
 	/**
@@ -635,8 +1065,7 @@ var pluginGtmServerSide = {
 					eventData['cart_state'] = response.data;
 				}
 
-				dataLayer.push( { ecommerce: null } );
-				dataLayer.push( eventData );
+				pluginGtmServerSide._pushDataLayerEvent( eventData );
 
 				if ( onPushed ) {
 					onPushed();
@@ -694,3 +1123,11 @@ var pluginGtmServerSide = {
 		);
 	}
 };
+
+/**
+ * Cart and Mini-Cart blocks: they render no remove link and post their changes
+ * to the Store API, so the cart they get back is the only signal. Watched from
+ * here, not on ready: the Mini-Cart is a script module, which runs before
+ * ready and loads the cart as it starts, and that load is the first baseline.
+ */
+pluginGtmServerSide.observeStoreApi();

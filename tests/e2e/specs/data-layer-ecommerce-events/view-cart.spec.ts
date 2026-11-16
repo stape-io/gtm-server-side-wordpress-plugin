@@ -1,4 +1,36 @@
 import { expect, test } from '../../fixtures';
+import { expectedEcommerce, expectedItem, withoutCartState } from '../../data-layer/expected';
+
+test( 'The cart page pushes view_cart listing every cart line with its quantity, with value and cart_total = cart total @Ta58d5065', async ( {
+	cartPage,
+	dataLayer,
+	homePage,
+	product,
+	saleProduct,
+} ) => {
+	await homePage.addToCart( saleProduct, 4 );
+	await homePage.addToCart( product, 2 );
+
+	await cartPage.goto();
+	const viewCart = await dataLayer.expectPushedOnce( 'view_cart' );
+
+	expect( withoutCartState( viewCart ) ).toEqual( {
+		// Spelled out rather than resolved, so a dropped suffix fails here.
+		event: 'view_cart_stape',
+		ecomm_pagetype: 'basket',
+		// Not covered here: its own case pins it to the number of lines.
+		cart_quantity: expect.any( Number ),
+		// Pinned rather than computed: 4 x 35.00 + 2 x 20.00.
+		cart_total: '180.00',
+		ecommerce: {
+			...expectedEcommerce( [
+				expectedItem( saleProduct, { quantity: 4, index: 1 } ),
+				expectedItem( product, { quantity: 2, index: 2 } ),
+			] ),
+			value: '180.00',
+		},
+	} );
+} );
 
 test( 'view_cart cart_quantity is the number of lines, not units @T2c541fc7', async ( {
 	cartPage,
@@ -81,4 +113,34 @@ test( 'view_cart cart_total includes tax when prices are entered inclusive of ta
 	expect( viewCart.event ).toBe( 'view_cart_stape' );
 	// Gross, not the 16.00 net.
 	expect( viewCart.cart_total ).toBe( '20.00' );
+} );
+
+test( 'view_cart item_variant for a variation added with an "Any" attribute includes the chosen value @Ta97f8897', async ( {
+	cartPage,
+	catalog,
+	category,
+	dataLayer,
+	productPage,
+} ) => {
+	const variableProduct = await catalog.createProduct( category, { type: 'variable' } );
+	// Red comes first and sets no Size, so the shopper picks one (see VARIATIONS in api/products.ts).
+	const [ red ] = variableProduct.variations;
+	await productPage.goto( variableProduct );
+	await productPage.chooseOptions( { Color: 'Red', Size: 'M' } );
+	await productPage.addToCart();
+
+	await cartPage.goto();
+	const viewCart = await dataLayer.expectPushedOnce( 'view_cart' );
+
+	expect( viewCart.event ).toBe( 'view_cart_stape' );
+	expect( viewCart.ecommerce?.items ).toEqual( [
+		expect.objectContaining( {
+			// The M comes from what the shopper chose: the variation itself says only Red.
+			item_variant: 'Red,M',
+			item_id: String( red.id ),
+			item_sku: red.sku,
+			price: '30.00',
+			quantity: 1,
+		} ),
+	] );
 } );
