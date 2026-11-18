@@ -1,12 +1,12 @@
 <?php
 /**
  * Plugin Name:       GTM Server Side e2e site state
- * Description:       Test-only. Reads and puts back the site-wide state a serial e2e test may change, for the siteState fixture. Works on a local environment only.
+ * Description:       Test-only. Reads and puts back the site-wide state an exclusive e2e test may change, for the siteState fixture. Works on a local environment only.
  * Version:           1.0.0
  * Requires PHP:      7.4
  * Author:            Stape
  *
- * A serial test changes what every page reads: it saves a settings tab in
+ * An exclusive test changes what every page reads: it saves a settings tab in
  * wp-admin, runs cron, deactivates a plugin. The siteState fixture reads the
  * state below before such a test and puts it back after it, over REST, as an
  * administrator.

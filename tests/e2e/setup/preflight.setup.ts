@@ -1,14 +1,18 @@
 import { test as preflight, expect } from '@wordpress/e2e-test-utils-playwright';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT as FIX } from '../api/plugins';
 import { purgeTestCoupons } from '../api/coupons';
+import { purgeLoaderCaches } from '../api/loader-cache';
+import { purgeOutgoingHttp } from '../api/outgoing-http';
 import { purgeTestAccounts } from '../api/customers';
 import { purgeTestOrders } from '../api/orders';
 import { purgeTestPages } from '../api/pages';
 import { purgeTestCatalog } from '../api/products';
+import { readStoredOption } from '../api/site-state';
 import { purgeTestTaxRates } from '../api/taxes';
 import { STORE_CURRENCY } from '../data-layer/expected';
 import type { PluginConfig } from '../types/plugin-config';
 import {
+	ARRAY_STORE_OPTIONS,
 	STORE_OPTIONS,
 	STORE_OPTIONS_COOKIE,
 	STORE_OPTIONS_HEADER,
@@ -27,10 +31,10 @@ import {
  * and pluginDir fixtures first, which would fail before any of the checks below
  * ran and hide what they would have said.
  *
- * Also removes the products, pages, coupons, tax rates, guest orders and
- * registered accounts killed runs left behind, and records the WordPress,
- * WooCommerce and theme versions on the test, so a report says what it ran
- * against.
+ * Also removes the products, pages, coupons, tax rates, guest orders,
+ * registered accounts, isolated loader caches and recorded outgoing requests
+ * killed runs left behind, and records the WordPress, WooCommerce and theme
+ * versions on the test, so a report says what it ran against.
  */
 
 const THEME = 'twentytwentyfive';
@@ -47,6 +51,8 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	await purgeTestTaxRates( requestUtils );
 	await purgeTestOrders( requestUtils );
 	await purgeTestAccounts( requestUtils );
+	await purgeLoaderCaches( page.request );
+	await purgeOutgoingHttp( requestUtils );
 
 	const plugins = await getInstalledPlugins( requestUtils );
 	const woocommerce = plugins.find( ( p ) => p.textdomain === 'woocommerce' );
@@ -59,10 +65,13 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	// overrides nothing off a local environment, nor an option missing from its
 	// own list. Ask it to override every STORE_OPTIONS key and read back which
 	// ones it did.
-	// Any value will do: the header only names the options overridden, and
-	// the probe renders no page with them.
+	// Any value of the option's type will do: the header only names the
+	// options overridden, and the probe renders no page with them.
 	const everyOption = Object.fromEntries(
-		Object.keys( STORE_OPTIONS ).map( ( key ) => [ key, 'yes' ] )
+		Object.keys( STORE_OPTIONS ).map( ( key ) => [
+			key,
+			ARRAY_STORE_OPTIONS.includes( key as keyof typeof STORE_OPTIONS ) ? [ 'yes' ] : 'yes',
+		] )
 	) as StoreOptions;
 	const probe = await page.request.get( STORE_OPTIONS_PROBE, {
 		headers: { Cookie: `${ STORE_OPTIONS_COOKIE }=${ storeOptionsCookieValue( everyOption ) }` },
@@ -161,7 +170,24 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 	} );
 	expect( theme?.stylesheet, `Page objects are written against ${ THEME }. ${ FIX }` ).toBe( THEME );
 
-	await page.goto( '/shop/' );
+	const shop = await page.goto( '/shop/' );
+	// The GTM snippet specs assume the baseline placement and container: the
+	// default snippet, loading GTM-TESTID from Google. Any of the sGTM URL,
+	// Stape container identifier, Cookie Keeper or a stored API loader would
+	// print another one.
+	const shopSource = ( await shop?.text() ) ?? '';
+	expect(
+		shopSource,
+		`/shop/ doesn't print the default GTM snippet: gtm_server_side_placement is not "code", or an sGTM URL, Stape container identifier, Cookie Keeper or API loader is stored. ${ FIX }`
+	).toContain( "'https://www.googletagmanager.com/gtm.js?id='+i+dl" );
+	expect(
+		shopSource,
+		`/shop/ prints the consent script: gtm_server_side_placement is "gtm_consent", not "code". ${ FIX }`
+	).not.toContain( 'custom-loader' );
+	expect(
+		shopSource,
+		`The GTM snippet doesn't load GTM-TESTID: gtm_server_side_web_container_id is not "GTM-TESTID". ${ FIX }`
+	).toContain( "(window,document,'script','dataLayer','GTM-TESTID');</script>" );
 	const config = await page.evaluate(
 		() => ( window as unknown as { varGtmServerSide?: PluginConfig } ).varGtmServerSide
 	);
@@ -183,6 +209,18 @@ preflight( 'Store is configured the way the specs assume @T2384d6d6', async ( { 
 		config?.user_data,
 		`gtm_server_side_data_layer_user_data is on in the database. ${ FIX }`
 	).toBeUndefined();
+
+	// The General tab validation specs start with no excluded roles: the role
+	// list hidden, none of its roles ticked. Missing or empty, as a store
+	// whose General tab was saved without them keeps them.
+	expect(
+		( await readStoredOption( requestUtils, 'gtm_server_side_gtm_exclude_roles' ) ) ?? '',
+		`"Exclude GTM for user roles" (gtm_server_side_gtm_exclude_roles) is on in the database. ${ FIX }`
+	).toBe( '' );
+	expect(
+		[ '', 'a:0:{}' ],
+		`Roles are excluded in the database (gtm_server_side_gtm_exclude_list_roles). ${ FIX }`
+	).toContain( ( await readStoredOption( requestUtils, 'gtm_server_side_gtm_exclude_list_roles' ) ) ?? '' );
 
 	// eslint-disable-next-line playwright/no-raw-locators -- a <meta> tag has no role or text to find it by.
 	const wordpress = await page

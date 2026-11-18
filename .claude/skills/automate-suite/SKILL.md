@@ -28,7 +28,8 @@ before step 1; this skill is the procedure and doesn't repeat them.
    `CMS / WordPress`). If its title matches more than one suite, ask which.
 2. Read every case of the suite from Testomat, in full. Testomat is the only
    source: don't use local drafts or copies of the cases.
-3. Take the cases with state `manual` and without the `known-defect` tag.
+3. Take the cases with state `manual` and without the `known-defect` or
+   `open-question` tag.
    List the others with the reason they are skipped.
 4. For each case taken, write:
    - the test title: the case title, then ` @T<id>`;

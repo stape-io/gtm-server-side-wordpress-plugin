@@ -1,9 +1,10 @@
 import { expect, test } from '../../fixtures';
+import { EXCLUSIVE } from '../../fixtures/exclusive';
 
 // Deactivating the plugin and saving its settings change every page, so these
-// run in the serial project, where siteState puts the store back afterwards.
+// are exclusive tests, which siteState puts the store back after.
 
-test( 'Activating the plugin on a site that never had it turns "Decorate dataLayer event name" on @Tcc91bba8', { tag: '@serial' }, async ( {
+test( 'Activating the plugin on a site that never had it turns "Decorate dataLayer event name" on @Tcc91bba8', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	pluginsPage,
 	deleteStoredOption,
@@ -27,7 +28,7 @@ test( 'Activating the plugin on a site that never had it turns "Decorate dataLay
 	expect( events ).toEqual( [ 'view_item_stape' ] );
 } );
 
-test( 'Deactivating and activating the plugin keeps "Decorate dataLayer event name" off when the admin turned it off @Tb7624501', { tag: '@serial' }, async ( {
+test( 'Deactivating and activating the plugin keeps "Decorate dataLayer event name" off when the admin turned it off @Tb7624501', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,
 	pluginsPage,
@@ -38,7 +39,7 @@ test( 'Deactivating and activating the plugin keeps "Decorate dataLayer event na
 	await loginAsAdmin();
 	await adminSettingsPage.goto( 'data-layer' );
 	await adminSettingsPage.decorateEventNameCheckbox.uncheck();
-	await adminSettingsPage.saveChanges();
+	await adminSettingsPage.save();
 	await expect( adminSettingsPage.savedNotice ).toBeVisible();
 
 	await pluginsPage.goto();

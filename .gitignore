@@ -10,7 +10,5 @@ composer.lock
 # Playwright output; paths are pinned in playwright.config.ts.
 /tests/e2e/artifacts/
 /tests/e2e/test-results/
-/tests/e2e/test-results-serial/
 /tests/e2e/playwright-report/
-/tests/e2e/playwright-report-serial/
 /tests/e2e/blob-report/

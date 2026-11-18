@@ -1,7 +1,7 @@
 import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 
 /**
- * The site-wide state a serial test may change, read and put back through
+ * The site-wide state an exclusive test may change, read and put back through
  * mu-plugins/site-state.php: the plugin's options and transients, the rewrite
  * rules, the active plugins and the plugin's cron events. The siteState
  * fixture hands it back unchanged; readStoredOption() reads one option's
@@ -50,7 +50,7 @@ export function restoreSiteState( requestUtils: RequestUtils, state: SiteState )
 /**
  * Deletes one of the plugin's options from the database, as `wp option
  * delete` does: no delete_option hook runs. Changes what every page reads, so
- * for serial tests only, whose siteState puts it back.
+ * for exclusive tests only, whose siteState puts it back.
  */
 export async function deleteStoredOption( requestUtils: RequestUtils, name: PluginOptionName ): Promise< void > {
 	const { options, cron } = await readSiteState( requestUtils );

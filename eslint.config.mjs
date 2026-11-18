@@ -82,6 +82,13 @@ export default tseslint.config(
 					selector: "CallExpression[callee.object.name='test'][callee.property.name='step']",
 					message: 'Specs do not use test.step: one test per Testomat case, read top to bottom.',
 				},
+				{
+					// A test with the tag but not the lock would save settings next
+					// to the others; one with the lock but not the tag would get no
+					// siteState restore. EXCLUSIVE carries both.
+					selector: "Literal[value='@exclusive'], Literal[value='-exclusive-']",
+					message: 'Mark an exclusive test with EXCLUSIVE from tests/e2e/fixtures/exclusive.ts: it carries the tag and the lock together.',
+				},
 			],
 		},
 	}

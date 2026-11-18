@@ -152,7 +152,8 @@ export class DataLayer {
 
 	/**
 	 * Every entry pushed so far, in order: for a case about what comes before
-	 * what (login_state ahead of the GTM snippet's `gtm.js`). A snapshot.
+	 * what (login_state ahead of the GTM snippet's `gtm.js`, the snippet's
+	 * `gtm.start` first). A snapshot, like entriesWith().
 	 */
 	async entries(): Promise< DataLayerEvent[] > {
 		return this.page.evaluate(
