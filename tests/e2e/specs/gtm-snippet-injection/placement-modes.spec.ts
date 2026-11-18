@@ -44,7 +44,11 @@ test( '"Add web GTM script onto every page" prints the default GTM snippet exact
 
 	const gtmStart = await dataLayer.entriesWith( 'gtm.start' );
 	expect( gtmStart ).toEqual( [ { 'gtm.start': expect.any( Number ), event: 'gtm.js' } ] );
-	expect( ( await dataLayer.entries() )[ 0 ] ).toEqual( gtmStart[ 0 ] );
+	// login_state comes first, printed ahead of every loader (DEV-12488); the
+	// snippet's push is the very next entry.
+	const [ first, second ] = await dataLayer.entries();
+	expect( first ).toEqual( { login_state: 'logged-out' } );
+	expect( second ).toEqual( gtmStart[ 0 ] );
 
 	await phpErrors.expectNone();
 } );
