@@ -3,7 +3,7 @@ Contributors: gtmserver,bukashk0zzz
 Tags: google tag manager, google tag manager server side, gtm, gtm server side, tag manager, tagmanager, analytics, google, serverside, server-side, gtag
 Requires at least: 5.2.0
 Tested up to: 7.1.0
-Stable tag: 2.3.11
+Stable tag: 2.3.12
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,23 @@ Yes. <a href="https://stape.io/blog/how-to-set-up-facebook-conversion-api">How t
 4. Menu item in the settings panel.
 
 == Changelog ==
+
+= 2.3.12 =
+* New: a view_item event is pushed when the shopper picks a variation on a variable product page, with the chosen variation as the item.
+* New: login_state is added to the data layer on every page.
+* New: the Cart and Mini-Cart blocks now send remove_from_cart, and add_to_cart / remove_from_cart on quantity changes, with ecommerce.value.
+* New: view_cart sends the cart total as ecommerce.value. cart_total and cart_state are unchanged.
+* Fixed new_customer being true for every guest purchase. A guest with an earlier order under the same billing email is now reported as a returning customer, in both the data layer and the purchase webhook.
+* Fixed remove_from_cart in the classic cart sending item_id as a number and no ecommerce.value.
+* Fixed item_variant being blank for a variation added with an "Any" attribute in view_cart, begin_checkout and purchase. It now reports the value the shopper chose.
+* Fixed add_to_cart reporting the parent product instead of the chosen variation when a theme or plugin adds a variable product over AJAX.
+* Fixed add_to_cart being sent twice on themes that add to cart over AJAX by posting the product form to the product page, such as Blocksy.
+* Fixed add_to_cart not being sent from the product page when a side-cart plugin, such as FunnelKit Cart, replaces WooCommerce's add to cart with its own AJAX handler.
+* Fixed data layer events throwing "dataLayer is not defined" when no GTM snippet is printed (placement "Disable", excluded roles). The plugin now creates dataLayer before its pushes, so with placement "Disable" a GTM container loaded later receives these events, and their counts go up.
+* Fixed sign_up being lost after registration on wp-login.php. It is now pushed on the first storefront page after registering.
+* Fixed "Load GTM with consent" not loading GTM for returning visitors who had already consented when the consent tool restores stored consent early (e.g. CookieYes). GTM now loads by the latest consent state.
+* Fixed "Load GTM with consent" saving an empty Web GTM ID. The ID is now required for this placement; a store that saved it empty must enter it on its next save.
+* Fixed "Decorate dataLayer event name" turning back on after the plugin is deactivated and reactivated. Saved settings are kept.
 
 = 2.3.11 =
 * Security: hardened the same-origin proxy so it only forwards requests to the configured Stape container. Thanks to Joep van Antwerpen for the responsible disclosure, coordinated by WPScan.

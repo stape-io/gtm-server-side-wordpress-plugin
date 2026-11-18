@@ -7,18 +7,22 @@ import { AdminSettingsPage } from '../pages/admin-settings-page';
 import { CartPage } from '../pages/cart-page';
 import { CategoryPage } from '../pages/category-page';
 import { CheckoutPage } from '../pages/checkout-page';
+import { GtmLoader } from '../pages/gtm-loader';
 import { ClassicCartPage } from '../pages/classic-cart-page';
 import { ContentPage } from '../pages/content-page';
 import { HomePage } from '../pages/home-page';
+import { MiniCart } from '../pages/mini-cart';
 import { MyAccountPage } from '../pages/my-account-page';
 import { ClassicLoopPage } from '../pages/classic-loop-page';
 import { CART_STATE_ACTION } from '../pages/product-listing';
 import { OrderReceivedPage } from '../pages/order-received-page';
+import { PluginsPage } from '../pages/plugins-page';
 import { ProductPage } from '../pages/product-page';
 import { ProductSearchPage } from '../pages/product-search-page';
 import { ProductTagPage } from '../pages/product-tag-page';
 import { ShopPage } from '../pages/shop-page';
 import { StorefrontPage } from '../pages/storefront-page';
+import { WpLoginPage } from '../pages/wp-login-page';
 import { findThisPlugin, getInstalledPlugins, RECREATE_ENVIRONMENT } from '../api/plugins';
 import {
 	createCategory,
@@ -39,18 +43,26 @@ import {
 	buildGuestBuyer,
 	buildNewCustomer,
 	createCustomer,
+	createUser,
 	deleteAccount,
 	deleteAccountsOf,
 	findAccountId,
 	type BillingDetails,
 	type CreatedCustomer,
 	type CustomerOptions,
+	type CreatedUser,
 	type NewCustomer,
 } from '../api/customers';
 import { deleteOrder, deleteOrdersOf, deleteOrdersOfCustomer, setOrderStatus } from '../api/orders';
 import { clearLoaderCache, LOADER_CACHE_COOKIE, readLoaderCache, type LoaderCacheValues } from '../api/loader-cache';
 import { deleteOutgoingHttp, OUTGOING_HTTP_COOKIE, readOutgoingHttp, type OutgoingRequest } from '../api/outgoing-http';
-import { readSiteState, readStoredOption, restoreSiteState, type PluginOptionName } from '../api/site-state';
+import {
+	deleteStoredOption,
+	readSiteState,
+	readStoredOption,
+	restoreSiteState,
+	type PluginOptionName,
+} from '../api/site-state';
 import { createCoupon, deleteCoupon, type CreatedCoupon } from '../api/coupons';
 import { createTaxRate, deleteTaxRate, type CreatedTaxRate, type TaxRateOptions } from '../api/taxes';
 import { STORE_OPTIONS_COOKIE, storeOptionsCookieValue, type StoreOptions } from './store-options';
@@ -67,6 +79,7 @@ const FLAT_RATE_COOKIE = 'gtm_e2e_flat_rate';
 const CONFIRMATION_PAGE_COOKIE = 'gtm_e2e_order_confirmation_page';
 const NO_EMAIL_VERIFICATION_GRACE_COOKIE = 'gtm_e2e_no_email_verification_grace';
 const CONSENT_PLATFORM_COOKIE = 'gtm_e2e_consent_platform';
+const CMP_STAND_IN_COOKIE = 'gtm_e2e_cmp_stand_in';
 
 /**
  * Whether a request belongs to the plugin: its own assets, or the admin-ajax
@@ -132,6 +145,11 @@ type Catalog = {
 	 * every order it placed, whatever email the checkout gave them.
 	 */
 	createCustomer: ( options?: CustomerOptions ) => Promise< CreatedCustomer >;
+	/**
+	 * A throwaway user with one role (`editor`, say), for a case about staff,
+	 * who log in on wp-login.php (wpLoginPage.logIn()). Deleted after the test.
+	 */
+	createUser: ( role: string ) => Promise< CreatedUser >;
 };
 
 type OptionWrites = {
@@ -184,6 +202,13 @@ type TestPlugins = {
 	 * ad_storage and analytics_storage, then an update denying both.
 	 */
 	consentPlatform: ( choice: 'granted-then-denied' ) => Promise< void >;
+	/**
+	 * Plays a consent platform restoring the visitor's stored choice in
+	 * wp_head, before the plugin's consent script (cmp-stand-in.php): a
+	 * `granted` analytics_storage default, or a `granted-denied` default
+	 * grant followed by an update denying both storages.
+	 */
+	cmpStandIn: ( choice: 'granted' | 'granted-denied' ) => Promise< void >;
 };
 
 /** Orders the guestBuyer fixture doesn't clean up, and what a case does to them as the store admin. */
@@ -260,14 +285,19 @@ type ShopFixtures = {
 	classicLoopPage: ClassicLoopPage;
 	classicCartPage: ClassicCartPage;
 	homePage: HomePage;
+	/** The GTM snippet behind the consent gate, and the gtm.js requests the page made since the test began. */
+	gtmLoader: GtmLoader;
+	miniCart: MiniCart;
 	myAccountPage: MyAccountPage;
 	shopPage: ShopPage;
 	contentPage: ContentPage;
 	adminNewOrderPage: AdminNewOrderPage;
 	adminSettingsPage: AdminSettingsPage;
+	pluginsPage: PluginsPage;
 	productTagPage: ProductTagPage;
 	productSearchPage: ProductSearchPage;
 	storefrontPage: StorefrontPage;
+	wpLoginPage: WpLoginPage;
 	/**
 	 * Overrides store settings for this test's browser only (see
 	 * ./store-options.ts). Call it before the first page load; a later call
@@ -370,6 +400,11 @@ type ShopFixtures = {
 	 * other test changes none of it, so it does nothing there.
 	 */
 	siteState: void;
+	/**
+	 * A case's `wp option delete` for one of the plugin's options. Exclusive
+	 * tests only: it changes what every page reads, and siteState puts it back.
+	 */
+	deleteStoredOption: ( name: PluginOptionName ) => Promise< void >;
 	/**
 	 * Option: uncaught errors pageErrors lets through, set with `test.use()` for
 	 * a case that lists a known defect's error under "Not covered here". Only
@@ -476,6 +511,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 		},
 		{ auto: true },
 	],
+	deleteStoredOption: async ( { requestUtils }, use, testInfo ) => {
+		await use( async ( name ) => {
+			expect( testInfo.tags, 'deleteStoredOption() in a test without EXCLUSIVE' ).toContain( EXCLUSIVE.tag );
+			await deleteStoredOption( requestUtils, name );
+		} );
+	},
 	dataLayer: async ( { page }, use ) => {
 		await use( new DataLayer( page ) );
 	},
@@ -503,6 +544,12 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	homePage: async ( { page }, use ) => {
 		await use( new HomePage( page ) );
 	},
+	gtmLoader: async ( { page }, use ) => {
+		await use( new GtmLoader( page ) );
+	},
+	miniCart: async ( { page }, use ) => {
+		await use( new MiniCart( page ) );
+	},
 	myAccountPage: async ( { page }, use ) => {
 		await use( new MyAccountPage( page ) );
 	},
@@ -518,6 +565,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 	adminSettingsPage: async ( { page }, use, testInfo ) => {
 		await use( new AdminSettingsPage( page, testInfo.tags.includes( EXCLUSIVE.tag ) ) );
 	},
+	pluginsPage: async ( { page }, use ) => {
+		await use( new PluginsPage( page ) );
+	},
 	productTagPage: async ( { page }, use ) => {
 		await use( new ProductTagPage( page ) );
 	},
@@ -529,6 +579,9 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			throw new Error( 'storefrontPage needs baseURL, which playwright.config.ts sets from WP_BASE_URL.' );
 		}
 		await use( new StorefrontPage( page, baseURL ) );
+	},
+	wpLoginPage: async ( { page }, use ) => {
+		await use( new WpLoginPage( page ) );
 	},
 	storeOptions: async ( { page, baseURL }, use ) => {
 		let options: StoreOptions = {};
@@ -547,6 +600,7 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 			markOrderConfirmationPage: ( created ) => setCookie( CONFIRMATION_PAGE_COOKIE, String( created.id ) ),
 			endEmailVerificationGrace: () => setCookie( NO_EMAIL_VERIFICATION_GRACE_COOKIE, '1' ),
 			consentPlatform: ( choice ) => setCookie( CONSENT_PLATFORM_COOKIE, choice ),
+			cmpStandIn: ( choice ) => setCookie( CMP_STAND_IN_COOKIE, choice ),
 		} );
 	},
 	newSession: async ( { page }, use ) => {
@@ -721,6 +775,11 @@ export const test = base.extend< ShopFixtures, WorkerFixtures >( {
 					await deleteOrdersOfCustomer( requestUtils, created.id );
 					await deleteAccount( requestUtils, created.id );
 				} );
+				return created;
+			},
+			createUser: async ( role ) => {
+				const created = await createUser( requestUtils, role );
+				deletions.push( () => deleteAccount( requestUtils, created.id ) );
 				return created;
 			},
 		} );

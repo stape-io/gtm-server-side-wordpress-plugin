@@ -8,48 +8,37 @@ const EXCLUDE_EDITORS = { excludeRoles: 'yes' as const, excludedRoles: [ 'editor
 const SBP_SET =
 	/^_sbp=[0-9a-f]{32}; expires=(\w{3}, \d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2}) GMT; Max-Age=63072000; path=\/; domain=\.localhost; secure; SameSite=lax$/;
 
-/**
- * Without a snippet nothing creates window.dataLayer, so the plugin's
- * server-rendered pushes throw for an excluded user. The cases list that under
- * "Not covered here"; the known-defect case 0e751329 is about it.
- */
-const DEV_12902 = [ { message: 'dataLayer is not defined', ticket: 'DEV-12902' } ];
-
 const TWO_YEARS_MS = 63072000 * 1000;
 /** Slack for the clocks of the test and the server, and the request's own time. */
 const CLOCK_SLACK_MS = 60 * 1000;
 
-test.describe( () => {
-	test.use( { knownPageErrors: DEV_12902 } );
+test( 'A logged-in user with an excluded role gets no GTM snippet @Tbf7fbd2b', async ( {
+	product,
+	catalog,
+	storeOptions,
+	myAccountPage,
+	storefrontPage,
+} ) => {
+	await storeOptions( EXCLUDE_EDITORS );
+	const editor = await catalog.createCustomer( { roles: [ 'editor' ] } );
+	await myAccountPage.goto();
+	await myAccountPage.logIn( editor );
 
-	test( 'A logged-in user with an excluded role gets no GTM snippet @Tbf7fbd2b', async ( {
-		product,
-		catalog,
-		storeOptions,
-		myAccountPage,
-		storefrontPage,
-	} ) => {
-		await storeOptions( EXCLUDE_EDITORS );
-		const editor = await catalog.createCustomer( { roles: [ 'editor' ] } );
-		await myAccountPage.goto();
-		await myAccountPage.logIn( editor );
+	await storefrontPage.goto( product.permalink );
+	let source = await storefrontPage.source();
+	// A page that broke prints no snippet either: the plugin's footer
+	// config shows it rendered to the end.
+	expect( source ).toContain( 'varGtmServerSide' );
+	expect( source ).not.toContain( GTM_START );
+	expect( source ).not.toContain( CONSENT_SCRIPT );
+	expect( storefrontPage.requestedUrls( 'gtm.js' ) ).toEqual( [] );
 
-		await storefrontPage.goto( product.permalink );
-		let source = await storefrontPage.source();
-		// A page that broke prints no snippet either: the plugin's footer
-		// config shows it rendered to the end.
-		expect( source ).toContain( 'varGtmServerSide' );
-		expect( source ).not.toContain( GTM_START );
-		expect( source ).not.toContain( CONSENT_SCRIPT );
-		expect( storefrontPage.requestedUrls( 'gtm.js' ) ).toEqual( [] );
-
-		await storeOptions( { placement: 'gtm_consent' } );
-		await storefrontPage.goto( product.permalink );
-		source = await storefrontPage.source();
-		expect( source ).toContain( 'varGtmServerSide' );
-		expect( source ).not.toContain( GTM_START );
-		expect( source ).not.toContain( CONSENT_SCRIPT );
-	} );
+	await storeOptions( { placement: 'gtm_consent' } );
+	await storefrontPage.goto( product.permalink );
+	source = await storefrontPage.source();
+	expect( source ).toContain( 'varGtmServerSide' );
+	expect( source ).not.toContain( GTM_START );
+	expect( source ).not.toContain( CONSENT_SCRIPT );
 } );
 
 test( 'Guests and logged-in users without an excluded role still get the snippet @Tb86538dd', async ( {
@@ -82,26 +71,22 @@ test( 'Guests and logged-in users without an excluded role still get the snippet
 	expect( ( await storefrontPage.source() ).split( GTM_START ), 'GTM blocks for the admin' ).toHaveLength( 2 );
 } );
 
-test.describe( () => {
-	test.use( { knownPageErrors: DEV_12902 } );
+test( 'A user with several roles is excluded when any of them is excluded @T3c4935b8', async ( {
+	product,
+	catalog,
+	storeOptions,
+	myAccountPage,
+	storefrontPage,
+} ) => {
+	await storeOptions( EXCLUDE_EDITORS );
+	const multi = await catalog.createCustomer( { roles: [ 'customer', 'editor' ] } );
+	await myAccountPage.goto();
+	await myAccountPage.logIn( multi );
 
-	test( 'A user with several roles is excluded when any of them is excluded @T3c4935b8', async ( {
-		product,
-		catalog,
-		storeOptions,
-		myAccountPage,
-		storefrontPage,
-	} ) => {
-		await storeOptions( EXCLUDE_EDITORS );
-		const multi = await catalog.createCustomer( { roles: [ 'customer', 'editor' ] } );
-		await myAccountPage.goto();
-		await myAccountPage.logIn( multi );
-
-		await storefrontPage.goto( product.permalink );
-		const source = await storefrontPage.source();
-		expect( source ).toContain( 'varGtmServerSide' );
-		expect( source ).not.toContain( GTM_START );
-	} );
+	await storefrontPage.goto( product.permalink );
+	const source = await storefrontPage.source();
+	expect( source ).toContain( 'varGtmServerSide' );
+	expect( source ).not.toContain( GTM_START );
 } );
 
 test( 'With "Exclude GTM for user roles" unchecked, a user with a listed role gets the snippet @T0e9915b4', async ( {
@@ -120,52 +105,99 @@ test( 'With "Exclude GTM for user roles" unchecked, a user with a listed role ge
 	expect( ( await storefrontPage.source() ).split( GTM_START ) ).toHaveLength( 2 );
 } );
 
-test.describe( () => {
-	test.use( { knownPageErrors: DEV_12902 } );
+test( 'An excluded user gets no JS error from the server-rendered data layer events @T0e751329', async ( {
+	storeOptions,
+	catalog,
+	wpLoginPage,
+	productPage,
+	homePage,
+	dataLayer,
+	product,
+} ) => {
+	await storeOptions( EXCLUDE_EDITORS );
+	const editor = await catalog.createUser( 'editor' );
 
-	test( 'An excluded user still receives the `_sbp` Cookie Keeper cookie @Tfefbbf9f', async ( {
-		product,
-		catalog,
-		loaderCache,
-		storeOptions,
-		newSession,
-		myAccountPage,
-		storefrontPage,
-	} ) => {
-		const settings = {
-			...EXCLUDE_EDITORS,
-			webContainerUrl: 'https://sgtm.example.test',
-			webIdentifier: 'abcdefgh',
-		};
-		await loaderCache.isolate();
-		await storeOptions( settings );
-		const editor = await catalog.createCustomer( { roles: [ 'editor' ] } );
-		// Logged in before Cookie Keeper is on, as in the case: with it on, the
-		// login response would already set `_sbp`.
-		await myAccountPage.goto();
-		await myAccountPage.logIn( editor );
-		expect( await storefrontPage.cookie( '_sbp' ) ).toBeUndefined();
+	await wpLoginPage.goto();
+	await wpLoginPage.logIn( editor );
 
-		await storeOptions( { cookieKeeper: 'yes' } );
-		const sent = Date.now();
-		await storefrontPage.goto( product.permalink );
-		const received = Date.now();
-		const headers = await storefrontPage.setCookieHeaders( '_sbp' );
-		expect( headers ).toHaveLength( 1 );
-		expect( headers[ 0 ] ).toMatch( SBP_SET );
-		const [ , expires ] = headers[ 0 ].match( SBP_SET ) ?? [];
-		const sentExpiry = Date.parse( `${ expires } GMT` );
-		expect( sentExpiry ).toBeGreaterThan( sent + TWO_YEARS_MS - CLOCK_SLACK_MS );
-		expect( sentExpiry ).toBeLessThan( received + TWO_YEARS_MS + CLOCK_SLACK_MS );
+	// The pageErrors fixture fails the test on the plugin's JS errors. The
+	// case doesn't cover whether an excluded user should get the events; the
+	// pushes are awaited only to show the inline scripts ran on each page.
+	await productPage.goto( product );
+	await dataLayer.expectPushedOnce( 'view_item' );
 
-		await newSession();
-		await loaderCache.isolate();
-		await storeOptions( { ...settings, cookieKeeper: 'yes' } );
-		await myAccountPage.goto();
-		await myAccountPage.logIn( editor );
-		await storefrontPage.goto( product.permalink );
-		const source = await storefrontPage.source();
-		expect( source ).toContain( 'varGtmServerSide' );
-		expect( source ).not.toContain( GTM_START );
-	} );
+	await homePage.goto();
+	await dataLayer.expectPushedOnce( { ecomm_pagetype: 'home' } );
+} );
+
+test( 'An excluded user still receives the `_sbp` Cookie Keeper cookie @Tfefbbf9f', async ( {
+	product,
+	catalog,
+	loaderCache,
+	storeOptions,
+	newSession,
+	myAccountPage,
+	storefrontPage,
+} ) => {
+	const settings = {
+		...EXCLUDE_EDITORS,
+		webContainerUrl: 'https://sgtm.example.test',
+		webIdentifier: 'abcdefgh',
+	};
+	await loaderCache.isolate();
+	await storeOptions( settings );
+	const editor = await catalog.createCustomer( { roles: [ 'editor' ] } );
+	// Logged in before Cookie Keeper is on, as in the case: with it on, the
+	// login response would already set `_sbp`.
+	await myAccountPage.goto();
+	await myAccountPage.logIn( editor );
+	expect( await storefrontPage.cookie( '_sbp' ) ).toBeUndefined();
+
+	await storeOptions( { cookieKeeper: 'yes' } );
+	const sent = Date.now();
+	await storefrontPage.goto( product.permalink );
+	const received = Date.now();
+	const headers = await storefrontPage.setCookieHeaders( '_sbp' );
+	expect( headers ).toHaveLength( 1 );
+	expect( headers[ 0 ] ).toMatch( SBP_SET );
+	const [ , expires ] = headers[ 0 ].match( SBP_SET ) ?? [];
+	const sentExpiry = Date.parse( `${ expires } GMT` );
+	expect( sentExpiry ).toBeGreaterThan( sent + TWO_YEARS_MS - CLOCK_SLACK_MS );
+	expect( sentExpiry ).toBeLessThan( received + TWO_YEARS_MS + CLOCK_SLACK_MS );
+
+	await newSession();
+	await loaderCache.isolate();
+	await storeOptions( { ...settings, cookieKeeper: 'yes' } );
+	await myAccountPage.goto();
+	await myAccountPage.logIn( editor );
+	await storefrontPage.goto( product.permalink );
+	const source = await storefrontPage.source();
+	expect( source ).toContain( 'varGtmServerSide' );
+	expect( source ).not.toContain( GTM_START );
+} );
+
+test( 'An excluded user gets no JS error from an AJAX add to cart on a product grid, and still loads no GTM @Tbdee7089', async ( {
+	storeOptions,
+	catalog,
+	wpLoginPage,
+	classicLoopPage,
+	gtmLoader,
+	dataLayer,
+	product,
+} ) => {
+	await storeOptions( EXCLUDE_EDITORS );
+	const editor = await catalog.createUser( 'editor' );
+	const loopPage = await catalog.createClassicLoopPage( product.category );
+
+	await wpLoginPage.goto();
+	await wpLoginPage.logIn( editor );
+
+	await classicLoopPage.goto( loopPage );
+	await classicLoopPage.addToCart( product.name );
+
+	// The pageErrors fixture fails the test on the plugin's JS errors. The push
+	// is awaited only to show the click's handler ran to the end; with no GTM
+	// on the page nothing reads it.
+	await dataLayer.expectPushedOnce( 'add_to_cart' );
+	expect( gtmLoader.gtmJsRequests() ).toEqual( [] );
 } );

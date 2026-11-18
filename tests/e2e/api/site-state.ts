@@ -46,3 +46,17 @@ export async function readStoredOption( requestUtils: RequestUtils, name: Plugin
 export function restoreSiteState( requestUtils: RequestUtils, state: SiteState ): Promise< SiteState > {
 	return call( requestUtils, 'PUT', state );
 }
+
+/**
+ * Deletes one of the plugin's options from the database, as `wp option
+ * delete` does: no delete_option hook runs. Changes what every page reads, so
+ * for exclusive tests only, whose siteState puts it back.
+ */
+export async function deleteStoredOption( requestUtils: RequestUtils, name: PluginOptionName ): Promise< void > {
+	const { options, cron } = await readSiteState( requestUtils );
+	delete options[ name ];
+	const after = await restoreSiteState( requestUtils, { options, cron } );
+	if ( name in after.options ) {
+		throw new Error( `${ name } is still stored after deleting it.` );
+	}
+}

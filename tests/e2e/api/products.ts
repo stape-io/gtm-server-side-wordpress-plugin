@@ -93,7 +93,8 @@ export async function deleteCategory( requestUtils: RequestUtils, id: number ): 
  * it on sale, `tags` tags it, `description` gives a search something to find
  * besides the generated name, and `tax_class` taxes it at a test's own rate
  * (see api/taxes.ts) instead of the standard one. A variable product always
- * has the same two variations, and a grouped one links the given products.
+ * has the same two variations, and `default_attributes` preselects options on
+ * its page; a grouped one links the given products.
  */
 export type ProductOptions =
 	| {
@@ -104,7 +105,7 @@ export type ProductOptions =
 			description?: string;
 			tax_class?: string;
 	  }
-	| { type: 'variable' }
+	| { type: 'variable'; default_attributes?: VariationAttribute[] }
 	| { type: 'grouped'; children: CreatedProduct[] };
 
 type VariationAttribute = { name: string; option: string };
@@ -118,15 +119,24 @@ export type CreatedVariation = {
 
 /**
  * The variable product of the Testomat cases (Cap Hoodie): Color and Size,
- * both used for variations. The Red variation sets no Size, so a shopper picks
- * any; it is also the cheaper one.
+ * both used for variations. The Red variation is "Any Size", so a shopper picks
+ * S or M; it is also the cheaper one.
  */
 const VARIABLE_ATTRIBUTES = [
 	{ name: 'Color', options: [ 'Red', 'Blue' ], variation: true, visible: true },
 	{ name: 'Size', options: [ 'S', 'M' ], variation: true, visible: true },
 ];
 const VARIATIONS: Array< { sku: string; regular_price: string; attributes: VariationAttribute[] } > = [
-	{ sku: 'red', regular_price: '30.00', attributes: [ { name: 'Color', option: 'Red' } ] },
+	{
+		sku: 'red',
+		regular_price: '30.00',
+		// An empty option is what makes it "Any Size": left out, WooCommerce
+		// offers only the sizes other variations use (M).
+		attributes: [
+			{ name: 'Color', option: 'Red' },
+			{ name: 'Size', option: '' },
+		],
+	},
 	{
 		sku: 'blue-m',
 		regular_price: '32.00',
@@ -157,7 +167,10 @@ export type CreatedProduct = {
 function typeFields( options: ProductOptions ): Record< string, unknown > {
 	switch ( options.type ) {
 		case 'variable':
-			return { attributes: VARIABLE_ATTRIBUTES };
+			return {
+				attributes: VARIABLE_ATTRIBUTES,
+				...( options.default_attributes ? { default_attributes: options.default_attributes } : {} ),
+			};
 		case 'grouped':
 			return { grouped_products: options.children.map( ( child ) => child.id ) };
 		default:

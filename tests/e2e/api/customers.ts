@@ -31,6 +31,7 @@ export type BillingDetails = {
 	address: string;
 	city: string;
 	postcode: string;
+	phone: string;
 };
 
 /**
@@ -48,6 +49,7 @@ export function buildGuestBuyer(): BillingDetails {
 		address: '1 Market St',
 		city: 'San Francisco',
 		postcode: '94105',
+		phone: '+14155550100',
 	};
 }
 
@@ -135,6 +137,30 @@ export async function createCustomer(
 	return { id: created.id, ...customer };
 }
 
+/** A WordPress user created over REST with one role, for the login form on wp-login.php. */
+export type CreatedUser = {
+	id: number;
+	username: string;
+	email: string;
+	password: string;
+};
+
+/** A user with `role` (`editor`, say) and an email unique per call, like a customer's. */
+export async function createUser( requestUtils: RequestUtils, role: string ): Promise< CreatedUser > {
+	const unique = uniqueSuffix();
+	const user: Omit< CreatedUser, 'id' > = {
+		username: `e2e-${ role }-${ unique }`,
+		email: `${ CUSTOMER_EMAIL_PREFIX }${ unique }@example.test`,
+		password: randomUUID(),
+	};
+	const created: { id: number } = await requestUtils.rest( {
+		path: '/wp/v2/users',
+		method: 'POST',
+		data: { ...user, roles: [ role ] },
+	} );
+	return { id: created.id, ...user };
+}
+
 /*
  * Accounts the browser registers, on My Account or at checkout. REST never
  * creates them, so they are found again by email, which is unique per test.
@@ -154,7 +180,8 @@ async function findAccounts( requestUtils: RequestUtils, email: string ): Promis
 
 /**
  * Through WordPress's endpoint, not WooCommerce's, which answers 403 for an
- * account without the customer role (an editor createCustomer() made).
+ * account without the customer role (an editor createCustomer() or
+ * createUser() made).
  */
 export async function deleteAccount( requestUtils: RequestUtils, id: number ): Promise< void > {
 	await requestUtils.rest( {

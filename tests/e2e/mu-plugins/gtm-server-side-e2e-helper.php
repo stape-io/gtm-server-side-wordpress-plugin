@@ -33,7 +33,7 @@ const GTM_SERVER_SIDE_E2E_OPTIONS_COOKIE = 'gtm_e2e_options';
 /**
  * The only options a cookie may override. Anyone can set a cookie, so
  * without this list a visitor could override any option, such as
- * users_can_register and default_role. Keep it in step with STORE_OPTIONS in
+ * default_role and siteurl. Keep it in step with STORE_OPTIONS in
  * tests/e2e/fixtures/store-options.ts.
  */
 const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
@@ -56,6 +56,7 @@ const GTM_SERVER_SIDE_E2E_OVERRIDABLE_OPTIONS = array(
 	'woocommerce_prices_include_tax',
 	'woocommerce_enable_myaccount_registration',
 	'woocommerce_enable_signup_and_login_from_checkout',
+	'users_can_register',
 );
 
 /**

@@ -68,7 +68,7 @@ the same content that workflow writes, then `npm run env:e2e:start -- --update`.
 | `fixtures/store-options.ts`  | The settings `storeOptions()` may override (see Store settings)      |
 | `fixtures/exclusive.ts`      | `EXCLUSIVE`, the details of an exclusive test (see Store settings)   |
 | `pages/`                     | Page objects; the pages with a product grid share `ProductListing`   |
-| `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()`   |
+| `data-layer/data-layer.ts`   | `DataLayer`: event name resolution, matching, `expectPushedOnce()` / `expectPushedTimes()` |
 | `data-layer/expected.ts`     | Builders for expected payloads                                       |
 | `data-layer/types.ts`        | The payload shape                                                    |
 | `data-layer/gtm-snippet.ts`  | What the GTM snippet specs look for in a page's source (sGTM URL, snippet markers) |
@@ -175,7 +175,9 @@ The rest is up to the author and the review.
 - **Wait with `dataLayer.expectPushedOnce()`.** It fails on a missing event,
   on a duplicate one and on one that isn't preceded by `{ ecommerce: null }`.
   Every event the plugin pushes (PHP and JS, including login, register and
-  home) clears `ecommerce` first, so the check has no opt-out.
+  home) clears `ecommerce` first, so the check has no opt-out. An event a
+  case expects more than once on one page (a `view_item` per variation the
+  shopper picks) uses `expectPushedTimes()`, the same check for an exact count.
 - **Assert the whole event with `toEqual`**, built from `data-layer/expected.ts`.
   A field the plugin starts or stops sending has to fail. Spell out `event`
   (`'add_to_cart_stape'`) instead of resolving it, so a dropped suffix fails too.
@@ -259,13 +261,14 @@ The rest is up to the author and the review.
   ignored, as are requests cancelled by a navigation: they change with every
   release, and `SCRIPT_DEBUG` makes React log warnings through `console.error`.
   The preflight check uses the base test and skips this fixture.
-  A case that lists a known defect's error under "Not covered here" (the
-  `dataLayer is not defined` of DEV-12902, with placement "Disable" or for a
-  user whose role is excluded) lets exactly that uncaught error through with
+  A case that lists a known defect's error under "Not covered here" lets
+  exactly that uncaught error through with
   `test.use( { knownPageErrors: [ { message, ticket } ] } )`, in a
   `test.describe` of its own. A listed error that never happens fails the
   test, naming its ticket: the defect looks fixed, so the entry goes, and
-  the known-defect case can be automated.
+  the known-defect case can be automated. (DEV-12902's `dataLayer is not
+  defined` went that way: fixed, its entries removed, and its cases
+  90103b64, 168e1b18, 0e751329 and bdee7089 automated.)
 - **PHP warnings in `debug.log`** are checked with the `phpErrors` fixture,
   not by reading the log, which every test running at the same time writes
   to: `await phpErrors.expectNone()` last, for a case that has the line. It
@@ -433,8 +436,11 @@ plugin's requests to Stape, recording what it sends - is a test plugin in
   thank-you page (`order-confirmation-page.php`, in place of a case's
   store-wide filter), `endEmailVerificationGrace()`, for a guest order
   link opened more than 10 minutes later (`email-verification-grace.php`),
-  and `consentPlatform()`, a consent platform whose stored choice is in the
-  dataLayer before the plugin's consent script (`consent-platform.php`).
+  `consentPlatform()`, a consent platform whose stored choice is in the
+  dataLayer before the plugin's consent script (`consent-platform.php`), and
+  `cmpStandIn()`, the "CMP stand-in" fixtures of the GTM snippet injection
+  folder: a stored grant, or a grant then a denial, pushed in `wp_head`
+  before the plugin's consent script (`cmp-stand-in.php`).
 - **The loader cache is the test's own** after `loaderCache.isolate()`
   (`loader-cache.php`). The plugin caches the identifier's random prefix and
   the encoded Web GTM ID in two site-wide transients, not keyed by the
@@ -585,6 +591,12 @@ when it is not the first.
    (`gtm_server_side_*`, which the site state covers), and its type refuses
    any other name: for one outside the state it would answer `undefined`, as
    for a missing row, so "not saved" would pass whatever was saved.
+
+   A case that deactivates and activates the plugin does it on the Plugins
+   screen (`pluginsPage`), which runs the plugin's real hooks. Its
+   `wp option delete` of one of the plugin's options is
+   `deleteStoredOption( '<option>' )`, which refuses to run in a test without
+   `EXCLUSIVE`.
 
 ## Testomat
 

@@ -49,43 +49,75 @@ test( '"Add web GTM script onto every page" prints the default GTM snippet exact
 	await phpErrors.expectNone();
 } );
 
-test.describe( () => {
-	// Without a snippet nothing creates window.dataLayer, so the plugin's
-	// server-rendered pushes throw. The case lists that under "Not covered
-	// here"; the known-defect case 90103b64 is about it.
-	test.use( { knownPageErrors: [ { message: 'dataLayer is not defined', ticket: 'DEV-12902' } ] } );
+test( '"Disable" prints no GTM snippet and no consent script on any storefront page, and still prints the view_item push @T802ad465', async ( {
+	product,
+	storeOptions,
+	storefrontPage,
+} ) => {
+	await storeOptions( { placement: 'disable' } );
 
-	test( '"Disable" prints no GTM snippet and no consent script on any storefront page, and still prints the view_item push @T802ad465', async ( {
-		product,
-		storeOptions,
-		storefrontPage,
-	} ) => {
-		await storeOptions( { placement: 'disable' } );
+	const pages = [
+		'/',
+		'/shop/',
+		product.permalink,
+		'/cart/',
+		'/my-account/',
+		`/?${ new URLSearchParams( { s: product.name } ) }`,
+		'/no-such-page/',
+	];
+	for ( const path of pages ) {
+		await storefrontPage.goto( path );
+		const source = await storefrontPage.source();
+		// A page that broke prints no snippet either: the plugin's footer
+		// config shows it rendered to the end.
+		expect( source, `the page rendered: ${ path }` ).toContain( 'varGtmServerSide' );
+		expect( source, `GTM block on ${ path }` ).not.toContain( GTM_START );
+		expect( source, `gtm.start on ${ path }` ).not.toContain( 'gtm.start' );
+		expect( source, `consent script on ${ path }` ).not.toContain( 'custom-loader' );
+	}
 
-		const pages = [
-			'/',
-			'/shop/',
-			product.permalink,
-			'/cart/',
-			'/my-account/',
-			`/?${ new URLSearchParams( { s: product.name } ) }`,
-			'/no-such-page/',
-		];
-		for ( const path of pages ) {
-			await storefrontPage.goto( path );
-			const source = await storefrontPage.source();
-			// A page that broke prints no snippet either: the plugin's footer
-			// config shows it rendered to the end.
-			expect( source, `the page rendered: ${ path }` ).toContain( 'varGtmServerSide' );
-			expect( source, `GTM block on ${ path }` ).not.toContain( GTM_START );
-			expect( source, `gtm.start on ${ path }` ).not.toContain( 'gtm.start' );
-			expect( source, `consent script on ${ path }` ).not.toContain( 'custom-loader' );
-		}
+	await storefrontPage.goto( product.permalink );
+	expect( await storefrontPage.source() ).toContain( 'view_item_stape' );
+	// Not just `gtm`: the plugin's own script, gtm-server-side-wordpress-plugin/…/javascript.js, matches that.
+	expect( storefrontPage.requestedUrls( 'googletagmanager' ) ).toEqual( [] );
+	expect( storefrontPage.requestedUrls( 'gtm.js' ) ).toEqual( [] );
+} );
 
-		await storefrontPage.goto( product.permalink );
-		expect( await storefrontPage.source() ).toContain( 'view_item_stape' );
-		// Not just `gtm`: the plugin's own script, gtm-server-side-wordpress-plugin/…/javascript.js, matches that.
-		expect( storefrontPage.requestedUrls( 'googletagmanager' ) ).toEqual( [] );
-		expect( storefrontPage.requestedUrls( 'gtm.js' ) ).toEqual( [] );
-	} );
+test( 'With placement "Disable", the server-rendered data layer events run without a JS error @T90103b64', async ( {
+	storeOptions,
+	productPage,
+	homePage,
+	dataLayer,
+	product,
+} ) => {
+	await storeOptions( { placement: 'disable' } );
+
+	// The pageErrors fixture fails the test on the plugin's JS errors on both
+	// pages, a ReferenceError from its inline pushes included.
+	await productPage.goto( product );
+	await dataLayer.expectPushedOnce( 'view_item' );
+	expect( await dataLayer.entriesWith( 'gtm.start' ), 'no GTM snippet is printed' ).toEqual( [] );
+
+	// home's push is the inline script on `/`: waiting for it shows it ran.
+	await homePage.goto();
+	await dataLayer.expectPushedOnce( { ecomm_pagetype: 'home' } );
+} );
+
+test( 'With placement "Disable", an AJAX add to cart from a product grid pushes add_to_cart without a JS error @T168e1b18', async ( {
+	storeOptions,
+	catalog,
+	classicLoopPage,
+	dataLayer,
+	product,
+} ) => {
+	await storeOptions( { placement: 'disable' } );
+	const loopPage = await catalog.createClassicLoopPage( product.category );
+
+	await classicLoopPage.goto( loopPage );
+	expect( await dataLayer.exists(), 'nothing on the page created the dataLayer before the click' ).toBe( false );
+
+	// The pageErrors fixture fails the test on the plugin's JS errors, a
+	// ReferenceError from the front-end script's push included.
+	await classicLoopPage.addToCart( product.name );
+	await dataLayer.expectPushedOnce( 'add_to_cart' );
 } );

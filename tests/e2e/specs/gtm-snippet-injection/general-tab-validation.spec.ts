@@ -51,6 +51,26 @@ test( 'With "Add web GTM script" selected, an empty Web GTM ID blocks saving ("T
 	expect( await storedOption( WEB_CONTAINER_ID ) ).toBe( 'GTM-TESTID' );
 } );
 
+test( 'With "Load GTM with consent" selected, an empty Web GTM ID blocks saving @Teff0f923', EXCLUSIVE, async ( {
+	loginAsAdmin,
+	adminSettingsPage,
+} ) => {
+	await loginAsAdmin();
+	await adminSettingsPage.goto( 'general' );
+	await adminSettingsPage.setSameOriginProxy( false );
+
+	await adminSettingsPage.gtmConsentPlacement.check();
+	await adminSettingsPage.webContainerIdInput.fill( '' );
+	expect( await adminSettingsPage.clickSave(), 'the page reloaded' ).toBe( false );
+	await expect( adminSettingsPage.savedNotice ).toBeHidden();
+	await expect( adminSettingsPage.validationError( WEB_CONTAINER_ID ) ).toHaveText( 'This field is required.' );
+
+	// The error exists only on the page the click was made on: a reload
+	// renders the form without it, with the stored ID.
+	await adminSettingsPage.goto( 'general' );
+	await expect( adminSettingsPage.webContainerIdInput ).toHaveValue( 'GTM-TESTID' );
+} );
+
 test( 'An sGTM URL that isn\'t https or ends with a slash blocks saving with "URL must be entered with https:// and without slashes at the end" @T79058af9', EXCLUSIVE, async ( {
 	loginAsAdmin,
 	adminSettingsPage,

@@ -47,6 +47,7 @@ export class CheckoutPage {
 		await this.form.getByLabel( 'Last name' ).fill( details.lastName );
 		await this.form.getByLabel( 'Address', { exact: true } ).fill( details.address );
 		await this.form.getByLabel( 'City' ).fill( details.city );
+		await this.form.getByLabel( 'Phone' ).fill( details.phone );
 		await this.form.getByLabel( 'ZIP Code' ).fill( details.postcode );
 		await this.form.getByLabel( 'ZIP Code' ).blur();
 
@@ -127,6 +128,7 @@ export class CheckoutPage {
 			state: 'CA',
 			postcode: details.postcode,
 			country: 'US',
+			phone: details.phone,
 		};
 		const response = await this.page.request.post( '/wp-json/wc/store/v1/checkout', {
 			headers: { Nonce: nonce },

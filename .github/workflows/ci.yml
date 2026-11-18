@@ -49,6 +49,10 @@ jobs:
 
       - run: npm test
 
+      # Versions agree and the plugin package holds only runtime files
+      # (bin/check-release.mjs). deploy.yml runs it again against the tag.
+      - run: npm run check:release
+
       # The package ships straight from the repository, so the bundle is
       # committed. Fail if it no longer matches its source.
       - name: Built bundle matches assets/src

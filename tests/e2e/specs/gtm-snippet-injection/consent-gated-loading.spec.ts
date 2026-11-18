@@ -73,6 +73,28 @@ test( 'Denied consent doesn\'t load GTM @T92493895', async ( { product, storeOpt
 	expect( storefrontPage.requestedUrls( 'gtm.js' ) ).toEqual( [] );
 } );
 
+test( 'Consent already granted before the plugin\'s consent script (a returning visitor) loads GTM on page load @T40acfaaa', async ( {
+	storeOptions,
+	testPlugins,
+	productPage,
+	gtmLoader,
+	dataLayer,
+	product,
+} ) => {
+	await storeOptions( { placement: 'gtm_consent' } );
+	await testPlugins.cmpStandIn( 'granted' );
+
+	await productPage.goto( product );
+	const source = await productPage.source();
+	const markers = [ 'gtag("consent","default"', 'gtmVariable:"dataLayer"', 'id="custom-loader"' ];
+	expect( markers.map( ( marker ) => source.split( marker ).length - 1 ), 'each search finds one match' ).toEqual( [ 1, 1, 1 ] );
+	const lines = markers.map( ( marker ) => source.indexOf( marker ) );
+	expect( lines, 'the grant comes before the consent script, and that before the loader' ).toEqual( [ ...lines ].sort( ( a, b ) => a - b ) );
+
+	await expect.poll( () => gtmLoader.gtmJsRequests() ).toEqual( [ GTM_JS ] );
+	expect( ( await dataLayer.entries() ).filter( ( entry ) => entry.event === 'gtm.js' ) ).toHaveLength( 1 );
+} );
+
 test( 'Consent mode gates every snippet variant: the identifier, Cookie Keeper and API loader snippets are printed as `type="text/plain" id="custom-loader"` @Tfab91dac', async ( {
 	loaderCache,
 	storeOptions,

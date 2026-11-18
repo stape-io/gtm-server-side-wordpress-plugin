@@ -86,8 +86,35 @@ export class ProductPage {
 		for ( const [ attribute, value ] of Object.entries( options ) ) {
 			await form.getByLabel( attribute ).selectOption( value );
 		}
+		await this.waitForVariation();
+	}
+
+	/**
+	 * Waits until WooCommerce has matched and shown a variation for the
+	 * options chosen, by the shopper or as the product's defaults on page load.
+	 */
+	async waitForVariation(): Promise< void > {
 		// The class, not the disabled attribute: WooCommerce's variation script only toggles the class.
-		await expect( form.getByRole( 'button', { name: /add to cart/i } ) ).not.toHaveClass( /\bdisabled\b/ );
+		await expect( this.form().getByRole( 'button', { name: /add to cart/i } ) ).not.toHaveClass( /\bdisabled\b/ );
+	}
+
+	/**
+	 * Clicks a variable product's "Clear" link and waits until no variation
+	 * is chosen: "Add to cart" is styled disabled again.
+	 */
+	async clearOptions(): Promise< void > {
+		await this.form().getByRole( 'link', { name: 'Clear options' } ).click();
+		await expect( this.form().getByRole( 'button', { name: /add to cart/i } ) ).toHaveClass( /\bdisabled\b/ );
+	}
+
+	/** A variable product's attribute field, by its label. */
+	option( attribute: string ): Locator {
+		return this.form().getByLabel( attribute );
+	}
+
+	/** The price of the variation the form shows, in the store's currency ($). */
+	variationPrice( price: string ): Locator {
+		return this.form().getByText( `$${ price }`, { exact: true } );
 	}
 
 	/**

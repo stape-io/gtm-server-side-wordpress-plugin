@@ -34,7 +34,6 @@ class GTM_Server_Side_Event_Register {
 
 		add_action( 'user_register', array( $this, 'user_register' ) );
 		add_action( 'wp_footer', array( $this, 'wp_footer' ) );
-		add_action( 'login_footer', array( $this, 'wp_footer' ) );
 	}
 
 	/**
@@ -49,10 +48,20 @@ class GTM_Server_Side_Event_Register {
 	/**
 	 * WP footer hook.
 	 *
+	 * Not on login_footer: wp-login.php prints no GTM snippet, so the flag
+	 * waits for the first storefront page. user_register also fires when staff
+	 * create a user in wp-admin, which puts the flag in their browser: an
+	 * excluded role drops it without pushing, so it can't fire once they log out.
+	 *
 	 * @return void
 	 */
 	public function wp_footer() {
 		if ( ! GTM_Server_Side_Helpers::exists_session( self::CHECK_NAME, GTM_SERVER_SIDE_FIELD_VALUE_YES ) ) {
+			return;
+		}
+
+		if ( GTM_Server_Side_Helpers::is_current_user_gtm_excluded() ) {
+			GTM_Server_Side_Helpers::javascript_delete_cookie( self::CHECK_NAME );
 			return;
 		}
 
@@ -63,12 +72,7 @@ class GTM_Server_Side_Event_Register {
 		if ( GTM_Server_Side_WC_Helpers::instance()->is_enable_user_data() ) {
 			$data_layer['user_data'] = GTM_Server_Side_WC_Helpers::instance()->get_data_layer_user_data();
 		}
-		?>
-		<script type="text/javascript">
-			dataLayer.push( { ecommerce: null } );
-			dataLayer.push(<?php echo GTM_Server_Side_Helpers::array_to_json( $data_layer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>);
-		</script>
-		<?php
+		GTM_Server_Side_Helpers::print_data_layer_event( $data_layer );
 		GTM_Server_Side_Helpers::javascript_delete_cookie( self::CHECK_NAME );
 	}
 }

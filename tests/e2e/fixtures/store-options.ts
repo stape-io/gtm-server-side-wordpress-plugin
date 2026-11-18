@@ -134,6 +134,12 @@ type StoreOptionValues = {
 	 * reads it when the checkout renders and when the Store API places the order.
 	 */
 	checkoutSignup: 'yes' | 'no';
+	/**
+	 * WordPress's "Anyone can register". Off (`0`) on the baseline store; on,
+	 * wp-login.php shows its Register form. Nothing runs when it is saved, and
+	 * wp-login.php reads it on the request that shows or posts the form.
+	 */
+	usersCanRegister: '1' | '0';
 };
 
 export const STORE_OPTIONS = {
@@ -156,6 +162,7 @@ export const STORE_OPTIONS = {
 	pricesIncludeTax: 'woocommerce_prices_include_tax',
 	myAccountRegistration: 'woocommerce_enable_myaccount_registration',
 	checkoutSignup: 'woocommerce_enable_signup_and_login_from_checkout',
+	usersCanRegister: 'users_can_register',
 } as const satisfies Record< keyof StoreOptionValues, string >;
 
 export type StoreOption = keyof typeof STORE_OPTIONS;
